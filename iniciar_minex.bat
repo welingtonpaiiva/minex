@@ -1,12 +1,16 @@
 @echo off
 chcp 65001 >nul
-title MineX - Servidor de Portaria e Mina
-echo ======================================================
-echo    INICIANDO SERVIDOR MINEX (CONTROLE INDUSTRIAL)
-echo ======================================================
+title CASA DA LANTERNA - CONTROLE INDUSTRIAL
+set PATH=C:\Program Files\nodejs;%PATH%
+
+echo =================================================================
+echo   INICIANDO SISTEMA CASA DA LANTERNA (CONTROLE DE MATERIAIS)
+echo =================================================================
 echo.
 echo Abrindo o navegador em http://localhost:3000 ...
 start http://localhost:3000
 
-"C:\Users\v-welingtonpaiva\.gemini\antigravity-ide\bin\node.exe" server.js
+cd /d "%~dp0backend"
+npm run dev
+
 pause

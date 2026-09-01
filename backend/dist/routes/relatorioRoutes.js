@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const RelatorioController_1 = require("../controllers/RelatorioController");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
+const router = (0, express_1.Router)();
+router.use(authMiddleware_1.authMiddleware);
+router.get('/resumo', RelatorioController_1.RelatorioController.obterResumo);
+router.get('/excel', RelatorioController_1.RelatorioController.exportarExcel);
+router.get('/pdf/em-uso', RelatorioController_1.RelatorioController.exportarPdfEmUso);
+exports.default = router;

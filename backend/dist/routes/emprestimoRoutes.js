@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const EmprestimoController_1 = require("../controllers/EmprestimoController");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
+const router = (0, express_1.Router)();
+router.use(authMiddleware_1.authMiddleware);
+router.get('/ativos', EmprestimoController_1.EmprestimoController.buscarEmprestimosAtivos);
+router.get('/colaborador/:colaboradorId', EmprestimoController_1.EmprestimoController.buscarEmprestimosDoColaborador);
+router.post('/saida', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR', 'OPERADOR']), EmprestimoController_1.EmprestimoController.realizarSaida);
+router.post('/entrada', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR', 'OPERADOR']), EmprestimoController_1.EmprestimoController.realizarEntrada);
+exports.default = router;

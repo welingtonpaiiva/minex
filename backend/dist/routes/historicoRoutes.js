@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const HistoricoController_1 = require("../controllers/HistoricoController");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
+const router = (0, express_1.Router)();
+router.use(authMiddleware_1.authMiddleware);
+router.get('/', HistoricoController_1.HistoricoController.listar);
+router.get('/colaborador/:colaboradorId', HistoricoController_1.HistoricoController.historicoColaborador);
+router.get('/material/:materialId', HistoricoController_1.HistoricoController.historicoMaterial);
+exports.default = router;

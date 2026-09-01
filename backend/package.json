@@ -1,0 +1,37 @@
+{
+  "name": "casa-da-lanterna-backend",
+  "version": "1.0.0",
+  "description": "Backend industrial para controle de entrada e saída da Casa da Lanterna",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "migrate": "ts-node src/database/migrate.ts",
+    "import:collaborators": "ts-node src/database/importCollaborators.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "pdfmake": "^0.2.10",
+    "pg": "^8.11.5",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.12.7",
+    "@types/pdfmake": "^0.2.9",
+    "@types/pg": "^8.11.5",
+    "@types/sqlite3": "^3.1.11",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5"
+  }
+}

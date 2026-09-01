@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const ColaboradorController_1 = require("../controllers/ColaboradorController");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
+const router = (0, express_1.Router)();
+router.use(authMiddleware_1.authMiddleware);
+router.get('/', ColaboradorController_1.ColaboradorController.listar);
+router.get('/nfc/:nfcId', ColaboradorController_1.ColaboradorController.buscarPorNfc);
+router.get('/matricula/:matricula', ColaboradorController_1.ColaboradorController.buscarPorMatricula);
+router.get('/:id', ColaboradorController_1.ColaboradorController.buscarPorId);
+router.post('/', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR', 'OPERADOR']), ColaboradorController_1.ColaboradorController.criar);
+router.put('/:id', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR', 'OPERADOR']), ColaboradorController_1.ColaboradorController.editar);
+router.patch('/:id/nfc', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR', 'OPERADOR']), ColaboradorController_1.ColaboradorController.associarNfc);
+exports.default = router;
