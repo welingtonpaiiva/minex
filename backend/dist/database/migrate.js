@@ -10,13 +10,44 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const db_1 = require("../config/db");
 async function runMigrations() {
     console.log('[MIGRATE] Iniciando criação das tabelas...');
-    const schemaPath = path_1.default.join(__dirname, 'schema.sql');
+    let schemaPath = path_1.default.join(__dirname, 'schema.sql');
+    if (!fs_1.default.existsSync(schemaPath)) {
+        schemaPath = path_1.default.resolve(__dirname, '../../src/database/schema.sql');
+    }
+    if (!fs_1.default.existsSync(schemaPath)) {
+        schemaPath = path_1.default.resolve(__dirname, '../src/database/schema.sql');
+    }
     const sqlContent = fs_1.default.readFileSync(schemaPath, 'utf-8');
     // Dividir o script por instruções individuais
     const statements = sqlContent
         .split(';')
         .map((stmt) => stmt.trim())
         .filter((stmt) => stmt.length > 0);
+    // Verificar se existem tabelas com schema legado e dropar para recriar com a estrutura correta
+    try {
+        const userCols = await (0, db_1.query)("PRAGMA table_info(usuarios)");
+        const hasSenhaHash = Array.isArray(userCols) && userCols.some((col) => col.name === 'senha_hash');
+        if (userCols.length > 0 && !hasSenhaHash) {
+            console.log('[MIGRATE] Tabela usuarios legada detectada. Atualizando estrutura...');
+            await (0, db_1.query)("DROP TABLE IF EXISTS emprestimos");
+            await (0, db_1.query)("DROP TABLE IF EXISTS movimentacoes");
+            await (0, db_1.query)("DROP TABLE IF EXISTS materiais");
+            await (0, db_1.query)("DROP TABLE IF EXISTS categorias");
+            await (0, db_1.query)("DROP TABLE IF EXISTS colaboradores");
+            await (0, db_1.query)("DROP TABLE IF EXISTS usuarios");
+        }
+        const colabCols = await (0, db_1.query)("PRAGMA table_info(colaboradores)");
+        const hasNfc = Array.isArray(colabCols) && colabCols.some((col) => col.name === 'nfc_id');
+        if (colabCols.length > 0 && !hasNfc) {
+            console.log('[MIGRATE] Tabela colaboradores legada detectada. Atualizando estrutura...');
+            await (0, db_1.query)("DROP TABLE IF EXISTS emprestimos");
+            await (0, db_1.query)("DROP TABLE IF EXISTS movimentacoes");
+            await (0, db_1.query)("DROP TABLE IF EXISTS colaboradores");
+        }
+    }
+    catch (e) {
+        // Ignorar erro se tabela não existir
+    }
     for (const stmt of statements) {
         try {
             await (0, db_1.query)(stmt);

@@ -6,7 +6,13 @@ import { query, queryOne } from '../config/db';
 export async function runMigrations() {
   console.log('[MIGRATE] Iniciando criação das tabelas...');
 
-  const schemaPath = path.join(__dirname, 'schema.sql');
+  let schemaPath = path.join(__dirname, 'schema.sql');
+  if (!fs.existsSync(schemaPath)) {
+    schemaPath = path.resolve(__dirname, '../../src/database/schema.sql');
+  }
+  if (!fs.existsSync(schemaPath)) {
+    schemaPath = path.resolve(__dirname, '../src/database/schema.sql');
+  }
   const sqlContent = fs.readFileSync(schemaPath, 'utf-8');
 
   // Dividir o script por instruções individuais

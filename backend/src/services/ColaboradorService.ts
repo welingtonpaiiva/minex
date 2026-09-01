@@ -35,7 +35,7 @@ export class ColaboradorService {
     // 2. Tentar busca ignorando zeros à esquerda (ex: leitores que enviam zeros adicionais)
     if (!colab && unpaddedNfc) {
       colab = await queryOne(
-        'SELECT * FROM colaboradores WHERE LTRIM(nfc_id, "0") = ? OR nfc_id = ?',
+        "SELECT * FROM colaboradores WHERE LTRIM(nfc_id, '0') = ? OR nfc_id = ?",
         [unpaddedNfc, unpaddedNfc]
       );
     }
@@ -53,7 +53,7 @@ export class ColaboradorService {
     const clean = matricula.trim();
     const unpadded = clean.replace(/^0+/, '');
     return await queryOne(
-      'SELECT * FROM colaboradores WHERE matricula = ? OR nfc_id = ? OR LTRIM(matricula, "0") = ?',
+      "SELECT * FROM colaboradores WHERE matricula = ? OR nfc_id = ? OR LTRIM(matricula, '0') = ?",
       [clean, clean, unpadded]
     );
   }
@@ -79,7 +79,7 @@ export class ColaboradorService {
       const cleanNfc = dados.nfc_id.trim();
       const unpaddedNfc = cleanNfc.replace(/^0+/, '');
       const nfcExist = unpaddedNfc
-        ? await queryOne('SELECT id FROM colaboradores WHERE nfc_id = ? OR LTRIM(nfc_id, "0") = ?', [cleanNfc, unpaddedNfc])
+        ? await queryOne("SELECT id FROM colaboradores WHERE nfc_id = ? OR LTRIM(nfc_id, '0') = ?", [cleanNfc, unpaddedNfc])
         : await queryOne('SELECT id FROM colaboradores WHERE nfc_id = ?', [cleanNfc]);
       if (nfcExist) {
         throw new Error('Este cartão NFC já está vinculado a outro colaborador');
@@ -120,7 +120,7 @@ export class ColaboradorService {
       const cleanNfc = dados.nfc_id.trim();
       const unpaddedNfc = cleanNfc.replace(/^0+/, '');
       const nfcExist = unpaddedNfc
-        ? await queryOne('SELECT id FROM colaboradores WHERE (nfc_id = ? OR LTRIM(nfc_id, "0") = ?) AND id != ?', [cleanNfc, unpaddedNfc, id])
+        ? await queryOne("SELECT id FROM colaboradores WHERE (nfc_id = ? OR LTRIM(nfc_id, '0') = ?) AND id != ?", [cleanNfc, unpaddedNfc, id])
         : await queryOne('SELECT id FROM colaboradores WHERE nfc_id = ? AND id != ?', [cleanNfc, id]);
       if (nfcExist) {
         throw new Error('Este cartão NFC já está associado a outro colaborador');
@@ -151,7 +151,7 @@ export class ColaboradorService {
     const cleanNfc = nfcId.trim();
     const unpaddedNfc = cleanNfc.replace(/^0+/, '');
     const exist = unpaddedNfc
-      ? await queryOne('SELECT id FROM colaboradores WHERE (nfc_id = ? OR LTRIM(nfc_id, "0") = ?) AND id != ?', [cleanNfc, unpaddedNfc, colaboradorId])
+      ? await queryOne("SELECT id FROM colaboradores WHERE (nfc_id = ? OR LTRIM(nfc_id, '0') = ?) AND id != ?", [cleanNfc, unpaddedNfc, colaboradorId])
       : await queryOne('SELECT id FROM colaboradores WHERE nfc_id = ? AND id != ?', [cleanNfc, colaboradorId]);
     if (exist) {
       throw new Error('Este cartão NFC já pertence a outro colaborador');
