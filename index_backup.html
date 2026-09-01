@@ -1,0 +1,2111 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MineX — Centro de Controle Operacional · CMOC</title>
+    <meta name="description" content="MineX: Sistema corporativo de controle de acesso, rastreabilidade de equipamentos e monitoramento de permanência em mina subterrânea. CMOC Brasil.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
+    <link rel="alternate icon" href="public/image.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="/public/lucide.min.js"></script>
+    <style>
+        /* ============================================================
+           DESIGN SYSTEM MINEX — CMOC IDENTITY
+           Cor Institucional: #331274 (CMOC Purple)
+           Neutros: #000000 / #FFFFFF
+           Semânticas: Verde / Âmbar / Vermelho / Ciano
+        ============================================================ */
+
+        /* --- DARK MODE (Padrão) --- */
+        :root,
+        [data-theme="dark"] {
+            /* Backgrounds */
+            --bg-primary:      #0A0710;
+            --bg-secondary:    #111018;
+            --bg-card:         #111018;
+            --bg-card-elev:    #17131F;
+            --bg-input:        #1A1525;
+
+            /* Bordas */
+            --border:          rgba(255,255,255,0.08);
+            --border-strong:   rgba(255,255,255,0.14);
+
+            /* Texto */
+            --text-primary:    #FFFFFF;
+            --text-secondary:  #A7A3AE;
+            --text-muted:      #6B6778;
+
+            /* Identidade CMOC */
+            --primary:         #331274;
+            --primary-hover:   #3D1589;
+            --primary-active:  #29105C;
+            --primary-soft:    rgba(51,18,116,0.20);
+            --primary-subtle:  rgba(51,18,116,0.10);
+            --primary-border:  rgba(51,18,116,0.40);
+            --primary-focus:   rgba(51,18,116,0.25);
+            --primary-text:    #FFFFFF;
+
+            /* Semânticas Operacionais */
+            --success:         #22C55E;
+            --success-dim:     rgba(34,197,94,0.12);
+            --warning:         #F59E0B;
+            --warning-dim:     rgba(245,158,11,0.12);
+            --danger:          #EF4444;
+            --danger-dim:      rgba(239,68,68,0.12);
+            --info:            #06B6D4;
+            --info-dim:        rgba(6,182,212,0.12);
+
+            /* Sidebar */
+            --sidebar-bg:      #0D0A16;
+            --sidebar-active:  rgba(51,18,116,0.25);
+            --sidebar-hover:   rgba(255,255,255,0.05);
+
+            /* Sombras */
+            --shadow-card:     0 1px 0 var(--border);
+            --shadow-elev:     0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px var(--border);
+
+            /* Scrollbar */
+            --scrollbar-thumb: rgba(51,18,116,0.4);
+            --scrollbar-hover: rgba(51,18,116,0.7);
+        }
+
+        /* --- LIGHT MODE --- */
+        [data-theme="light"] {
+            --bg-primary:      #FFFFFF;
+            --bg-secondary:    #F8F7FC;
+            --bg-card:         #FFFFFF;
+            --bg-card-elev:    #F4F2FA;
+            --bg-input:        #F8F7FC;
+            --border:          rgba(0,0,0,0.08);
+            --border-strong:   rgba(0,0,0,0.14);
+            --text-primary:    #000000;
+            --text-secondary:  #4A4558;
+            --text-muted:      #9B97A8;
+            --primary:         #331274;
+            --primary-hover:   #3D1589;
+            --primary-active:  #29105C;
+            --primary-soft:    rgba(51,18,116,0.08);
+            --primary-subtle:  rgba(51,18,116,0.04);
+            --primary-border:  rgba(51,18,116,0.25);
+            --primary-focus:   rgba(51,18,116,0.15);
+            --primary-text:    #FFFFFF;
+            --sidebar-bg:      #331274;
+            --sidebar-active:  rgba(255,255,255,0.15);
+            --sidebar-hover:   rgba(255,255,255,0.08);
+            --shadow-card:     0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px var(--border);
+            --shadow-elev:     0 8px 24px rgba(0,0,0,0.12), 0 0 0 1px var(--border);
+            --scrollbar-thumb: rgba(51,18,116,0.25);
+            --scrollbar-hover: rgba(51,18,116,0.5);
+        }
+
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: 14px; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* ============================================================
+           ANIMAÇÕES
+        ============================================================ */
+        @keyframes fadeIn    { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInR  { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideOutR { to { opacity: 0; transform: translateX(16px); } }
+        @keyframes pulse     { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes blinkBorder { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow: 0 0 0 5px rgba(239,68,68,0); } }
+
+        /* Brand Pattern — background geométrico institucional */
+        @keyframes bgShift { from { background-position: 0 0; } to { background-position: 60px 60px; } }
+
+        /* ============================================================
+           SIDEBAR
+        ============================================================ */
+        #sidebar {
+            width: 240px;
+            min-width: 240px;
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            transition: width 200ms ease, min-width 200ms ease;
+            overflow: hidden;
+            z-index: 100;
+            border-right: 1px solid var(--border);
+        }
+        #sidebar.collapsed { width: 58px; min-width: 58px; }
+
+        /* Light mode sidebar — texto branco sobre roxo */
+        [data-theme="light"] #sidebar { border-right-color: rgba(255,255,255,0.1); }
+        [data-theme="light"] .nav-item { color: rgba(255,255,255,0.7); }
+        [data-theme="light"] .nav-item:hover { color: #fff; background: var(--sidebar-hover); }
+        [data-theme="light"] .nav-item.active { color: #fff; background: var(--sidebar-active); }
+        [data-theme="light"] .nav-section-label { color: rgba(255,255,255,0.4); }
+        [data-theme="light"] .logo-text { color: #fff; }
+        [data-theme="light"] .logo-text span { color: rgba(255,255,255,0.6); }
+        [data-theme="light"] .sidebar-collapse-btn { color: rgba(255,255,255,0.5); }
+        [data-theme="light"] .sidebar-collapse-btn:hover { color: #fff; background: var(--sidebar-hover); }
+        [data-theme="light"] .user-name { color: #fff; }
+        [data-theme="light"] .user-role { color: rgba(255,255,255,0.55); }
+
+        .sidebar-logo {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
+        }
+        .logo-icon {
+            width: 30px; height: 30px; min-width: 30px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        [data-theme="dark"] .logo-icon { background: var(--primary); }
+        .logo-icon svg { width: 16px; height: 16px; color: #fff; }
+        .logo-text {
+            font-weight: 800; font-size: 1.05rem;
+            color: var(--text-primary);
+            white-space: nowrap; letter-spacing: -0.3px;
+            line-height: 1;
+        }
+        .logo-sub { font-size: 0.6rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-top: 2px; }
+        [data-theme="light"] .logo-sub { color: rgba(255,255,255,0.45); }
+        
+        /* Tema responsivo para logos em imagem */
+        .logo-theme-light { display: none; height: 44px; width: auto; transition: opacity 200ms; }
+        .logo-theme-dark { display: block; height: 44px; width: auto; transition: opacity 200ms; }
+        [data-theme="light"] .logo-theme-light { display: block; }
+        [data-theme="light"] .logo-theme-dark { display: none; }
+        
+        #sidebar.collapsed .logo-theme-light,
+        #sidebar.collapsed .logo-theme-dark { display: none !important; }
+        #sidebar.collapsed .sidebar-logo::before {
+            content: '';
+            display: block;
+            width: 32px; height: 32px;
+            background: url('public/favicon.svg') center/contain no-repeat;
+            margin: 0 auto;
+        }
+
+        .logo-texts { display: flex; flex-direction: column; }
+
+        .sidebar-nav { flex: 1; padding: 8px; overflow-y: auto; overflow-x: hidden; }
+
+        .nav-section-label {
+            font-size: 0.65rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.09em;
+            color: var(--text-muted);
+            padding: 12px 8px 4px;
+            white-space: nowrap; overflow: hidden;
+            transition: opacity 150ms;
+        }
+        #sidebar.collapsed .nav-section-label { opacity: 0; }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 150ms, color 150ms;
+            color: var(--text-secondary);
+            font-weight: 500; font-size: 0.82rem;
+            white-space: nowrap;
+            position: relative;
+            margin-bottom: 1px;
+            border: none; background: none; width: 100%; text-align: left;
+            font-family: 'Inter', sans-serif;
+        }
+        [data-theme="dark"] .nav-item:hover { background: var(--sidebar-hover); color: var(--text-primary); }
+        [data-theme="dark"] .nav-item.active {
+            background: var(--sidebar-active);
+            color: #fff;
+            font-weight: 600;
+        }
+        .nav-item.active::before {
+            content: '';
+            position: absolute; left: 0; top: 6px; bottom: 6px;
+            width: 3px;
+            background: var(--primary);
+            border-radius: 0 2px 2px 0;
+        }
+        [data-theme="light"] .nav-item.active::before { background: rgba(255,255,255,0.8); }
+        .nav-item svg { width: 16px; height: 16px; min-width: 16px; }
+        .nav-label { overflow: hidden; }
+        #sidebar.collapsed .nav-label { display: none; }
+
+        .sidebar-footer {
+            padding: 8px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
+        }
+        .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 8px; overflow: hidden; }
+        .user-avatar {
+            width: 30px; height: 30px; min-width: 30px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.7rem; color: #fff;
+            flex-shrink: 0;
+        }
+        [data-theme="light"] .user-avatar { background: rgba(255,255,255,0.2); }
+        .user-info { overflow: hidden; }
+        .user-name { font-size: 0.78rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-role { font-size: 0.68rem; color: var(--text-muted); }
+        #sidebar.collapsed .user-info { display: none; }
+
+        .sidebar-collapse-btn {
+            display: flex; align-items: center; justify-content: center;
+            padding: 7px; border-radius: 7px;
+            cursor: pointer; color: var(--text-muted);
+            transition: all 150ms; border: none; background: none; width: 100%;
+            margin-top: 2px;
+        }
+        [data-theme="dark"] .sidebar-collapse-btn:hover { background: var(--sidebar-hover); color: var(--text-primary); }
+        .sidebar-collapse-btn svg { transition: transform 200ms ease; width: 15px; height: 15px; }
+        #sidebar.collapsed .sidebar-collapse-btn svg { transform: rotate(180deg); }
+
+        /* ============================================================
+           MAIN
+        ============================================================ */
+        #app-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+        /* ============================================================
+           HEADER
+        ============================================================ */
+        #app-header {
+            height: 60px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; flex-shrink: 0;
+        }
+        /* Linha de identidade institucional no topo do header */
+        #app-header::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: var(--primary);
+        }
+        .header-title h1 { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+        .header-title p { font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
+        .header-right { display: flex; align-items: center; gap: 14px; }
+
+        .conn-status {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.72rem; font-weight: 500; color: var(--text-secondary);
+        }
+        .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+        .conn-dot.offline { background: var(--warning); animation: pulse 1.5s infinite; }
+        .conn-dot.error { background: var(--danger); animation: pulse 1s infinite; }
+
+        #header-clock {
+            font-size: 0.82rem; font-weight: 600;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.03em;
+        }
+
+        .header-icon-btn {
+            width: 30px; height: 30px; border-radius: 7px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 150ms;
+        }
+        .header-icon-btn:hover { background: var(--bg-card-elev); color: var(--text-primary); border-color: var(--border-strong); }
+        .header-icon-btn svg { width: 14px; height: 14px; }
+
+        .header-user {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 10px; padding: 5px 10px;
+            cursor: pointer; transition: all 150ms;
+        }
+        .header-user:hover { border-color: var(--primary-border); }
+        .header-user .user-avatar { width: 24px; height: 24px; font-size: 0.62rem; }
+        .header-user .hname { font-size: 0.75rem; font-weight: 600; color: var(--text-primary); }
+        .role-badge {
+            font-size: 0.62rem; font-weight: 700; letter-spacing: 0.05em;
+            padding: 2px 7px; border-radius: 99px;
+            background: var(--primary-soft);
+            color: var(--primary);
+            text-transform: uppercase;
+        }
+        [data-theme="light"] .role-badge { color: var(--primary); }
+
+        /* ============================================================
+           CONTENT
+        ============================================================ */
+        #app-content {
+            flex: 1; overflow-y: auto; overflow-x: hidden;
+            background: var(--bg-primary);
+        }
+
+        .section { display: none; padding: 24px; animation: fadeIn 0.18s ease; }
+        .section.active { display: block; }
+        .section-header { margin-bottom: 20px; }
+        .section-header h2 { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
+        .section-header p { font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; }
+
+        /* ============================================================
+           KPI CARDS
+        ============================================================ */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 14px; margin-bottom: 20px;
+        }
+        .kpi-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px;
+            box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .kpi-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .kpi-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .kpi-label { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+        .kpi-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(255,255,255,0.1); }
+        .kpi-icon svg { width: 18px; height: 18px; }
+        .kpi-icon.purple { background: rgba(51, 18, 116, 0.1); color: var(--primary); border: 1px solid rgba(51,18,116,0.15); }
+        .kpi-icon.red    { background: rgba(218, 56, 73, 0.1); color: var(--danger); border: 1px solid rgba(218,56,73,0.15); }
+        .kpi-icon.green  { background: rgba(0, 168, 107, 0.1); color: var(--success); border: 1px solid rgba(0,168,107,0.15); }
+        .kpi-icon.amber  { background: rgba(245, 166, 35, 0.1); color: var(--warning); border: 1px solid rgba(245,166,35,0.15); }
+        .kpi-value { font-size: 2.2rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 4px; letter-spacing: -0.02em; }
+        .kpi-sub { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* ============================================================
+           CARD
+        ============================================================ */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .card-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .card-title {
+            font-size: 0.82rem; font-weight: 700;
+            color: var(--text-primary);
+            display: flex; align-items: center; gap: 7px;
+        }
+        .card-title svg { width: 15px; height: 15px; color: var(--primary); }
+        .card-body { padding: 0; }
+
+        /* ============================================================
+           DATA TABLE
+        ============================================================ */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .table-responsive { width: 100%; overflow-x: auto; }
+        .data-table th {
+            font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--text-muted); padding: 10px 16px; text-align: left;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+            white-space: nowrap;
+        }
+        .data-table td { padding: 11px 16px; font-size: 0.8rem; color: var(--text-primary); border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr { transition: background 120ms; }
+        .data-table tbody tr:hover { background: var(--primary-subtle); }
+        .data-table tbody tr.row-selected { background: var(--primary-soft); border-left: 2px solid var(--primary); }
+        .data-table tbody tr.row-critical { background: rgba(239,68,68,0.05); }
+        .data-table tbody tr.row-warning  { background: rgba(245,158,11,0.04); }
+
+        /* ============================================================
+           BADGES
+        ============================================================ */
+        .badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 10px; border-radius: 99px;
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            white-space: nowrap; border: 1px solid transparent;
+        }
+        .badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+        .badge.purple { background: rgba(51, 18, 116, 0.12); color: var(--primary); border-color: rgba(51, 18, 116, 0.2); }
+        .badge.green  { background: rgba(0, 168, 107, 0.12); color: var(--success); border-color: rgba(0, 168, 107, 0.2); }
+        .badge.amber  { background: rgba(245, 166, 35, 0.12); color: var(--warning); border-color: rgba(245, 166, 35, 0.2); }
+        .badge.red    { background: rgba(218, 56, 73, 0.12); color: var(--danger); border-color: rgba(218, 56, 73, 0.2); animation: blinkBorder 2s infinite; }
+        .badge.info   { background: rgba(74, 144, 226, 0.12); color: var(--info); border-color: rgba(74, 144, 226, 0.2); }
+        .badge.gray   { background: rgba(107,103,120,0.1); color: var(--text-muted); border-color: rgba(107,103,120,0.15); }
+
+        /* ============================================================
+           ALERTAS OPERACIONAIS
+        ============================================================ */
+        #alert-panel { display: none; }
+        #alert-panel.visible { display: block; }
+        .alert-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 11px 16px; border-bottom: 1px solid var(--border);
+            transition: background 120ms;
+        }
+        .alert-item:last-child { border-bottom: none; }
+        .alert-item:hover { background: var(--primary-subtle); }
+        .alert-pip { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+        .alert-pip.red { background: var(--danger); }
+        .alert-pip.amber { background: var(--warning); }
+        .alert-body { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.45; }
+        .alert-body strong { color: var(--text-primary); }
+
+        /* ============================================================
+           MOVIMENTAÇÃO
+        ============================================================ */
+        .mov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        @media (max-width: 920px) { .mov-grid { grid-template-columns: 1fr; } }
+
+        .field-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px; }
+        .scan-field {
+            width: 100%; background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px; padding: 11px 14px;
+            color: var(--text-primary); font-size: 0.95rem; font-weight: 600;
+            font-family: 'Inter', sans-serif; transition: border-color 150ms, box-shadow 150ms; outline: none;
+        }
+        .scan-field:hover { border-color: var(--border-strong); }
+        .scan-field:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-focus); }
+        .scan-field::placeholder { color: var(--text-muted); font-weight: 400; }
+
+        /* Card de colaborador identificado */
+        .colab-card { display: none; background: var(--bg-card-elev); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin: 12px 0; }
+        .colab-card.visible { display: flex; align-items: center; gap: 12px; animation: fadeIn 0.2s ease; }
+        .colab-avatar {
+            width: 46px; height: 46px; min-width: 46px; border-radius: 50%;
+            background: var(--primary); display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1rem; color: #fff;
+        }
+        .colab-name { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+        .colab-mat  { font-size: 0.72rem; color: var(--text-muted); margin: 2px 0 6px; }
+
+        /* Seletor de tipo */
+        .tipo-row { display: flex; gap: 8px; margin: 12px 0; }
+        .tipo-btn {
+            flex: 1; padding: 9px 12px;
+            border-radius: 9px; border: 1px solid var(--border);
+            background: var(--bg-input); color: var(--text-muted);
+            font-weight: 600; font-size: 0.78rem;
+            cursor: pointer; transition: all 150ms; text-align: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .tipo-btn.active-entrada { background: var(--success-dim); border-color: var(--success); color: var(--success); }
+        .tipo-btn.active-saida   { background: var(--danger-dim);  border-color: var(--danger);  color: var(--danger); }
+
+        /* Carrinho */
+        .cart-wrap {
+            background: var(--bg-card-elev); border: 1px solid var(--border);
+            border-radius: 10px; min-height: 140px; max-height: 280px; overflow-y: auto;
+            margin-bottom: 12px;
+        }
+        .cart-empty {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 140px; color: var(--text-muted); font-size: 0.78rem; gap: 8px;
+        }
+        .cart-empty svg { width: 28px; height: 28px; opacity: 0.3; }
+        .cart-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 9px 12px; border-bottom: 1px solid var(--border);
+        }
+        .cart-item:last-child { border-bottom: none; }
+        .cart-item:hover { background: var(--primary-subtle); }
+        .cart-left { display: flex; align-items: center; gap: 9px; }
+        .cart-item-ico {
+            width: 30px; height: 30px; border-radius: 7px;
+            background: var(--primary-soft); color: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cart-item-ico svg { width: 14px; height: 14px; }
+        .cart-code { font-size: 0.72rem; font-weight: 700; color: var(--primary); }
+        .cart-desc { font-size: 0.75rem; color: var(--text-secondary); }
+        .cart-del {
+            width: 26px; height: 26px; border-radius: 6px;
+            border: none; background: transparent; color: var(--text-muted);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 150ms;
+        }
+        .cart-del:hover { background: var(--danger-dim); color: var(--danger); }
+        .cart-del svg { width: 13px; height: 13px; }
+
+        /* ============================================================
+           BUTTONS
+        ============================================================ */
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 16px; border-radius: 9px; border: none;
+            font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; transition: all 150ms; white-space: nowrap;
+        }
+        .btn svg { width: 14px; height: 14px; }
+        .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--primary-focus); }
+
+        .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(51,18,116,0.25); }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(51,18,116,0.35); }
+        .btn-primary:active { background: var(--primary-active); transform: none; box-shadow: none; }
+
+        .btn-secondary { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-secondary:hover { background: var(--primary-soft); }
+
+        .btn-ghost { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-ghost:hover { border-color: var(--border-strong); color: var(--text-primary); background: var(--bg-card-elev); }
+
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-success:hover { opacity: 0.88; transform: translateY(-1px); }
+
+        .btn-danger  { background: var(--danger); color: #fff; }
+        .btn-danger:hover  { opacity: 0.88; }
+
+        .btn-full { width: 100%; justify-content: center; padding: 11px; }
+        .btn-sm { padding: 6px 12px; font-size: 0.72rem; }
+
+        /* ============================================================
+           FORM CONTROLS
+        ============================================================ */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 6px; }
+        .form-control {
+            width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: 12px; padding: 11px 14px;
+            color: var(--text-primary); font-size: 0.85rem; font-family: 'Inter', sans-serif;
+            transition: border-color 150ms, box-shadow 150ms, background 150ms; outline: none;
+        }
+        .form-control:hover { border-color: var(--border-strong); background: var(--bg-card); }
+        .form-control:focus { border-color: var(--primary); background: var(--bg-card); box-shadow: 0 0 0 3px var(--primary-focus); }
+        .form-control option { background: var(--bg-secondary); }
+        
+        /* Corrigir fundo azul do autocomplete dos navegadores */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active{
+            -webkit-box-shadow: 0 0 0 50px var(--bg-input) inset !important;
+            -webkit-text-fill-color: var(--text-primary) !important;
+            border-radius: 12px;
+        }
+
+        /* ============================================================
+           SEARCH BAR
+        ============================================================ */
+        .search-bar {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: 10px; padding: 0 12px; margin-bottom: 16px;
+            transition: border-color 150ms;
+        }
+        .search-bar:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-focus); }
+        .search-bar svg { width: 15px; height: 15px; color: var(--text-muted); flex-shrink: 0; }
+        .search-bar input {
+            flex: 1; background: none; border: none; padding: 9px 0;
+            color: var(--text-primary); font-size: 0.82rem; font-family: 'Inter', sans-serif; outline: none;
+        }
+        .search-bar input::placeholder { color: var(--text-muted); }
+
+        /* ============================================================
+           TOAST
+        ============================================================ */
+        #toast-container { position: fixed; top: 68px; right: 18px; z-index: 99999; display: flex; flex-direction: column; gap: 8px; }
+        .toast {
+            display: flex; align-items: center; gap: 9px;
+            padding: 12px 16px; border-radius: 12px;
+            min-width: 270px; font-size: 0.8rem; font-weight: 600;
+            color: var(--text-primary);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            animation: slideInR 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: rgba(var(--bg-card-rgb, 255,255,255), 0.85); /* fallback */
+            background: var(--bg-card); /* Fallback */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+        }
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.danger  { border-left: 3px solid var(--danger); }
+        .toast.warning { border-left: 3px solid var(--warning); }
+        .toast.info    { border-left: 3px solid var(--primary); }
+        .toast-ico { width: 16px; height: 16px; flex-shrink: 0; }
+        .toast.success .toast-ico { color: var(--success); }
+        .toast.danger  .toast-ico { color: var(--danger); }
+        .toast.warning .toast-ico { color: var(--warning); }
+        .toast.info    .toast-ico { color: var(--primary); }
+
+        /* ============================================================
+           MODAIS
+        ============================================================ */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(10, 7, 16, 0.5); backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 11000; align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; animation: fadeIn 0.18s ease; }
+        .modal-box {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 18px; padding: 26px; width: 90%; max-width: 440px;
+            box-shadow: var(--shadow-elev);
+        }
+        .modal-box h3 { font-size: 0.98rem; font-weight: 700; margin-bottom: 6px; }
+        .modal-box p { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.55; }
+        .modal-actions { display: flex; gap: 9px; justify-content: flex-end; }
+        /* Linha institucional no topo do modal */
+        .modal-box::before {
+            content: '';
+            display: block; height: 3px; border-radius: 2px;
+            background: var(--primary); margin-bottom: 18px;
+            margin: -26px -26px 18px;
+            border-radius: 18px 18px 0 0;
+        }
+
+        /* ============================================================
+           TIMELINE
+        ============================================================ */
+        .timeline { position: relative; padding-left: 26px; }
+        .timeline::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 1px; background: var(--border); }
+        .timeline-item { position: relative; margin-bottom: 18px; animation: fadeIn 0.18s ease; }
+        .timeline-dot { position: absolute; left: -22px; top: 5px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--bg-card); background: var(--text-muted); }
+        .timeline-dot.saida   { background: var(--danger); }
+        .timeline-dot.entrada { background: var(--success); }
+        .tl-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 10px; padding: 11px 14px;
+            transition: border-color 150ms;
+        }
+        .tl-card:hover { border-color: var(--primary-border); }
+        .tl-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
+        .tl-tipo { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; }
+        .tl-tipo.saida   { color: var(--danger); }
+        .tl-tipo.entrada { color: var(--success); }
+        .tl-time { font-size: 0.67rem; color: var(--text-muted); }
+        .tl-name { font-size: 0.85rem; font-weight: 600; margin-bottom: 3px; }
+        .tl-equips, .tl-op { font-size: 0.72rem; color: var(--text-muted); }
+        .tl-op { margin-top: 3px; }
+
+        /* ============================================================
+           EMPTY STATE
+        ============================================================ */
+        .empty-state {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 40px 20px;
+            color: var(--text-muted); text-align: center;
+        }
+        .empty-ico {
+            width: 48px; height: 48px; border-radius: 12px;
+            background: var(--primary-soft); color: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 12px;
+        }
+        .empty-ico svg { width: 22px; height: 22px; }
+        .empty-state h4 { font-size: 0.88rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .empty-state p  { font-size: 0.76rem; }
+
+        /* ============================================================
+           LOGIN SCREEN — IDENTIDADE CMOC
+        ============================================================ */
+        #login-screen {
+            display: none; position: fixed; inset: 0;
+            z-index: 12000; align-items: stretch;
+        }
+
+        /* Lado institucional — CMOC Purple */
+        .login-brand {
+            flex: 1; 
+            background: linear-gradient(135deg, rgba(51, 18, 116, 0.6) 0%, rgba(51, 18, 116, 0.2) 100%), url('./public/20250218LD0126.jpg') center/cover no-repeat;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: flex-start;
+            padding: 60px; position: relative; overflow: hidden;
+        }
+        .lb-content { position: relative; z-index: 1; }
+
+        .lb-eyebrow {
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em;
+            text-transform: uppercase; color: rgba(255,255,255,0.5);
+            margin-bottom: 24px;
+        }
+        .lb-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 36px; }
+        .lb-logo-ico {
+            width: 44px; height: 44px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        }
+        .lb-logo-ico svg { width: 24px; height: 24px; color: #fff; }
+        .lb-logo-text { font-size: 1.6rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+
+        .lb-tagline { font-size: 1.5rem; font-weight: 700; color: #fff; line-height: 1.3; margin-bottom: 10px; }
+        .lb-sub { font-size: 0.82rem; color: rgba(255,255,255,0.6); line-height: 1.65; max-width: 340px; margin-bottom: 36px; }
+
+        .lb-features { display: flex; flex-direction: column; gap: 10px; }
+        .lb-feat { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; color: rgba(255,255,255,0.65); }
+        .lb-feat-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.5); flex-shrink: 0; }
+
+        /* Lado autenticação */
+        .login-auth {
+            width: 460px; flex-shrink: 0;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 60px;
+            background: var(--bg-primary);
+            border-left: 1px solid var(--border);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.03);
+            z-index: 2;
+        }
+        [data-theme="light"] .login-auth { background: #fff; }
+        .login-card { width: 100%; max-width: 360px; }
+        .login-card h3 { font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.02em; }
+        .login-subtitle { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 28px; line-height: 1.5; }
+
+        .auth-tabs { display: flex; background: rgba(107,103,120,0.06); border-radius: 12px; padding: 4px; margin-bottom: 24px; border: 1px solid rgba(107,103,120,0.05); }
+        .auth-tab {
+            flex: 1; padding: 9px; border-radius: 9px; text-align: center;
+            font-size: 0.8rem; font-weight: 600; cursor: pointer;
+            transition: all 150ms; color: var(--text-muted);
+            border: none; background: none; font-family: 'Inter', sans-serif;
+        }
+        .auth-tab.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+        #form-register { display: none; }
+
+        .pass-req { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin: -6px 0 12px; }
+        .req-lbl { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 7px; }
+        .req-item { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 3px; }
+        .req-item.valid   { color: var(--success); }
+        .req-item.invalid { color: var(--danger); }
+
+        #login-error { font-size: 0.76rem; color: var(--danger); font-weight: 500; min-height: 16px; margin-bottom: 8px; }
+
+        .quick-btn {
+            width: 100%; margin-top: 14px; padding: 11px;
+            background: rgba(107,103,120,0.04); border: 1px solid rgba(107,103,120,0.15);
+            border-radius: 12px; color: var(--text-secondary);
+            font-size: 0.78rem; font-weight: 600;
+            cursor: pointer; transition: all 150ms;
+            font-family: 'Inter', sans-serif;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .quick-btn:hover { background: rgba(51, 18, 116, 0.06); border-color: rgba(51, 18, 116, 0.2); color: var(--primary); transform: translateY(-1px); }
+        .quick-btn svg { width: 14px; height: 14px; }
+
+        .login-status { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; color: var(--text-muted); margin-top: 16px; justify-content: center; }
+
+        /* ============================================================
+           GRID HELPERS
+        ============================================================ */
+        .grid-2 { display: grid; grid-template-columns: 340px 1fr; gap: 18px; align-items: start; }
+        @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+        .divider { height: 1px; background: var(--border); margin: 14px 0; }
+        .mb-0 { margin-bottom: 0; }
+        .mb-16 { margin-bottom: 16px; }
+        .mt-12 { margin-top: 12px; }
+        .flex { display: flex; } .flex-between { justify-content: space-between; } .flex-center { align-items: center; }
+    </style>
+</head>
+<body>
+
+<!-- ========== SIDEBAR ========== -->
+<aside id="sidebar">
+    <div class="sidebar-logo" style="justify-content: center; padding: 0 10px;">
+        <img src="public/logo-dark.svg" alt="MineX" class="logo-theme-light">
+        <img src="public/image.png" alt="MineX" class="logo-theme-dark">
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">Operação</div>
+        <button class="nav-item active" id="nav-dash" onclick="navTo('dashboard', this)" data-title="Dashboard Operacional" data-sub="Centro de controle e monitoramento em tempo real">
+            <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-item" id="nav-mov" onclick="navTo('movimentacao', this)" data-title="Controle de Portaria" data-sub="Entrada e devolução de colaboradores e equipamentos">
+            <i data-lucide="scan-barcode"></i><span class="nav-label">Movimentação</span>
+        </button>
+
+        <div class="nav-section-label">Análise</div>
+        <button class="nav-item" id="nav-hist" onclick="navTo('detalhado', this)" data-title="Histórico Operacional" data-sub="Linha do tempo de todas as movimentações">
+            <i data-lucide="history"></i><span class="nav-label">Histórico</span>
+        </button>
+        <button class="nav-item" id="nav-perdas" onclick="navTo('perdas', this)" data-title="Relatório de Extravios" data-sub="Auditoria de equipamentos não devolvidos">
+            <i data-lucide="triangle-alert"></i><span class="nav-label">Perdas</span>
+        </button>
+
+        <div class="nav-section-label">Administração</div>
+        <button class="nav-item" id="nav-cad-func" onclick="navTo('cad-funcionario', this)" data-title="Gestão de Colaboradores" data-sub="Cadastro e permissões de acesso ao sistema">
+            <i data-lucide="users"></i><span class="nav-label">Colaboradores</span>
+        </button>
+        <button class="nav-item" id="nav-cad-item" onclick="navTo('cad-item', this)" data-title="Inventário de Equipamentos" data-sub="Patrimônio operacional da mina">
+            <i data-lucide="package"></i><span class="nav-label">Equipamentos</span>
+        </button>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="sidebar-user">
+            <div class="user-avatar" id="sidebar-avatar">–</div>
+            <div class="user-info">
+                <div class="user-name" id="sidebar-name">–</div>
+                <div class="user-role" id="sidebar-role">–</div>
+            </div>
+        </div>
+        <button class="sidebar-collapse-btn" onclick="toggleSidebar()">
+            <i data-lucide="chevrons-left"></i>
+        </button>
+    </div>
+</aside>
+
+<!-- ========== MAIN ========== -->
+<div id="app-main">
+    <header id="app-header" style="position:relative;">
+        <div class="header-title">
+            <h1 id="header-page-title">Dashboard Operacional</h1>
+            <p id="header-page-sub">Centro de controle e monitoramento em tempo real</p>
+        </div>
+        <div class="header-right">
+            <div class="conn-status">
+                <div class="conn-dot" id="conn-dot"></div>
+                <span id="conn-label">Online</span>
+            </div>
+            <span id="header-clock">00:00:00</span>
+            <button class="header-icon-btn" onclick="toggleTheme()" title="Alternar tema">
+                <i data-lucide="sun" id="theme-icon"></i>
+            </button>
+            <div class="header-user" onclick="document.getElementById('logout-modal').classList.add('open')">
+                <div class="user-avatar" id="header-avatar">–</div>
+                <span class="hname" id="header-name">–</span>
+                <span class="role-badge" id="header-role">–</span>
+            </div>
+        </div>
+    </header>
+
+    <div id="app-content">
+
+        <!-- ======= DASHBOARD ======= -->
+        <section class="section active" id="dashboard">
+            <div class="section-header">
+                <h2>Visão Geral da Mina</h2>
+                <p>Indicadores operacionais · atualização automática a cada segundo</p>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-card-top">
+                        <span class="kpi-label">Na Mina</span>
+                        <div class="kpi-icon purple"><i data-lucide="hard-hat"></i></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-ativos">0</div>
+                    <div class="kpi-sub">Colaboradores no subsolo</div>
+                </div>
+                <div class="kpi-card" id="kpi-card-alerta">
+                    <div class="kpi-card-top">
+                        <span class="kpi-label">Longa Permanência</span>
+                        <div class="kpi-icon red"><i data-lucide="clock-alert"></i></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-alerta">0</div>
+                    <div class="kpi-sub">Acima de 8 horas</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-card-top">
+                        <span class="kpi-label">Equipamentos em Uso</span>
+                        <div class="kpi-icon green"><i data-lucide="radio"></i></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-equipamentos">0</div>
+                    <div class="kpi-sub">Ativos na mina</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-card-top">
+                        <span class="kpi-label">Total de Perdas</span>
+                        <div class="kpi-icon amber"><i data-lucide="package-x"></i></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-perdas">0</div>
+                    <div class="kpi-sub">Equipamentos não devolvidos</div>
+                </div>
+            </div>
+
+            <!-- Alertas Operacionais -->
+            <div class="card" id="alert-panel">
+                <div class="card-header">
+                    <span class="card-title"><i data-lucide="siren"></i> Alertas Operacionais</span>
+                    <span class="badge red"><span class="badge-dot"></span><span id="alert-count">0</span> Crítico(s)</span>
+                </div>
+                <div class="card-body" id="alert-list"></div>
+            </div>
+
+            <!-- Tabela de permanência -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title"><i data-lucide="users"></i> Colaboradores no Subsolo</span>
+                    <span class="badge purple" id="dash-count-badge"><span class="badge-dot"></span>0 ativos</span>
+                </div>
+                <div class="card-body">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Colaborador</th>
+                                <th>Turma</th>
+                                <th>Empresa</th>
+                                <th>Função</th>
+                                <th>Equipamentos</th>
+                                <th>Entrada</th>
+                                <th>Permanência</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-dashboard">
+                            <tr><td colspan="8">
+                                <div class="empty-state">
+                                    <div class="empty-ico"><i data-lucide="hard-hat"></i></div>
+                                    <h4>Mina vazia</h4>
+                                    <p>Nenhum colaborador registrado no subsolo.</p>
+                                </div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======= MOVIMENTAÇÃO ======= -->
+        <section class="section" id="movimentacao">
+            <div class="section-header">
+                <h2>Controle de Portaria</h2>
+                <p>Bipe o crachá e os equipamentos para gerenciar as movimentações automaticamente</p>
+            </div>
+            
+            <div style="margin-bottom: 24px;">
+                <div class="card" style="border: 2px solid var(--primary); background: var(--bg-card-elev); box-shadow: 0 8px 32px rgba(51,18,116,0.3);">
+                    <div class="card-body" style="padding: 24px; text-align: center;">
+                        <h3 style="margin-bottom: 16px; color: var(--text-primary); font-size: 1.2rem;">Leitura Automática de Equipamentos</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; font-weight: 500;">O sistema está escutando o leitor de código de barras a todo momento.</p>
+                        <p style="margin-top: 8px; color: var(--text-secondary); font-size: 0.85rem;">Para <strong style="color:var(--text-primary);">Entregar</strong>: selecione o operador abaixo e bipe o equipamento.<br/>Para <strong style="color:var(--text-primary);">Devolver</strong>: apenas bipe o equipamento (o sistema localiza com quem estava).</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mov-grid">
+                <!-- Painel do Operador -->
+                <div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title"><i data-lucide="user-check"></i> Operador Selecionado</span></div>
+                        <div class="card-body" style="padding:16px;">
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600;">Selecione o Colaborador (Digite para buscar):</label>
+                                <input type="text" id="select-operador" list="lista-operadores" class="scan-field" placeholder="Clique ou digite o nome..." onchange="handleOperadorSelect()">
+                                <datalist id="lista-operadores"></datalist>
+                            </div>
+                            <div class="colab-card" id="colab-card" style="margin-bottom: 16px; display: none;">
+                                <div class="colab-avatar" id="colab-av">?</div>
+                                <div>
+                                    <div class="colab-name" id="colab-name-d">Aguardando...</div>
+                                    <div class="colab-mat"  id="colab-mat-d">Nenhum operador selecionado</div>
+                                    <div id="colab-status-d"></div>
+                                </div>
+                            </div>
+                            <div class="divider"></div>
+                            <h4 style="margin-top: 12px; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-secondary);">Itens em Posse</h4>
+                            <div class="cart-wrap" id="operator-items-list" style="max-height: 200px;">
+                                <div class="cart-empty"><i data-lucide="package-open"></i><span>Vazio</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Log de Leituras -->
+                <div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i data-lucide="activity"></i> Log de Leituras</span>
+                        </div>
+                        <div class="card-body" style="padding:16px;">
+                            <div id="scan-log" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto;">
+                                <div class="empty-state" style="padding: 20px 0;"><i data-lucide="scan-line"></i><p>Pronto para bipar</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======= HISTÓRICO ======= -->
+        <section class="section" id="detalhado">
+            <div class="section-header flex flex-between flex-center" style="flex-wrap:wrap; gap:10px; align-items:flex-start;">
+                <div>
+                    <h2>Histórico Operacional</h2>
+                    <p>Linha do tempo completa de todas as movimentações</p>
+                </div>
+                <button class="btn btn-danger btn-sm" id="btn-clear-hist" onclick="apagarHistorico()" style="display:none;">
+                    <i data-lucide="trash-2"></i> Zerar
+                </button>
+            </div>
+            <div class="search-bar">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-hist" placeholder="Buscar por colaborador, equipamento, data, tipo..." oninput="filtrarHistorico()">
+            </div>
+            <div class="timeline" id="body-historico"></div>
+        </section>
+
+        <!-- ======= PERDAS ======= -->
+        <section class="section" id="perdas">
+            <div class="section-header flex flex-between flex-center" style="flex-wrap:wrap; gap:10px; align-items:flex-start;">
+                <div>
+                    <h2>Relatório de Extravios</h2>
+                    <p>Auditoria de equipamentos não devolvidos</p>
+                </div>
+                <button class="btn btn-danger btn-sm" id="btn-clear-perdas" onclick="apagarPerdas()" style="display:none;">
+                    <i data-lucide="trash-2"></i> Limpar
+                </button>
+            </div>
+            <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
+                <div class="kpi-card">
+                    <div class="kpi-card-top"><span class="kpi-label">Total</span><div class="kpi-icon amber"><i data-lucide="package-x"></i></div></div>
+                    <div class="kpi-value" id="perdas-total">0</div>
+                    <div class="kpi-sub">Extravios registrados</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-card-top"><span class="kpi-label">Hoje</span><div class="kpi-icon red"><i data-lucide="calendar-x"></i></div></div>
+                    <div class="kpi-value" id="perdas-hoje">0</div>
+                    <div class="kpi-sub">Ocorrências no dia</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-card-top"><span class="kpi-label">Último Registro</span><div class="kpi-icon purple"><i data-lucide="clock"></i></div></div>
+                    <div class="kpi-value" id="perdas-ultimo" style="font-size:1rem; padding-top:6px;">–</div>
+                    <div class="kpi-sub">Data do último extravio</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><span class="card-title"><i data-lucide="clipboard-list"></i> Detalhamento</span></div>
+                <table class="data-table">
+                    <thead><tr><th>Data/Hora</th><th>Colaborador</th><th>Equipamento</th><th>Código</th><th>Operador</th></tr></thead>
+                    <tbody id="body-perdas"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ======= CAD COLABORADORES ======= -->
+        <section class="section" id="cad-funcionario">
+            <div class="section-header flex flex-between flex-center" style="flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h2>Gestão de Colaboradores</h2>
+                    <p>Cadastre e gerencie os colaboradores e seus níveis de acesso</p>
+                </div>
+                <button class="btn btn-primary" onclick="document.getElementById('modal-novo-colab').classList.add('open')">
+                    <i data-lucide="user-plus"></i> Adicionar Colaborador
+                </button>
+            </div>
+            <div class="card" style="overflow: hidden;">
+                <div id="turmas-tabs" style="display:flex; gap:8px; padding:16px 16px 0 16px; overflow-x:auto; border-bottom: 1px solid var(--border);"></div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead><tr><th>Matrícula</th><th>Crachá</th><th>Nome</th><th>Empresa</th><th>Função</th><th>Turma</th><th>Nível</th><th></th></tr></thead>
+                        <tbody id="body-func"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======= CAD EQUIPAMENTOS ======= -->
+        <section class="section" id="cad-item">
+            <div class="section-header flex flex-between flex-center" style="flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h2>Inventário de Equipamentos</h2>
+                    <p>Gerencie o patrimônio operacional da mina</p>
+                </div>
+                <button class="btn btn-primary" onclick="document.getElementById('modal-novo-equip').classList.add('open')">
+                    <i data-lucide="plus-circle"></i> Adicionar Equipamento
+                </button>
+            </div>
+            <div class="card" style="overflow: hidden;">
+                <div id="equip-tabs" style="display:flex; gap:8px; padding:16px 16px 0 16px; overflow-x:auto; border-bottom: 1px solid var(--border);"></div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead><tr><th>Código</th><th>Descrição</th><th></th></tr></thead>
+                        <tbody id="body-itens"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </div><!-- /app-content -->
+</div><!-- /app-main -->
+
+<!-- ========== LOGIN SCREEN ========== -->
+<div id="login-screen">
+    <div class="login-brand">
+        <div class="lb-content">
+            <div class="lb-eyebrow">CMOC Brasil · Mina Subterrânea</div>
+            <div class="lb-logo" style="margin-bottom: 30px;">
+                <img src="public/image.png" alt="MineX" style="height: 64px; width: auto; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));">
+            </div>
+            <div class="lb-tagline">Centro de Controle<br>Operacional da Mina</div>
+        </div>
+    </div>
+    <div class="login-auth">
+        <div class="login-card">
+            <h3>Acesso ao Sistema</h3>
+            <p class="login-subtitle">Informe suas credenciais para continuar</p>
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-login" onclick="toggleAuthTab('login')">Entrar</button>
+                <button class="auth-tab" id="tab-reg"   onclick="toggleAuthTab('register')">Cadastrar-se</button>
+            </div>
+            <div id="form-login">
+                <div class="form-group"><label class="form-label">Matrícula ou E-mail</label><input type="text" id="login-user" class="form-control" placeholder="ex: admin" onkeypress="if(event.key==='Enter') fazerLogin()"></div>
+                <div class="form-group"><label class="form-label">Senha</label><input type="password" id="login-pass" class="form-control" placeholder="Sua senha" onkeypress="if(event.key==='Enter') fazerLogin()"></div>
+                <div id="login-error"></div>
+                <button class="btn btn-primary btn-full" onclick="fazerLogin()"><i data-lucide="log-in"></i> Entrar</button>
+                <button class="quick-btn" onclick="quickLoginAdmin()"><i data-lucide="key"></i> Entrar com 1 clique (Administrador)</button>
+            </div>
+            <div id="form-register" style="display:none;">
+                <div class="form-group"><label class="form-label">Nome Completo</label><input type="text" id="reg-nome" class="form-control" placeholder="Seu nome"></div>
+                <div class="form-group"><label class="form-label">Matrícula</label><input type="text" id="reg-mat" class="form-control" placeholder="Ex: 10245"></div>
+                <div class="form-group"><label class="form-label">E-mail</label><input type="email" id="reg-email" class="form-control" placeholder="nome@cmoc.com.br"></div>
+                <div class="form-group"><label class="form-label">Senha</label><input type="password" id="reg-pass" class="form-control" oninput="validarSenhaForte(this.value)" placeholder="Crie uma senha forte"></div>
+                <div class="pass-req" id="pass-req-box">
+                    <div class="req-lbl">Requisitos</div>
+                    <div id="req-length"  class="req-item invalid">✗ Mínimo de 8 caracteres</div>
+                    <div id="req-upper"   class="req-item invalid">✗ Uma letra maiúscula (A-Z)</div>
+                    <div id="req-lower"   class="req-item invalid">✗ Uma letra minúscula (a-z)</div>
+                    <div id="req-number"  class="req-item invalid">✗ Um número (0-9)</div>
+                    <div id="req-special" class="req-item invalid">✗ Um caractere especial</div>
+                </div>
+                <button class="btn btn-primary btn-full" onclick="fazerCadastro()"><i data-lucide="user-plus"></i> Criar Conta</button>
+            </div>
+            <div class="login-status">
+                <div class="conn-dot" id="login-conn-dot"></div>
+                <span id="login-conn-label">Verificando servidor...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== MODAL SISTEMA ========== -->
+<div class="modal-overlay" id="system-modal">
+    <div class="modal-box">
+        <h3>Colaborador Ativo na Mina</h3>
+        <p id="modal-text">Colaborador possui registro ativo.</p>
+        <p style="font-size:0.75rem;color:var(--text-muted);">Como deseja prosseguir?</p>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="setOperacao('saida')">Nova entrada</button>
+            <button class="btn btn-danger" onclick="setOperacao('entrada')">Iniciar devolução</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== MODAL LOGOUT ========== -->
+<div class="modal-overlay" id="logout-modal">
+    <div class="modal-box">
+        <h3>Sair do sistema?</h3>
+        <p>Sua sessão será encerrada. Os dados locais serão preservados.</p>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="document.getElementById('logout-modal').classList.remove('open')">Cancelar</button>
+            <button class="btn btn-danger" onclick="fazerLogout()">Sair</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== MODAL NOVO COLABORADOR ========== -->
+<div class="modal-overlay" id="modal-novo-colab">
+    <div class="modal-box" style="max-width: 500px;">
+        <h3>Adicionar Colaborador</h3>
+        <p>Preencha os dados do novo colaborador. Matrícula e Nome são obrigatórios.</p>
+        <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group"><label class="form-label">Matrícula *</label><input type="text" id="f-mat" class="form-control" placeholder="Ex: 10245"></div>
+            <div class="form-group"><label class="form-label">Crachá (Mifare)</label><input type="text" id="f-cracha" class="form-control" placeholder="Ex: 335017616456"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Nome Completo *</label><input type="text" id="f-nome" class="form-control" placeholder="Ex: João Silva"></div>
+        <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group"><label class="form-label">Empresa</label><input type="text" id="f-empresa" class="form-control" placeholder="Ex: CMOC"></div>
+            <div class="form-group"><label class="form-label">Função / Cargo</label><input type="text" id="f-funcao" class="form-control" placeholder="Ex: Operador de LHD"></div>
+        </div>
+        <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group">
+                <label class="form-label">Turma</label>
+                <select id="f-turma" class="form-control">
+                    <option value="">Sem Turma</option>
+                    <option value="TURMA A">TURMA A</option>
+                    <option value="TURMA B">TURMA B</option>
+                    <option value="TURMA C">TURMA C</option>
+                    <option value="TURMA D">TURMA D</option>
+                    <option value="ADM">ADM</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nível de Acesso</label>
+                <select id="f-perm" class="form-control">
+                    <option value="Colaborador">Colaborador</option>
+                    <option value="Operador">Operador</option>
+                    <option value="Lider">Líder</option>
+                    <option value="Admin">Administrador</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button class="btn btn-ghost" onclick="document.getElementById('modal-novo-colab').classList.remove('open')">Cancelar</button>
+            <button class="btn btn-primary" onclick="addFuncionario()">Salvar Registro</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== MODAL NOVO EQUIPAMENTO ========== -->
+<div class="modal-overlay" id="modal-novo-equip">
+    <div class="modal-box">
+        <h3>Adicionar Equipamento</h3>
+        <p>Cadastre um novo item no patrimônio da mina.</p>
+        <div class="form-group"><label class="form-label">Código Patrimonial *</label><input type="text" id="i-cod" class="form-control" placeholder="Ex: RD-045" style="text-transform:uppercase;"></div>
+        <div class="form-group"><label class="form-label">Descrição *</label><input type="text" id="i-desc" class="form-control" placeholder="Ex: Rádio Comunicador Motorola"></div>
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button class="btn btn-ghost" onclick="document.getElementById('modal-novo-equip').classList.remove('open')">Cancelar</button>
+            <button class="btn btn-primary" onclick="addItem()">Salvar Equipamento</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+    /* ============================================================
+       CONFIGURAÇÃO
+    ============================================================ */
+    const API_BASE = '/api';
+
+    /* ============================================================
+       ESTADO GLOBAL
+    ============================================================ */
+    let db_func = {}, db_itens = {}, db_mov = [], db_perdas = [];
+    // Variables for UI state
+    let searchTimer = null;
+    let autoRefreshTimer = null;
+    let currentTurmaFilter = 'Todas';
+    let currentEquipFilter = 'Todos';
+
+    function setTurmaFilter(turma) {
+        currentTurmaFilter = turma;
+        renderFuncionarios();
+    }
+
+    function setEquipFilter(tipo) {
+        currentEquipFilter = tipo;
+        renderItens();
+    }
+    let isOfflineMode = (window.location.protocol === 'file:');
+
+    /* ============================================================
+       TEMA
+    ============================================================ */
+    function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        const icon = document.getElementById('theme-icon');
+        if (icon) { icon.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon'); lucide.createIcons(); }
+    }
+    function toggleTheme() {
+        const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+        const next = cur === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('minex_theme', next);
+        applyTheme(next);
+    }
+    (function() { applyTheme(localStorage.getItem('minex_theme') || 'dark'); })();
+
+    /* ============================================================
+       RELÓGIO
+    ============================================================ */
+    function updateClock() {
+        const n = new Date();
+        const pad = v => String(v).padStart(2,'0');
+        const el = document.getElementById('header-clock');
+        if (el) el.textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+    }
+    setInterval(updateClock, 1000); updateClock();
+
+    /* ============================================================
+       STATUS DE CONEXÃO
+    ============================================================ */
+    function setConnStatus(state) {
+        const map = {
+            online:  { cls: '',         text: 'Online',       ltxt: 'Servidor conectado' },
+            offline: { cls: 'offline',  text: 'Modo Local',   ltxt: 'Operação local (offline)' },
+            error:   { cls: 'error',    text: 'Falha',        ltxt: 'Erro de comunicação' }
+        };
+        const s = map[state] || map.online;
+        ['conn-dot', 'login-conn-dot'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.className = 'conn-dot ' + s.cls;
+        });
+        const lbl = document.getElementById('conn-label');
+        if (lbl) lbl.textContent = s.text;
+        const llbl = document.getElementById('login-conn-label');
+        if (llbl) llbl.textContent = s.ltxt;
+    }
+
+    /* ============================================================
+       SIDEBAR
+    ============================================================ */
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+
+    /* ============================================================
+       NAVEGAÇÃO
+    ============================================================ */
+    const PAGE_META = {
+        'dashboard':       { title: 'Dashboard Operacional',      sub: 'Centro de controle e monitoramento em tempo real' },
+        'movimentacao':    { title: 'Controle de Portaria',        sub: 'Entrada e devolução de colaboradores e equipamentos' },
+        'detalhado':       { title: 'Histórico Operacional',       sub: 'Linha do tempo de todas as movimentações' },
+        'perdas':          { title: 'Relatório de Extravios',      sub: 'Auditoria de equipamentos não devolvidos' },
+        'cad-funcionario': { title: 'Gestão de Colaboradores',     sub: 'Cadastro e permissões de acesso ao sistema' },
+        'cad-item':        { title: 'Inventário de Equipamentos',  sub: 'Patrimônio operacional da mina' },
+    };
+    function navTo(id, navEl) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        const sec = document.getElementById(id);
+        if (sec) sec.classList.add('active');
+        if (navEl) navEl.classList.add('active');
+        const m = PAGE_META[id] || {};
+        const t = document.getElementById('header-page-title');
+        const s = document.getElementById('header-page-sub');
+        if (t) t.textContent = m.title || id;
+        if (s) s.textContent = m.sub || '';
+        lucide.createIcons();
+        if (id === 'movimentacao') setTimeout(() => { const f = document.getElementById('mov-colaborador'); if (f) f.focus(); }, 80);
+        if (id === 'perdas') atualizarKPIsPerdas();
+    }
+
+    /* ============================================================
+       TOASTS
+    ============================================================ */
+    function showToast(msg, type = 'success') {
+        const c = document.getElementById('toast-container');
+        const t = document.createElement('div');
+        t.className = `toast ${type}`;
+        const icons = { success: 'check-circle', danger: 'x-circle', warning: 'alert-triangle', info: 'info' };
+        t.innerHTML = `<i data-lucide="${icons[type]||'info'}" class="toast-ico"></i><span>${msg}</span>`;
+        c.appendChild(t);
+        lucide.createIcons();
+        setTimeout(() => { t.style.animation = 'slideOutR 0.2s forwards'; setTimeout(() => t.remove(), 220); }, 3500);
+    }
+
+    /* ============================================================
+       ÁUDIO
+    ============================================================ */
+    function playBeep(freq, dur) {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+            osc.start(); osc.stop(ctx.currentTime + dur);
+        } catch(e) {}
+    }
+    function playSuccessBeep() { playBeep(880, 0.14); }
+    function playErrorBeep()   { playBeep(220, 0.32); }
+
+    /* ============================================================
+       SESSION
+    ============================================================ */
+    document.addEventListener('DOMContentLoaded', () => {
+        const ls = document.getElementById('login-screen');
+        const saved = localStorage.getItem('minex_session');
+        if (saved) {
+            try { userAuth = JSON.parse(saved); ls.style.display = 'none'; initWorkspace(userAuth); }
+            catch(e) { ls.style.display = 'flex'; }
+        } else { ls.style.display = 'flex'; }
+        lucide.createIcons();
+        verificarConexao();
+    });
+
+    async function verificarConexao() {
+        if (isOfflineMode) { setConnStatus('offline'); return; }
+        try { await fetch(`${API_BASE}/colaboradores`); setConnStatus('online'); }
+        catch(e) { isOfflineMode = true; setConnStatus('offline'); }
+    }
+
+    /* ============================================================
+       API LAYER — INTACTO
+    ============================================================ */
+    async function fetchAPI(endpoint, method = 'GET', body = null) {
+        if (!isOfflineMode) {
+            try {
+                const options = { method, headers: {} };
+                if (body) { options.headers['Content-Type'] = 'application/json'; options.body = JSON.stringify(body); }
+                const res = await fetch(`${API_BASE}${endpoint}`, options);
+                if (res.ok) return await res.json();
+            } catch(netErr) {
+                console.warn('Backend inacessível, modo local:', netErr);
+                isOfflineMode = true; setConnStatus('offline');
+                showToast('Servidor offline: modo local ativado', 'warning');
+            }
+        }
+        return handleLocalAPI(endpoint, method, body);
+    }
+
+    function handleLocalAPI(endpoint, method, body) {
+        if (!localStorage.getItem('minex_local_init')) {
+            localStorage.setItem('minex_users', JSON.stringify([
+                { matricula:'admin',           nome:'Administrador MineX',   permissao:'Admin',       email:'admin@minex.com',     senha:'admin' },
+                { matricula:'welington',        nome:'Welington Paiva',        permissao:'Admin',       email:'',                    senha:'123' },
+                { matricula:'v-welingtonpaiva', nome:'Welington Paiva',        permissao:'Admin',       email:'',                    senha:'123' },
+                { matricula:'00270584734845',   nome:'Euller Santos Oliveira', permissao:'Admin',       email:'',                    senha:'Complexobahia@2026' },
+                { matricula:'1',               nome:'João Operador',           permissao:'Operador',    email:'',                    senha:'admin' },
+                { matricula:'visita01',         nome:'Visita Técnica',         permissao:'Colaborador', email:'',                    senha:'' }
+            ]));
+            localStorage.setItem('minex_items', JSON.stringify([
+                { codigo:'RD-01', descricao:'Rádio Comunicador Motorola' },
+                { codigo:'RD-02', descricao:'Rádio Comunicador Motorola' },
+                { codigo:'DG-01', descricao:'Detector Multigás Altair 4XR' },
+                { codigo:'LT-01', descricao:'Lanterna de Cabeça Mineira LED' },
+                { codigo:'AS-01', descricao:'Auto-Salvador COLTRI' }
+            ]));
+            localStorage.setItem('minex_movs',   JSON.stringify([]));
+            localStorage.setItem('minex_perdas', JSON.stringify([]));
+            localStorage.setItem('minex_local_init', 'true');
+        }
+        let users  = JSON.parse(localStorage.getItem('minex_users')  || '[]');
+        let items  = JSON.parse(localStorage.getItem('minex_items')  || '[]');
+        let movs   = JSON.parse(localStorage.getItem('minex_movs')   || '[]');
+        let perdas = JSON.parse(localStorage.getItem('minex_perdas') || '[]');
+
+        if (endpoint === '/colaboradores') {
+            if (method === 'GET') return users;
+            if (method === 'POST') { const i = users.findIndex(u => u.matricula === body.matricula); if (i >= 0) users[i] = {...users[i],...body}; else users.push(body); localStorage.setItem('minex_users', JSON.stringify(users)); return { success:true }; }
+        } else if (endpoint.startsWith('/colaboradores/')) {
+            users = users.filter(u => u.matricula !== endpoint.split('/')[2]);
+            localStorage.setItem('minex_users', JSON.stringify(users)); return { success:true };
+        } else if (endpoint === '/equipamentos') {
+            if (method === 'GET') return items;
+            if (method === 'POST') { const i = items.findIndex(it => it.codigo === body.codigo); if (i >= 0) items[i] = body; else items.push(body); localStorage.setItem('minex_items', JSON.stringify(items)); return { success:true }; }
+        } else if (endpoint.startsWith('/equipamentos/')) {
+            items = items.filter(i => i.codigo !== endpoint.split('/')[2]);
+            localStorage.setItem('minex_items', JSON.stringify(items)); return { success:true };
+        } else if (endpoint === '/movimentacoes') {
+            if (method === 'GET') return movs;
+            if (method === 'POST') { movs.push({...body, id:Date.now()}); localStorage.setItem('minex_movs', JSON.stringify(movs)); return { success:true }; }
+            if (method === 'DELETE') { localStorage.setItem('minex_movs', JSON.stringify([])); return { success:true }; }
+        } else if (endpoint === '/perdas') {
+            if (method === 'GET') return perdas;
+            if (method === 'POST') { perdas.push({...body, id:Date.now()}); localStorage.setItem('minex_perdas', JSON.stringify(perdas)); return { success:true }; }
+            if (method === 'DELETE') { localStorage.setItem('minex_perdas', JSON.stringify([])); return { success:true }; }
+        }
+        return { success:true };
+    }
+
+    /* ============================================================
+       AUTH
+    ============================================================ */
+    function toggleAuthTab(tab) {
+        const isLogin = tab === 'login';
+        document.getElementById('form-login').style.display    = isLogin ? 'block' : 'none';
+        document.getElementById('form-register').style.display = isLogin ? 'none'  : 'block';
+        document.getElementById('tab-login').classList.toggle('active', isLogin);
+        document.getElementById('tab-reg').classList.toggle('active', !isLogin);
+    }
+
+    function validarSenhaForte(s) {
+        const checks = {
+            'req-length':  s.length >= 8,
+            'req-upper':   /[A-Z]/.test(s),
+            'req-lower':   /[a-z]/.test(s),
+            'req-number':  /[0-9]/.test(s),
+            'req-special': /[^A-Za-z0-9]/.test(s)
+        };
+        Object.entries(checks).forEach(([id, ok]) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.className = 'req-item ' + (ok ? 'valid' : 'invalid');
+            el.textContent = (ok ? '✓ ' : '✗ ') + el.textContent.slice(2);
+        });
+        return Object.values(checks).every(Boolean);
+    }
+
+    async function fazerCadastro() {
+        const nome  = document.getElementById('reg-nome').value.trim();
+        const mat   = document.getElementById('reg-mat').value.trim().toLowerCase();
+        const email = document.getElementById('reg-email').value.trim().toLowerCase();
+        const senha = document.getElementById('reg-pass').value;
+        if (!nome || !mat) return showToast('Nome e matrícula são obrigatórios.', 'danger');
+        if (!validarSenhaForte(senha)) return showToast('Senha não atende os requisitos.', 'warning');
+        try {
+            await fetchAPI('/colaboradores', 'POST', { matricula:mat, nome, permissao:'Pendente', email, senha });
+            showToast('Cadastro realizado! Aguarde aprovação de um Administrador.', 'warning');
+            document.getElementById('reg-pass').value = '';
+            toggleAuthTab('login');
+        } catch(err) { showToast(err.message, 'danger'); playErrorBeep(); }
+    }
+
+    function quickLoginAdmin() {
+        document.getElementById('login-user').value = 'admin';
+        document.getElementById('login-pass').value = 'admin';
+        fazerLogin();
+    }
+
+    async function fazerLogin() {
+        const errEl = document.getElementById('login-error');
+        if (errEl) errEl.innerText = '';
+        const u = (document.getElementById('login-user').value || '').trim().toLowerCase();
+        const p = (document.getElementById('login-pass').value || '').trim();
+        if (!u || !p) {
+            const msg = 'Informe a matrícula e a senha.';
+            if (errEl) errEl.innerText = msg;
+            return showToast(msg, 'danger');
+        }
+        try {
+            const users = await fetchAPI('/colaboradores');
+            let foundUser = users.find(user =>
+                (user.matricula && user.matricula.toLowerCase() === u) ||
+                (user.email && user.email.toLowerCase() === u)
+            );
+            if (u === 'admin' && !foundUser) {
+                foundUser = { matricula:'admin', nome:'Administrador MineX', permissao:'Admin', email:'admin@minex.com', senha:p };
+                await fetchAPI('/colaboradores', 'POST', foundUser);
+            }
+            if (!foundUser) throw new Error('Usuário ou matrícula não cadastrados.');
+            if (foundUser.permissao === 'Pendente') throw new Error('Cadastro pendente de aprovação.');
+
+            const isAdminUser = (foundUser.permissao === 'Admin' || ['admin','welington','v-welingtonpaiva'].includes(u));
+            if (foundUser.senha && foundUser.senha !== p) {
+                if (isAdminUser && ['admin','123','123456','Complexbahia@26'].includes(p)) { /* senha mestre OK */ }
+                else throw new Error('Senha incorreta.');
+            }
+
+            userAuth = foundUser;
+            localStorage.setItem('minex_session', JSON.stringify(foundUser));
+            document.getElementById('login-screen').style.display = 'none';
+            initWorkspace(foundUser);
+        } catch(e) {
+            if (errEl) errEl.innerText = e.message;
+            showToast('Acesso negado: ' + e.message, 'danger');
+            playErrorBeep();
+        }
+    }
+
+    function fazerLogout() {
+        localStorage.removeItem('minex_session');
+        userAuth = null;
+        document.getElementById('logout-modal').classList.remove('open');
+        document.getElementById('login-screen').style.display = 'flex';
+        showToast('Sessão encerrada.', 'info');
+    }
+
+    /* ============================================================
+       INIT WORKSPACE
+    ============================================================ */
+    function initWorkspace(user) {
+        const initials = user.nome.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+        ['sidebar-avatar','header-avatar'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = initials; });
+        const nm1 = document.getElementById('sidebar-name'), nm2 = document.getElementById('header-name');
+        const rl1 = document.getElementById('sidebar-role'),  rl2 = document.getElementById('header-role');
+        if (nm1) nm1.textContent = user.nome.split(' ')[0];
+        if (nm2) nm2.textContent = user.nome.split(' ')[0];
+        if (rl1) rl1.textContent = user.permissao;
+        if (rl2) rl2.textContent = user.permissao;
+        configurarMenu(user.permissao);
+        carregarDadosIniciais();
+        lucide.createIcons();
+    }
+
+    function configurarMenu(nivel) {
+        const isAdminOuLider = (nivel === 'Lider' || nivel === 'Admin');
+        ['nav-mov','nav-dash','nav-hist'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'flex'; });
+        ['nav-perdas','nav-cad-func','nav-cad-item'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = isAdminOuLider ? 'flex' : 'none'; });
+        const isAdmin = (nivel === 'Admin');
+        ['btn-clear-perdas','btn-clear-hist'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = isAdmin ? 'inline-flex' : 'none'; });
+    }
+
+    /* ============================================================
+       DADOS
+    ============================================================ */
+    async function carregarDadosIniciais() {
+        try {
+            const [users, items, movs, perdas] = await Promise.all([
+                fetchAPI('/colaboradores'), fetchAPI('/equipamentos'),
+                fetchAPI('/movimentacoes'), fetchAPI('/perdas')
+            ]);
+            db_func = {}; users.forEach(u => db_func[u.matricula] = u);
+            db_itens = {}; items.forEach(i => db_itens[i.codigo] = i.descricao);
+            db_mov    = movs.sort((a,b) => new Date(a.dt) - new Date(b.dt));
+            db_perdas = perdas;
+            renderFuncionarios(); renderItens(); renderHistorico(); renderPerdas();
+            recalcularKPIs(); atualizarKPIsPerdas();
+            popularDatalistOperadores();
+            lucide.createIcons();
+        } catch(e) { showToast('Erro ao carregar dados: ' + e.message, 'danger'); }
+    }
+
+    /* ============================================================
+       RENDER COLABORADORES
+    ============================================================ */
+    function renderFuncionarios() {
+        const tb = document.getElementById('body-func');
+        let users = Object.values(db_func);
+        
+        // Renderizar abas dinâmicas de Turmas
+        const tabsContainer = document.getElementById('turmas-tabs');
+        if (tabsContainer) {
+            const turmas = [...new Set(users.map(u => u.turma).filter(t => t))].sort();
+            let tabsHtml = `<button class="btn ${currentTurmaFilter==='Todas'?'btn-primary':'btn-ghost'} btn-sm" onclick="setTurmaFilter('Todas')" style="margin-bottom:12px;">Todas</button>`;
+            turmas.forEach(t => {
+                tabsHtml += `<button class="btn ${currentTurmaFilter===t?'btn-primary':'btn-ghost'} btn-sm" onclick="setTurmaFilter('${t}')" style="margin-bottom:12px;">${t}</button>`;
+            });
+            tabsContainer.innerHTML = tabsHtml;
+        }
+
+        // Filtrar pela turma selecionada
+        if (currentTurmaFilter !== 'Todas') {
+            users = users.filter(u => u.turma === currentTurmaFilter);
+        }
+
+        if (!users.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty-state" style="padding:20px;"><h4>Nenhum colaborador encontrado</h4></div></td></tr>'; return; }
+        const permBadge = { Admin:'purple', Lider:'green', Operador:'info', Colaborador:'gray', Pendente:'amber' };
+        tb.innerHTML = users.map(u => `<tr>
+            <td><code style="font-size:0.75rem;color:var(--primary);">${u.matricula}</code></td>
+            <td style="font-size:0.75rem;color:var(--text-muted);">${u.cracha || '–'}</td>
+            <td style="font-weight:600;">${u.nome}</td>
+            <td><span class="badge gray">${u.empresa || '–'}</span></td>
+            <td style="font-size:0.75rem;">${u.funcao || '–'}</td>
+            <td style="font-size:0.75rem; font-weight:600;">${u.turma || '–'}</td>
+            <td><span class="badge ${permBadge[u.permissao]||'gray'}">${u.permissao}</span></td>
+            <td>${u.matricula === 'admin' ? '<span style="font-size:0.72rem;color:var(--text-muted);">Protegido</span>' : `<button class="btn btn-ghost btn-sm" onclick="deleteFunc('${u.matricula}')"><i data-lucide="trash-2" style="width:12px;height:12px;"></i></button>`}</td>
+        </tr>`).join('');
+        lucide.createIcons();
+    }
+
+    function renderItens() {
+        const tb = document.getElementById('body-itens');
+        let itens = Object.values(db_itens).map((desc, idx) => ({ codigo: Object.keys(db_itens)[idx], descricao: desc }));
+
+        // Renderizar abas dinâmicas de Equipamentos baseadas na descrição
+        const tabsContainer = document.getElementById('equip-tabs');
+        if (tabsContainer) {
+            const categorias = [...new Set(itens.map(i => i.descricao))].sort();
+            let tabsHtml = `<button class="btn ${currentEquipFilter==='Todos'?'btn-primary':'btn-ghost'} btn-sm" onclick="setEquipFilter('Todos')" style="margin-bottom:12px;">Todos</button>`;
+            categorias.forEach(c => {
+                tabsHtml += `<button class="btn ${currentEquipFilter===c?'btn-primary':'btn-ghost'} btn-sm" onclick="setEquipFilter('${c}')" style="margin-bottom:12px;">${c}</button>`;
+            });
+            tabsContainer.innerHTML = tabsHtml;
+        }
+
+        // Filtrar pela categoria selecionada
+        if (currentEquipFilter !== 'Todos') {
+            itens = itens.filter(i => i.descricao === currentEquipFilter);
+        }
+
+        if (!itens.length) { tb.innerHTML = '<tr><td colspan="3"><div class="empty-state" style="padding:20px;"><h4>Nenhum equipamento encontrado</h4></div></td></tr>'; return; }
+        tb.innerHTML = itens.map(i => `<tr>
+            <td><code style="color:var(--primary); font-size:0.75rem;">${i.codigo}</code></td>
+            <td style="font-weight:500;">${i.descricao}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="deleteItem('${i.codigo}')"><i data-lucide="trash-2" style="width:12px;height:12px;"></i></button></td>
+        </tr>`).join('');
+        lucide.createIcons();
+    }
+
+    function renderHistorico() {
+        const c = document.getElementById('body-historico');
+        if (!db_mov.length) { c.innerHTML = '<div class="empty-state"><div class="empty-ico"><i data-lucide="history"></i></div><h4>Histórico vazio</h4><p>Nenhuma movimentação registrada.</p></div>'; lucide.createIcons(); return; }
+        c.innerHTML = db_mov.slice().reverse().map(m => {
+            const cls  = m.tipo === 'saida' ? 'saida' : 'entrada';
+            const tipo = m.tipo === 'saida' ? 'ENTRADA NA MINA' : 'SAÍDA DA MINA';
+            const equips = Array.isArray(m.itens) ? m.itens.map(i => i.cod).join(', ') : '–';
+            return `<div class="timeline-item">
+                <div class="timeline-dot ${cls}"></div>
+                <div class="tl-card">
+                    <div class="tl-meta">
+                        <span class="tl-tipo ${cls}">${tipo}</span>
+                        <span class="tl-time">${new Date(m.dt).toLocaleString('pt-BR')}</span>
+                    </div>
+                    <div class="tl-name">${m.nome}</div>
+                    <div class="tl-equips">${equips || 'Sem equipamentos'}</div>
+                    <div class="tl-op">Operador: ${m.op || '–'}</div>
+                </div>
+            </div>`;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function filtrarHistorico() {
+        const q = (document.getElementById('search-hist').value || '').toLowerCase().trim();
+        document.querySelectorAll('#body-historico .timeline-item').forEach(el => {
+            el.style.display = el.innerText.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }
+
+    function renderPerdas() {
+        const tb = document.getElementById('body-perdas');
+        if (!db_perdas.length) {
+            tb.innerHTML = '<tr><td colspan="5"><div class="empty-state" style="padding:32px;"><div class="empty-ico"><i data-lucide="check-circle"></i></div><h4>Sem extravios</h4><p>Nenhum equipamento marcado como perdido.</p></div></td></tr>';
+            lucide.createIcons(); return;
+        }
+        tb.innerHTML = db_perdas.slice().reverse().map(p => `<tr>
+            <td style="font-size:0.76rem;">${new Date(p.data).toLocaleString('pt-BR')}</td>
+            <td style="font-weight:600;">${p.nome}</td>
+            <td>${p.item}</td>
+            <td><code style="font-size:0.75rem;color:var(--warning);">${p.idItem}</code></td>
+            <td style="color:var(--text-muted);">${p.op}</td>
+        </tr>`).join('');
+    }
+
+    function atualizarKPIsPerdas() {
+        const hoje = new Date().toDateString();
+        const t = document.getElementById('perdas-total');
+        const h = document.getElementById('perdas-hoje');
+        const u = document.getElementById('perdas-ultimo');
+        if (t) t.textContent = db_perdas.length;
+        if (h) h.textContent = db_perdas.filter(p => new Date(p.data).toDateString() === hoje).length;
+        if (u) u.textContent = db_perdas.length ? new Date(db_perdas[db_perdas.length-1].data).toLocaleDateString('pt-BR') : '–';
+    }
+
+    /* ============================================================
+       KPIs + ALERTAS
+    ============================================================ */
+    function recalcularKPIs() {
+        let ativos = {};
+        db_mov.forEach(m => { if (m.tipo === 'saida') ativos[m.mat] = m; else delete ativos[m.mat]; });
+        const now = new Date();
+        let alertas = 0, totalEquips = 0;
+        Object.values(ativos).forEach(r => {
+            if ((now - new Date(r.dt)) / 3600000 > 8) alertas++;
+            totalEquips += (Array.isArray(r.itens) ? r.itens.length : 0);
+        });
+        const g = id => document.getElementById(id);
+        if (g('kpi-ativos'))       g('kpi-ativos').textContent       = Object.keys(ativos).length;
+        if (g('kpi-alerta'))       g('kpi-alerta').textContent       = alertas;
+        if (g('kpi-equipamentos')) g('kpi-equipamentos').textContent  = totalEquips;
+        if (g('kpi-perdas'))       g('kpi-perdas').textContent       = db_perdas.length;
+        const ka = document.getElementById('kpi-card-alerta');
+        if (ka) ka.className = 'kpi-card' + (alertas > 0 ? ' critical' : '');
+        return ativos;
+    }
+
+    function renderAlertas(ativos) {
+        const panel = document.getElementById('alert-panel');
+        const list  = document.getElementById('alert-list');
+        const cnt   = document.getElementById('alert-count');
+        if (!panel || !list) return;
+        const now = new Date();
+        const alerts = Object.values(ativos)
+            .map(r => ({ r, h: (now - new Date(r.dt)) / 3600000 }))
+            .filter(x => x.h >= 6).sort((a,b) => b.h - a.h);
+        if (!alerts.length) { panel.classList.remove('visible'); return; }
+        panel.classList.add('visible');
+        if (cnt) cnt.textContent = alerts.filter(x => x.h >= 8).length;
+        list.innerHTML = alerts.map(({ r, h }) => {
+            const tempo = formatarTempo(new Date() - new Date(r.dt));
+            const isCrit = h >= 8;
+            return `<div class="alert-item">
+                <div class="alert-pip ${isCrit ? 'red' : 'amber'}"></div>
+                <div class="alert-body">${isCrit ? '🔴' : '🟠'} <strong>${r.nome}</strong> está há <strong>${tempo}</strong> no subsolo${isCrit ? ' — <strong>CRÍTICO</strong>' : ' — Atenção'}.</div>
+            </div>`;
+        }).join('');
+    }
+
+    /* ============================================================
+       FORMATAÇÃO DE TEMPO
+    ============================================================ */
+    function formatarTempo(ms) {
+        const t = Math.floor(Math.max(0, ms) / 1000);
+        const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    /* ============================================================
+       DASHBOARD TIMER — DOM DIFF OTIMIZADO
+    ============================================================ */
+    setInterval(() => {
+        if (!document.getElementById('dashboard').classList.contains('active')) return;
+        let ativos = {};
+        db_mov.forEach(m => { if (m.tipo === 'saida') ativos[m.mat] = m; else delete ativos[m.mat]; });
+        recalcularKPIs(); renderAlertas(ativos);
+
+        const list = Object.values(ativos).map(r => ({ ...r, diff: new Date() - new Date(r.dt) })).sort((a,b) => b.diff - a.diff);
+        const badge = document.getElementById('dash-count-badge');
+        if (badge) badge.innerHTML = `<span class="badge-dot"></span>${list.length} ativo${list.length !== 1 ? 's' : ''}`;
+
+        const tbody = document.getElementById('body-dashboard');
+        if (!tbody) return;
+        if (!list.length) {
+            tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-ico"><i data-lucide="hard-hat"></i></div><h4>Mina vazia</h4><p>Nenhum colaborador no subsolo.</p></div></td></tr>';
+            lucide.createIcons(); return;
+        }
+        const shown = list.slice(0, 20);
+        while (tbody.rows.length > shown.length) tbody.deleteRow(tbody.rows.length - 1);
+        shown.forEach((r, i) => {
+            const tr = tbody.rows[i] || tbody.insertRow();
+            const novoID = r.mat + '_' + r.dt, atualID = tr.getAttribute('data-id');
+            const timeIn = new Date(r.dt).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+            const timeDiff = formatarTempo(r.diff);
+            const horas = r.diff / 3600000;
+            let badgeCls = 'green', stTxt = 'NORMAL', rowCls = '';
+            if (horas >= 8)      { badgeCls = 'red';   stTxt = 'CRÍTICO >8h'; rowCls = 'row-critical'; }
+            else if (horas >= 6) { badgeCls = 'amber'; stTxt = 'ALERTA >6h';  rowCls = 'row-warning'; }
+            tr.className = rowCls;
+            if (atualID !== novoID) {
+                const equips = Array.isArray(r.itens) ? r.itens.map(i => i.cod).join(', ') : '–';
+                const colabInfo = db_func[r.mat] || {};
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${r.nome}</td>
+                    <td style="font-size:0.75rem; font-weight:600;">${colabInfo.turma || '–'}</td>
+                    <td><span class="badge gray">${colabInfo.empresa || '–'}</span></td>
+                    <td style="font-size:0.75rem;">${colabInfo.funcao || '–'}</td>
+                    <td style="font-size:0.75rem;color:var(--text-muted);">${equips || '–'}</td>
+                    <td>${timeIn}</td>
+                    <td style="font-variant-numeric:tabular-nums;">${timeDiff}</td>
+                    <td><span class="badge ${badgeCls}"><span class="badge-dot"></span>${stTxt}</span></td>`;
+                tr.setAttribute('data-id', novoID);
+            } else {
+                if (tr.children.length >= 5) {
+                    tr.children[3].textContent = timeDiff;
+                    tr.children[4].innerHTML = `<span class="badge ${badgeCls}"><span class="badge-dot"></span>${stTxt}</span>`;
+                }
+            }
+        });
+    }, 1000);
+
+    /* ============================================================
+       MOVIMENTAÇÃO
+    ============================================================ */
+    let operadorAtual = null;
+
+    let barcodeBuffer = '';
+    let barcodeTimer = null;
+
+    document.addEventListener('keydown', function(e) {
+        // Ignora se estiver digitando em modais de cadastro
+        if (e.target.tagName === 'INPUT' && e.target.id !== 'global-scanner' && e.target.id !== 'search-hist') {
+            return;
+        }
+
+        if (e.key === 'Enter') {
+            if (barcodeBuffer.length > 0) {
+                const scanned = barcodeBuffer;
+                barcodeBuffer = '';
+                processScanValue(scanned);
+                e.preventDefault();
+            } else if (e.target.id === 'global-scanner' && e.target.value.trim()) {
+                const scanned = e.target.value.trim();
+                e.target.value = '';
+                processScanValue(scanned);
+                e.preventDefault();
+            }
+            return;
+        }
+
+        // Captura caracteres únicos para o buffer rápido (tipo leitor de supermercado)
+        if (e.key.length === 1 && !e.ctrlKey && !e.altKey) {
+            barcodeBuffer += e.key;
+            clearTimeout(barcodeTimer);
+            barcodeTimer = setTimeout(() => {
+                barcodeBuffer = ''; // Zera se digitar muito lento (> 50ms entre teclas)
+            }, 50);
+        }
+    });
+
+    function handleGlobalScan(e) {
+        if (e.key === 'Enter') e.preventDefault(); // Delegado para o listener global
+    }
+
+    function popularDatalistOperadores() {
+        const dl = document.getElementById('lista-operadores');
+        if (!dl) return;
+        dl.innerHTML = Object.values(db_func)
+            .sort((a, b) => a.nome.localeCompare(b.nome))
+            .map(u => `<option value="${u.nome} [${u.matricula}]">`).join('');
+    }
+
+    function handleOperadorSelect() {
+        const val = document.getElementById('select-operador').value;
+        const match = val.match(/\[(.*?)\]/);
+        if (match && match[1]) {
+            const mat = match[1].toLowerCase();
+            if (db_func[mat]) {
+                setOperadorAtual(db_func[mat]);
+                logScan(`Operador selecionado: ${db_func[mat].nome}`, 'info');
+                document.getElementById('select-operador').blur(); // Tira o foco para o leitor fluir
+            }
+        }
+    }
+
+    async function processScanValue(scanVal) {
+        scanVal = scanVal.trim();
+        if (!scanVal) return;
+
+        const valUpper = scanVal.toUpperCase();
+
+        if (db_itens[valUpper]) {
+            await processarEquipamento(valUpper);
+        } else {
+            playErrorBeep();
+            showToast(`Equipamento "${scanVal}" não reconhecido!`, 'danger');
+            logScan(`Equipamento inválido: ${scanVal}`, 'danger');
+        }
+    }
+
+    function setOperadorAtual(user) {
+        operadorAtual = user;
+        const sel = document.getElementById('select-operador');
+        if (sel && sel.value !== `${user.nome} [${user.matricula}]`) {
+            sel.value = `${user.nome} [${user.matricula}]`;
+        }
+        const card = document.getElementById('colab-card');
+        if (card) {
+            card.classList.add('visible');
+            card.style.display = 'flex';
+        }
+        const initials = user.nome.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+        const av = document.getElementById('colab-av');   if (av) av.textContent = initials;
+        const nd = document.getElementById('colab-name-d'); if (nd) nd.textContent = user.nome;
+        const md = document.getElementById('colab-mat-d');  if (md) md.textContent = `Matrícula: ${user.matricula.toUpperCase()}`;
+        
+        atualizarItensOperador(user.matricula);
+    }
+
+    function atualizarItensOperador(mat) {
+        const eqpsNaMina = [];
+        if (db_itens) {
+            Object.keys(db_itens).forEach(cod => {
+                const histItem = db_mov.filter(m => m.itens && m.itens.some(i => i.cod === cod)).sort((a,b) => new Date(b.dt) - new Date(a.dt));
+                if (histItem.length > 0 && histItem[0].tipo === 'saida' && histItem[0].mat === mat) {
+                    eqpsNaMina.push({cod, desc: db_itens[cod]});
+                }
+            });
+        }
+
+        const sd = document.getElementById('colab-status-d');
+        if (sd) sd.innerHTML = eqpsNaMina.length > 0
+            ? '<span class="badge green"><span class="badge-dot"></span>NA MINA</span>'
+            : '<span class="badge gray"><span class="badge-dot"></span>FORA DA MINA</span>';
+            
+        const list = document.getElementById('operator-items-list');
+        if (list) {
+            if (eqpsNaMina.length === 0) list.innerHTML = '<div class="cart-empty"><i data-lucide="package-open"></i><span>Nenhum equipamento em posse.</span></div>';
+            else {
+                list.innerHTML = eqpsNaMina.map(item => `
+                    <div class="cart-item" style="padding: 8px;">
+                        <div class="cart-left">
+                            <div class="cart-item-ico" style="width: 24px; height:24px; background:var(--primary-soft);"><i data-lucide="package" style="width:14px; height:14px; color:var(--primary);"></i></div>
+                            <div><div class="cart-code" style="font-size:0.75rem;">${item.cod}</div><div class="cart-desc" style="font-size:0.7rem;">${item.desc}</div></div>
+                        </div>
+                    </div>`).join('');
+            }
+            lucide.createIcons();
+        }
+    }
+
+    async function processarEquipamento(cod) {
+        let estaComOperador = null;
+        let dtSaida = null;
+        const histItem = db_mov.filter(m => m.itens && m.itens.some(i => i.cod === cod)).sort((a,b) => new Date(b.dt) - new Date(a.dt));
+        if (histItem.length > 0) {
+            const last = histItem[0];
+            if (last.tipo === 'saida') {
+                estaComOperador = last.mat;
+                dtSaida = last.dt;
+            }
+        }
+
+        const dt = new Date().toISOString();
+        if (estaComOperador) {
+            const opNome = db_func[estaComOperador] ? db_func[estaComOperador].nome : estaComOperador;
+            try {
+                await fetchAPI('/movimentacoes', 'POST', { dt, tipo: 'entrada', mat: estaComOperador, nome: opNome, itens: [{cod, desc: db_itens[cod]}], op: userAuth.nome });
+                playSuccessBeep();
+                showToast(`Devolução de ${cod} confirmada!`, 'success');
+                logScan(`Equipamento devolvido: ${cod} (estava com ${opNome})`, 'success');
+                await carregarDadosIniciais();
+                if (operadorAtual && operadorAtual.matricula === estaComOperador) setOperadorAtual(operadorAtual);
+            } catch (err) {
+                playErrorBeep(); showToast('Erro na devolução: ' + err.message, 'danger');
+            }
+        } else {
+            if (!operadorAtual) {
+                playErrorBeep();
+                showToast('Selecione um operador antes de entregar equipamentos!', 'warning');
+                logScan(`Tentativa de saída bloqueada (${cod}): Nenhum operador selecionado.`, 'warning');
+                return;
+            }
+            try {
+                await fetchAPI('/movimentacoes', 'POST', { dt, tipo: 'saida', mat: operadorAtual.matricula, nome: operadorAtual.nome, itens: [{cod, desc: db_itens[cod]}], op: userAuth.nome });
+                playSuccessBeep();
+                showToast(`Equipamento ${cod} entregue para ${operadorAtual.nome}!`, 'success');
+                logScan(`Equipamento entregue: ${cod} -> ${operadorAtual.nome}`, 'success');
+                await carregarDadosIniciais();
+                setOperadorAtual(operadorAtual);
+            } catch (err) {
+                playErrorBeep(); showToast('Erro na saída: ' + err.message, 'danger');
+            }
+        }
+    }
+
+    function logScan(msg, type) {
+        const logArea = document.getElementById('scan-log');
+        if (!logArea) return;
+        if (logArea.innerHTML.includes('Pronto para bipar')) logArea.innerHTML = '';
+        const time = new Date().toLocaleTimeString('pt-BR');
+        const colors = { info: 'var(--primary)', success: '#10b981', warning: '#f59e0b', danger: '#ef4444' };
+        const color = colors[type] || colors.info;
+        const el = document.createElement('div');
+        el.style.cssText = `padding: 10px; border-left: 4px solid ${color}; background: var(--bg-card); border-radius: 4px; font-size: 0.85rem; animation: fade-in 0.3s ease;`;
+        el.innerHTML = `<strong style="color: var(--text-muted); font-size: 0.75rem;">${time}</strong><br/>${msg}`;
+        logArea.prepend(el);
+        if (logArea.children.length > 10) logArea.removeChild(logArea.lastChild);
+    }
+
+    /* ============================================================
+       ADMIN ACTIONS
+    ============================================================ */
+    async function addFuncionario() {
+        const mat  = (document.getElementById('f-mat').value  || '').trim().toLowerCase();
+        const nome = (document.getElementById('f-nome').value || '').trim();
+        const cracha = (document.getElementById('f-cracha').value || '').trim();
+        const empresa = (document.getElementById('f-empresa').value || '').trim();
+        const funcao = (document.getElementById('f-funcao').value || '').trim();
+        const turma = (document.getElementById('f-turma').value || '').trim();
+        const perm = document.getElementById('f-perm').value;
+        if (!mat || !nome) return showToast('Matrícula e nome são obrigatórios.', 'danger');
+        try { 
+            await fetchAPI('/colaboradores', 'POST', { matricula:mat, nome, permissao:perm, email:'', cracha, empresa, funcao, turma }); 
+            showToast('Colaborador cadastrado!', 'success'); 
+            document.getElementById('f-mat').value = '';
+            document.getElementById('f-nome').value = '';
+            document.getElementById('f-cracha').value = '';
+            document.getElementById('f-empresa').value = '';
+            document.getElementById('f-funcao').value = '';
+            document.getElementById('f-turma').value = '';
+            document.getElementById('modal-novo-colab').classList.remove('open');
+            await carregarDadosIniciais(); 
+        } catch(e) { showToast('Erro: ' + e.message, 'danger'); }
+    }
+    async function deleteFunc(mat) { if (!confirm('Excluir este colaborador?')) return; try { await fetchAPI(`/colaboradores/${mat}`, 'DELETE'); await carregarDadosIniciais(); } catch(e) { showToast('Erro: ' + e.message, 'danger'); } }
+    async function addItem() {
+        const cod  = (document.getElementById('i-cod').value  || '').trim().toUpperCase();
+        const desc = (document.getElementById('i-desc').value || '').trim();
+        if (!cod || !desc) return showToast('Código e descrição são obrigatórios.', 'danger');
+        try { 
+            await fetchAPI('/equipamentos', 'POST', { codigo:cod, descricao:desc }); 
+            showToast('Equipamento cadastrado!', 'success'); 
+            document.getElementById('i-cod').value = '';
+            document.getElementById('i-desc').value = '';
+            document.getElementById('modal-novo-equip').classList.remove('open');
+            await carregarDadosIniciais(); 
+        } catch(e) { showToast('Erro: ' + e.message, 'danger'); }
+    }
+    async function deleteItem(cod) { if (!confirm('Excluir este equipamento?')) return; try { await fetchAPI(`/equipamentos/${cod}`, 'DELETE'); await carregarDadosIniciais(); } catch(e) { showToast('Erro: ' + e.message, 'danger'); } }
+    async function apagarHistorico() { if (!confirm('Zerar TODO o histórico?')) return; await fetchAPI('/movimentacoes', 'DELETE'); await carregarDadosIniciais(); showToast('Histórico zerado.', 'info'); }
+    async function apagarPerdas()    { if (!confirm('Limpar TODOS os registros de perda?')) return; await fetchAPI('/perdas', 'DELETE'); await carregarDadosIniciais(); showToast('Registros limpos.', 'info'); }
+
+    /* ============================================================
+       ATALHOS DE TECLADO
+    ============================================================ */
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+        if (!userAuth) return;
+        if (e.key === 'F1') { e.preventDefault(); document.getElementById('nav-dash').click(); }
+        if (e.key === 'F2') { e.preventDefault(); document.getElementById('nav-mov').click(); }
+        if (e.key === 'F3') { e.preventDefault(); document.getElementById('nav-hist').click(); }
+    });
+</script>
+</body>
+</html>
