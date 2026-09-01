@@ -46,7 +46,7 @@ export const Entrada: React.FC = () => {
 
       if (emprestimos.length === 0) {
         soundFX.playError();
-        setMensagemErro(`NENHUM MATERIAL EM USO PARA ESTE COLABORADOR (${colab.nome})`);
+        setMensagemErro(`COLABORADOR RECONHECIDO: ${colab.nome} (MAT: ${colab.matricula}), MAS NÃO POSSUI NENHUM MATERIAL SOB SUA POSSE NO MOMENTO.`);
         return;
       }
 
@@ -296,11 +296,13 @@ export const Entrada: React.FC = () => {
             </form>
 
             {colaborador && (
-              <div className="bg-slate-50 p-4 rounded border border-slate-300 mt-auto shadow-inner">
-                <div className="text-xs font-bold text-slate-500 uppercase mb-2">COLABORADOR:</div>
+              <div className="bg-slate-50 p-4 rounded border border-slate-300 mt-auto shadow-sm">
+                <div className="text-xs font-bold text-slate-500 uppercase mb-2">RESPONSÁVEL PELA ENTRADA:</div>
                 <div className="text-lg font-black text-slate-900 uppercase leading-snug">{colaborador.nome}</div>
                 <div className="text-xs text-slate-600 font-mono mt-1">MATRÍCULA: <span className="text-emerald-700 font-bold">{colaborador.matricula}</span></div>
-                <div className="text-xs text-amber-700 font-mono font-bold mt-2">
+                <div className="text-xs text-slate-600 font-mono">SETOR: {colaborador.setor || '-'}</div>
+                <div className="text-xs text-slate-600 font-mono">CARGO: {colaborador.cargo || '-'}</div>
+                <div className="text-xs text-amber-700 font-mono font-bold mt-2 pt-2 border-t border-slate-200">
                   EMPRÉSTIMOS PENDENTES: {emprestimosTemp.length - devolvidosCount} DE {emprestimosTemp.length}
                 </div>
               </div>
