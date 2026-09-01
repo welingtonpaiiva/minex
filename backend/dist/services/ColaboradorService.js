@@ -24,12 +24,26 @@ class ColaboradorService {
     static async buscarPorNfc(nfcId) {
         if (!nfcId)
             return null;
-        return await (0, db_1.queryOne)('SELECT * FROM colaboradores WHERE nfc_id = ?', [nfcId.trim()]);
+        const cleanNfc = nfcId.trim();
+        const unpaddedNfc = cleanNfc.replace(/^0+/, '');
+        // 1. Tentar busca exata por nfc_id
+        let colab = await (0, db_1.queryOne)('SELECT * FROM colaboradores WHERE nfc_id = ?', [cleanNfc]);
+        // 2. Tentar busca ignorando zeros à esquerda (ex: leitores que enviam zeros adicionais)
+        if (!colab && unpaddedNfc) {
+            colab = await (0, db_1.queryOne)("SELECT * FROM colaboradores WHERE LTRIM(nfc_id, '0') = ? OR nfc_id = ?", [unpaddedNfc, unpaddedNfc]);
+        }
+        // 3. Fallback: buscar por matrícula
+        if (!colab) {
+            colab = await (0, db_1.queryOne)('SELECT * FROM colaboradores WHERE matricula = ?', [cleanNfc]);
+        }
+        return colab;
     }
     static async buscarPorMatricula(matricula) {
         if (!matricula)
             return null;
-        return await (0, db_1.queryOne)('SELECT * FROM colaboradores WHERE matricula = ?', [matricula.trim()]);
+        const clean = matricula.trim();
+        const unpadded = clean.replace(/^0+/, '');
+        return await (0, db_1.queryOne)("SELECT * FROM colaboradores WHERE matricula = ? OR nfc_id = ? OR LTRIM(matricula, '0') = ?", [clean, clean, unpadded]);
     }
     static async criar(dados) {
         if (!dados.nome || !dados.matricula) {
@@ -40,7 +54,11 @@ class ColaboradorService {
             throw new Error('Já existe um colaborador cadastrado com esta matrícula');
         }
         if (dados.nfc_id && dados.nfc_id.trim() !== '') {
-            const nfcExist = await (0, db_1.queryOne)('SELECT id FROM colaboradores WHERE nfc_id = ?', [dados.nfc_id.trim()]);
+            const cleanNfc = dados.nfc_id.trim();
+            const unpaddedNfc = cleanNfc.replace(/^0+/, '');
+            const nfcExist = unpaddedNfc
+                ? await (0, db_1.queryOne)("SELECT id FROM colaboradores WHERE nfc_id = ? OR LTRIM(nfc_id, '0') = ?", [cleanNfc, unpaddedNfc])
+                : await (0, db_1.queryOne)('SELECT id FROM colaboradores WHERE nfc_id = ?', [cleanNfc]);
             if (nfcExist) {
                 throw new Error('Este cartão NFC já está vinculado a outro colaborador');
             }
@@ -63,7 +81,11 @@ class ColaboradorService {
             throw new Error('Colaborador não encontrado');
         }
         if (dados.nfc_id && dados.nfc_id.trim() !== colab.nfc_id) {
-            const nfcExist = await (0, db_1.queryOne)('SELECT id FROM colaboradores WHERE nfc_id = ? AND id != ?', [dados.nfc_id.trim(), id]);
+            const cleanNfc = dados.nfc_id.trim();
+            const unpaddedNfc = cleanNfc.replace(/^0+/, '');
+            const nfcExist = unpaddedNfc
+                ? await (0, db_1.queryOne)("SELECT id FROM colaboradores WHERE (nfc_id = ? OR LTRIM(nfc_id, '0') = ?) AND id != ?", [cleanNfc, unpaddedNfc, id])
+                : await (0, db_1.queryOne)('SELECT id FROM colaboradores WHERE nfc_id = ? AND id != ?', [cleanNfc, id]);
             if (nfcExist) {
                 throw new Error('Este cartão NFC já está associado a outro colaborador');
             }
@@ -85,7 +107,10 @@ class ColaboradorService {
         if (!nfcId)
             throw new Error('Código NFC não informado');
         const cleanNfc = nfcId.trim();
-        const exist = await (0, db_1.queryOne)('SELECT id FROM colaboradores WHERE nfc_id = ? AND id != ?', [cleanNfc, colaboradorId]);
+        const unpaddedNfc = cleanNfc.replace(/^0+/, '');
+        const exist = unpaddedNfc
+            ? await (0, db_1.queryOne)("SELECT id FROM colaboradores WHERE (nfc_id = ? OR LTRIM(nfc_id, '0') = ?) AND id != ?", [cleanNfc, unpaddedNfc, colaboradorId])
+            : await (0, db_1.queryOne)('SELECT id FROM colaboradores WHERE nfc_id = ? AND id != ?', [cleanNfc, colaboradorId]);
         if (exist) {
             throw new Error('Este cartão NFC já pertence a outro colaborador');
         }

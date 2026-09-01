@@ -82,5 +82,15 @@ class MaterialController {
             return res.status(400).json({ error: err.message });
         }
     }
+    static async excluir(req, res) {
+        try {
+            const id = parseInt(req.params.id);
+            const resultado = await MaterialService_1.MaterialService.excluir(id);
+            return res.json(resultado);
+        }
+        catch (err) {
+            return res.status(400).json({ error: err.message });
+        }
+    }
 }
 exports.MaterialController = MaterialController;

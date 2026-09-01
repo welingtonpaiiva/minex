@@ -24,9 +24,9 @@ class MaterialService {
             params.push(filtros.categoria_id);
         }
         if (filtros?.busca) {
-            sql += ' AND (m.nome LIKE ? OR m.codigo_interno LIKE ? OR m.codigo_barras LIKE ? OR m.patrimonio LIKE ?)';
+            sql += ' AND (m.nome LIKE ? OR m.codigo_interno LIKE ? OR m.codigo_barras LIKE ?)';
             const term = `%${filtros.busca.trim()}%`;
-            params.push(term, term, term, term);
+            params.push(term, term, term);
         }
         sql += ' ORDER BY m.codigo_interno ASC';
         return await (0, db_1.query)(sql, params);
@@ -72,13 +72,12 @@ class MaterialService {
         if (existBar) {
             throw new Error(`Já existe um material cadastrado com o código de barras ${codBar}`);
         }
-        await (0, db_1.query)(`INSERT INTO materiais (nome, codigo_interno, codigo_barras, categoria_id, patrimonio, foto_url, status, observacao)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
+        await (0, db_1.query)(`INSERT INTO materiais (nome, codigo_interno, codigo_barras, categoria_id, foto_url, status, observacao)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`, [
             dados.nome.trim(),
             codInt,
             codBar,
             dados.categoria_id || null,
-            dados.patrimonio || '',
             dados.foto_url || '',
             'DISPONIVEL',
             dados.observacao || ''
@@ -91,11 +90,10 @@ class MaterialService {
             throw new Error('Material não encontrado');
         }
         await (0, db_1.query)(`UPDATE materiais
-       SET nome = ?, categoria_id = ?, patrimonio = ?, foto_url = ?, observacao = ?, status = ?, updated_at = (datetime('now', 'localtime'))
+       SET nome = ?, categoria_id = ?, foto_url = ?, observacao = ?, status = ?, updated_at = (datetime('now', 'localtime'))
        WHERE id = ?`, [
             dados.nome !== undefined ? dados.nome.trim() : mat.nome,
             dados.categoria_id !== undefined ? dados.categoria_id : mat.categoria_id,
-            dados.patrimonio !== undefined ? dados.patrimonio : mat.patrimonio,
             dados.foto_url !== undefined ? dados.foto_url : mat.foto_url,
             dados.observacao !== undefined ? dados.observacao : mat.observacao,
             dados.status !== undefined ? dados.status : mat.status,
@@ -120,6 +118,18 @@ class MaterialService {
     }
     static async listarCategorias() {
         return await (0, db_1.query)('SELECT * FROM categorias ORDER BY nome ASC');
+    }
+    static async excluir(id) {
+        const mat = await this.buscarPorId(id);
+        if (!mat) {
+            throw new Error('Material não encontrado');
+        }
+        if (mat.status === 'EM_USO') {
+            throw new Error('Não é possível excluir um material que está em uso no momento.');
+        }
+        await (0, db_1.query)('DELETE FROM emprestimos WHERE material_id = ?', [id]);
+        await (0, db_1.query)('DELETE FROM materiais WHERE id = ?', [id]);
+        return { message: 'Material excluído com sucesso', id };
     }
 }
 exports.MaterialService = MaterialService;

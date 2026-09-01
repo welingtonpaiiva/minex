@@ -1,5 +1,4 @@
 @echo off
-chcp 65001 >nul
 title CASA DA LANTERNA - CONTROLE INDUSTRIAL
 set PATH=C:\Program Files\nodejs;%PATH%
 
@@ -7,10 +6,28 @@ echo =================================================================
 echo   INICIANDO SISTEMA CASA DA LANTERNA (CONTROLE DE MATERIAIS)
 echo =================================================================
 echo.
-echo Abrindo o navegador em http://localhost:3000 ...
-start http://localhost:3000
+
+echo [1/2] Compilando arquivos do Frontend e Backend...
+cd /d "%~dp0frontend"
+call npm run build >nul 2>&1
 
 cd /d "%~dp0backend"
-npm run dev
+call npm run build >nul 2>&1
 
-pause
+echo.
+echo [2/2] Iniciando Servidor na Porta 5000...
+start "Servidor Minex" /b npm start
+
+echo.
+echo Aguardando inicializacao do servidor (3 segundos)...
+ping -n 4 127.0.0.1 >nul
+
+echo Abrindo o sistema no navegador em http://localhost:5000 ...
+start http://localhost:5000
+
+echo.
+echo =================================================================
+echo   SISTEMA MINEX OPERACIONAL EM HTTP://LOCALHOST:5000
+echo   Mantenha esta janela aberta para manter o servidor ativo.
+echo =================================================================
+echo.

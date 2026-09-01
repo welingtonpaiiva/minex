@@ -97,19 +97,17 @@ export async function withTransaction<T>(callback: (execQuery: typeof query) => 
       client.release();
     }
   } else if (sqliteDb) {
-    return new Promise(async (resolve, reject) => {
-      sqliteDb!.serialize(async () => {
-        try {
-          await query('BEGIN TRANSACTION');
-          const result = await callback(query);
-          await query('COMMIT');
-          resolve(result);
-        } catch (err) {
-          try { await query('ROLLBACK'); } catch (_) {}
-          reject(err);
-        }
-      });
-    });
+    try {
+      await query('BEGIN TRANSACTION');
+      const result = await callback(query);
+      await query('COMMIT');
+      return result;
+    } catch (err) {
+      try {
+        await query('ROLLBACK');
+      } catch (_) {}
+      throw err;
+    }
   } else {
     throw new Error('Nenhum banco de dados configurado');
   }

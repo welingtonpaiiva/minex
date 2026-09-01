@@ -12,4 +12,5 @@ router.get('/:id', MaterialController_1.MaterialController.buscarPorId);
 router.post('/', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR']), MaterialController_1.MaterialController.criar);
 router.put('/:id', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR']), MaterialController_1.MaterialController.editar);
 router.patch('/:id/status', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR', 'OPERADOR']), MaterialController_1.MaterialController.alterarStatus);
+router.delete('/:id', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR']), MaterialController_1.MaterialController.excluir);
 exports.default = router;
