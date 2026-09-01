@@ -84,3 +84,34 @@ export interface Movimentacao {
 export type SaidaStep = 'WAITING_NFC' | 'SCANNING_ITEMS' | 'CONFIRMING' | 'PROCESSING' | 'SUCCESS';
 
 export type EntradaStep = 'WAITING_NFC' | 'LOADING_LOANS' | 'SCANNING_RETURNS' | 'CONFIRMING' | 'PROCESSING' | 'SUCCESS';
+
+export type NivelAlertaTurno = 'NORMAL' | 'ATENCAO' | 'CRITICO';
+
+export interface AlertaTurnoItem {
+  emprestimo_id: number;
+  data_hora_saida: string;
+  colaborador_id: number;
+  colaborador_nome: string;
+  colaborador_matricula: string;
+  setor?: string;
+  cargo?: string;
+  material_id: number;
+  material_nome: string;
+  codigo_interno: string;
+  codigo_barras: string;
+  categoria_nome?: string;
+  minutos_em_uso: number;
+  horas_em_uso: number;
+  tempo_formatado: string;
+  nivel_alerta: NivelAlertaTurno;
+  mensagem_alerta: string;
+}
+
+export interface ResumoAlertasTurno {
+  totalEmUso: number;
+  normalCount: number;
+  atencaoCount: number;
+  criticoCount: number;
+  alertas: AlertaTurnoItem[];
+}
+
