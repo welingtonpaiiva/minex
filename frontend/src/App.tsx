@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { TopBar } from './components/TopBar';
+import { CursorFollower } from './components/CursorFollower';
 import { Login } from './pages/Login';
 import { MainMenu } from './pages/MainMenu';
 import { Saida } from './pages/Saida';
@@ -56,6 +57,7 @@ export const App: React.FC = () => {
 
   return (
     <Router>
+      <CursorFollower />
       <div className="h-screen w-screen flex flex-col bg-slate-100 overflow-hidden">
         {user && <TopBar user={user} onLogout={handleLogout} />}
 
