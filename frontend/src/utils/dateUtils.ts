@@ -17,6 +17,6 @@ export const calcularHorasEmUso = (dataHoraSaidaStr?: string): { horas: number; 
   return {
     horas: Math.max(0, horas),
     diffMinutos: Math.max(0, diffMinutos),
-    excedeu: horas >= 8
+    excedeu: diffMinutos >= 450 // 7h30min
   };
 };

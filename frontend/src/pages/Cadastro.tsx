@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Boxes, Users, Plus, Edit2, History, Wifi, Search, AlertTriangle, CheckCircle, ShieldAlert, Trash2 } from 'lucide-react';
+import { ArrowLeft, Boxes, Users, Plus, Edit2, Wifi, Search, AlertTriangle, CheckCircle, ShieldAlert, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { soundFX } from '../services/soundFX';
 import { Material, Colaborador, Categoria, Usuario } from '../types';
@@ -184,476 +184,475 @@ export const Cadastro: React.FC<CadastroProps> = ({ user }) => {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-100 p-4 overflow-hidden select-none">
-      {/* Topo / Voltar */}
-      <div className="flex items-center justify-between bg-white p-3 rounded border border-slate-300 mb-4 shrink-0 shadow-sm">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/')}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2 rounded border border-slate-300 font-bold flex items-center gap-2 cursor-pointer shadow-sm"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>VOLTAR</span>
-          </button>
-          <h2 className="text-xl font-extrabold text-blue-700 uppercase tracking-wider font-mono">
-            CADASTRO GERAL DO SISTEMA
-          </h2>
-        </div>
-
-        {/* Abas Principais (Materiais vs Colaboradores) */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setActiveTab('materiais');
-              setBusca('');
-            }}
-            className={`px-6 py-2.5 rounded font-extrabold text-sm uppercase flex items-center gap-2 border cursor-pointer ${
-              activeTab === 'materiais'
-                ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
-                : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+    <div className="flex-1 flex flex-col bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans select-none overflow-y-auto min-h-screen">
+      <div className="max-w-[1380px] w-full mx-auto flex flex-col gap-6 flex-1">
+        
+        {/* NOTIFICAÇÃO ALERTA */}
+        {mensagem && (
+          <div
+            className={`p-4 rounded-2xl font-bold text-xs flex justify-between items-center shrink-0 border shadow-sm ${
+              mensagem.tipo === 'sucesso'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                : 'bg-red-50 border-red-300 text-red-950'
             }`}
           >
-            <Boxes className="w-5 h-5" />
-            <span>MATERIAIS</span>
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('colaboradores');
-              setBusca('');
-            }}
-            className={`px-6 py-2.5 rounded font-extrabold text-sm uppercase flex items-center gap-2 border cursor-pointer ${
-              activeTab === 'colaboradores'
-                ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
-                : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
-            }`}
-          >
-            <Users className="w-5 h-5" />
-            <span>COLABORADORES</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Notificação Alerta */}
-      {mensagem && (
-        <div
-          className={`mb-4 p-3 rounded font-bold text-sm flex justify-between items-center shrink-0 border-2 shadow-sm ${
-            mensagem.tipo === 'sucesso'
-              ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
-              : 'bg-red-50 border-red-500 text-red-800'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {mensagem.tipo === 'sucesso' ? (
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
-            ) : (
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-            )}
-            <span>{mensagem.texto}</span>
-          </div>
-          <button onClick={() => setMensagem(null)} className="text-xs underline cursor-pointer">OK</button>
-        </div>
-      )}
-
-      {/* Barra de Pesquisa & Botão Novo */}
-      <div className="flex items-center justify-between gap-4 mb-4 shrink-0 bg-white p-3 rounded border border-slate-300 shadow-sm">
-        <div className="relative flex-1 max-w-md">
-          <input
-            type="text"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder={`Pesquisar ${activeTab === 'materiais' ? 'material por código/nome...' : 'colaborador por nome/matrícula/NFC...'}`}
-            className="input-industrial text-sm py-2 pl-10"
-          />
-          <Search className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" />
-        </div>
-
-        {user?.nivel_acesso !== 'CONSULTA' && (
-          <button
-            onClick={() => {
-              if (activeTab === 'materiais') {
-                setModalMaterial({ nome: '', codigo_interno: '', codigo_barras: '', status: 'DISPONIVEL' });
-              } else {
-                setModalColaborador({ nome: '', matricula: '', status: 'ATIVO' });
-              }
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-6 py-2.5 rounded border border-blue-500 uppercase text-sm flex items-center gap-2 cursor-pointer shadow-md"
-          >
-            <Plus className="w-5 h-5" />
-            <span>NOVO {activeTab === 'materiais' ? 'MATERIAL' : 'COLABORADOR'}</span>
-          </button>
-        )}
-      </div>
-
-      {/* Modal Leitor NFC de Associar Crachá */}
-      <NfcReaderModal
-        isOpen={modalNfcColaboradorId !== null}
-        onClose={() => setModalNfcColaboradorId(null)}
-        onNfcRead={handleAssociarNfc}
-        title="GRAVAR CRACHÁ NFC"
-        subtitle="Aproxime o novo cartão NFC para vincular ao colaborador"
-      />
-
-      {/* TABELA DE MATERIAIS */}
-      {activeTab === 'materiais' && (
-        <div className="flex-1 overflow-auto border border-slate-300 bg-white rounded-sm shadow-sm">
-          <table className="table-industrial">
-            <thead>
-              <tr>
-                <th>CÓDIGO INTERNO</th>
-                <th>CÓDIGO BARRAS</th>
-                <th>NOME DO MATERIAL</th>
-                <th>CATEGORIA</th>
-                <th>STATUS</th>
-                <th>RESPONSÁVEL ATUAL</th>
-                <th className="text-center">AÇÕES</th>
-              </tr>
-            </thead>
-            <tbody>
-              {materiais.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-400 font-bold uppercase">
-                    Nenhum material encontrado.
-                  </td>
-                </tr>
+            <div className="flex items-center gap-3">
+              {mensagem.tipo === 'sucesso' ? (
+                <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
               ) : (
-                materiais.map((item) => (
-                  <tr key={item.id}>
-                    <td className="font-mono font-bold text-amber-700">{item.codigo_interno}</td>
-                    <td className="font-mono text-slate-600">{item.codigo_barras}</td>
-                    <td className="font-bold text-slate-900">{item.nome}</td>
-                    <td className="text-slate-600">{item.categoria_nome || 'Geral'}</td>
-                    <td>
-                      <StatusBadge status={item.status} size="sm" />
-                    </td>
-                    <td className="text-slate-700">
-                      {item.colaborador_nome ? (
-                        <div>
-                          <div className="font-bold text-emerald-700">{item.colaborador_nome}</div>
-                          <div className="text-[10px] font-mono text-slate-500">MAT: {item.colaborador_matricula}</div>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400">-</span>
-                      )}
-                    </td>
-                    <td className="text-center">
-                      <div className="flex justify-center gap-1">
-                        {user?.nivel_acesso === 'ADMINISTRADOR' && (
-                          <>
+                <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+              )}
+              <span>{mensagem.texto}</span>
+            </div>
+            <button onClick={() => setMensagem(null)} className="text-xs font-bold underline cursor-pointer">OK</button>
+          </div>
+        )}
+
+        {/* ABAS & BARRA DE PESQUISA & BOTÃO NOVO (PADRÃO SITE) */}
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm shrink-0">
+          
+          {/* ABAS PRINCIPAIS (MATERIAIS VS COLABORADORES) */}
+          <div className="bg-slate-100 p-1.5 rounded-xl border border-slate-200 flex items-center gap-2">
+            <button
+              onClick={() => {
+                setActiveTab('materiais');
+                setBusca('');
+              }}
+              className={`px-5 py-2.5 rounded-lg font-extrabold text-xs uppercase flex items-center gap-2 transition-all cursor-pointer ${
+                activeTab === 'materiais'
+                  ? 'bg-[#331274] text-white shadow-sm'
+                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              <Boxes className="w-4 h-4" />
+              <span>MATERIAIS</span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('colaboradores');
+                setBusca('');
+              }}
+              className={`px-5 py-2.5 rounded-lg font-extrabold text-xs uppercase flex items-center gap-2 transition-all cursor-pointer ${
+                activeTab === 'colaboradores'
+                  ? 'bg-[#331274] text-white shadow-sm'
+                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>COLABORADORES</span>
+            </button>
+          </div>
+
+          <div className="relative flex-1 max-w-md">
+            <input
+              type="text"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder={`Pesquisar ${activeTab === 'materiais' ? 'material por código ou nome...' : 'colaborador por nome, matrícula ou NFC...'}`}
+              className="w-full py-2.5 pl-10 pr-4 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all shadow-sm"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          </div>
+
+          {user?.nivel_acesso !== 'CONSULTA' && (
+            <button
+              onClick={() => {
+                if (activeTab === 'materiais') {
+                  setModalMaterial({ nome: '', codigo_interno: '', codigo_barras: '', status: 'DISPONIVEL' });
+                } else {
+                  setModalColaborador({ nome: '', matricula: '', status: 'ATIVO' });
+                }
+              }}
+              className="bg-[#331274] hover:bg-[#43208C] text-white font-extrabold px-5 py-2.5 rounded-xl uppercase text-xs flex items-center gap-2 cursor-pointer shadow-md transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>NOVO {activeTab === 'materiais' ? 'MATERIAL' : 'COLABORADOR'}</span>
+            </button>
+          )}
+        </div>
+
+        {/* MODAL LEITOR NFC */}
+        <NfcReaderModal
+          isOpen={modalNfcColaboradorId !== null}
+          onClose={() => setModalNfcColaboradorId(null)}
+          onNfcRead={handleAssociarNfc}
+          title="GRAVAR CRACHÁ NFC"
+          subtitle="Aproxime o novo cartão NFC para vincular ao colaborador"
+        />
+
+        {/* TABELA DE MATERIAIS */}
+        {activeTab === 'materiais' && (
+          <div className="flex-1 overflow-hidden border border-slate-200 bg-white rounded-2xl shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-800 text-xs font-extrabold uppercase tracking-wider border-b border-slate-200 font-['Outfit']">
+                    <th className="py-3.5 px-4">CÓDIGO INTERNO</th>
+                    <th className="py-3.5 px-4">CÓDIGO BARRAS</th>
+                    <th className="py-3.5 px-4">MATERIAL</th>
+                    <th className="py-3.5 px-4">CATEGORIA</th>
+                    <th className="py-3.5 px-4">STATUS</th>
+                    <th className="py-3.5 px-4">POSSE ATUAL</th>
+                    <th className="py-3.5 px-4 text-center">AÇÕES</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 text-xs sm:text-sm">
+                  {materiais.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-12 text-slate-500 font-bold uppercase">
+                        Nenhum material encontrado.
+                      </td>
+                    </tr>
+                  ) : (
+                    materiais.map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.codigo_interno}</td>
+                        <td className="font-mono text-slate-600 py-3.5 px-4">{item.codigo_barras}</td>
+                        <td className="font-bold text-slate-900 py-3.5 px-4">{item.nome}</td>
+                        <td className="text-slate-600 font-medium py-3.5 px-4">{item.categoria_nome || 'Geral'}</td>
+                        <td className="py-3.5 px-4">
+                          <StatusBadge status={item.status} size="sm" />
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {item.colaborador_nome ? (
+                            <div>
+                              <div className="font-bold text-[#331274] uppercase">{item.colaborador_nome}</div>
+                              <div className="text-xs font-mono text-slate-500">MAT: {item.colaborador_matricula}</div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 font-mono text-xs font-semibold">- DISPONÍVEL -</span>
+                          )}
+                        </td>
+                        <td className="text-center py-3.5 px-4">
+                          <div className="flex justify-center gap-2">
+                            {user?.nivel_acesso === 'ADMINISTRADOR' && (
+                              <>
+                                <button
+                                  onClick={() => setModalMaterial(item)}
+                                  className="bg-slate-100 hover:bg-slate-200 text-[#331274] p-2 rounded-xl border border-slate-200 cursor-pointer transition-all shadow-sm"
+                                  title="Editar Material"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                {item.status !== 'EM_USO' && (
+                                  <button
+                                    onClick={() => handleExcluirMaterial(item)}
+                                    className="bg-red-50 hover:bg-red-600 text-red-600 hover:text-white p-2 rounded-xl border border-red-200 hover:border-red-600 cursor-pointer transition-colors shadow-sm"
+                                    title="Excluir Material"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </>
+                            )}
+                            {item.status !== 'EM_USO' && (
+                              <button
+                                onClick={() => handleAlternarManutencao(item)}
+                                className={`p-2 rounded-xl border cursor-pointer transition-colors shadow-sm ${
+                                  item.status === 'MANUTENCAO'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                                    : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                                }`}
+                                title={item.status === 'MANUTENCAO' ? 'Retornar da Manutenção' : 'Enviar para Manutenção'}
+                              >
+                                <ShieldAlert className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TABELA DE COLABORADORES */}
+        {activeTab === 'colaboradores' && (
+          <div className="flex-1 overflow-hidden border border-slate-200 bg-white rounded-2xl shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-800 text-xs font-extrabold uppercase tracking-wider border-b border-slate-200 font-['Outfit']">
+                    <th className="py-3.5 px-4">MATRÍCULA</th>
+                    <th className="py-3.5 px-4">NOME DO COLABORADOR</th>
+                    <th className="py-3.5 px-4">SETOR</th>
+                    <th className="py-3.5 px-4">CARGO</th>
+                    <th className="py-3.5 px-4">CARTÃO NFC</th>
+                    <th className="py-3.5 px-4">STATUS</th>
+                    <th className="py-3.5 px-4 text-center">AÇÕES</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 text-xs sm:text-sm">
+                  {colaboradores.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-12 text-slate-500 font-bold uppercase">
+                        Nenhum colaborador encontrado.
+                      </td>
+                    </tr>
+                  ) : (
+                    colaboradores.map((item) => (
+                      <tr key={item.id} className={`transition-colors ${item.status === 'INATIVO' ? 'opacity-60 bg-slate-50' : 'hover:bg-slate-50'}`}>
+                        <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.matricula}</td>
+                        <td className="font-bold text-slate-900 py-3.5 px-4">{item.nome}</td>
+                        <td className="text-slate-600 font-medium py-3.5 px-4">{item.setor || '-'}</td>
+                        <td className="text-slate-600 font-medium py-3.5 px-4">{item.cargo || '-'}</td>
+                        <td className="font-mono text-slate-800 font-bold py-3.5 px-4">
+                          {item.nfc_id ? (
+                            <div className="flex items-center gap-1.5">
+                              <Wifi className="w-3.5 h-3.5 text-[#331274]" />
+                              <span>{item.nfc_id}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 font-normal">NENHUM</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <StatusBadge status={item.status} size="sm" />
+                        </td>
+                        <td className="text-center py-3.5 px-4">
+                          <div className="flex justify-center gap-2">
                             <button
-                              onClick={() => setModalMaterial(item)}
-                              className="bg-slate-100 hover:bg-slate-200 text-blue-700 p-1.5 rounded border border-slate-300 cursor-pointer shadow-sm"
-                              title="Editar Material"
+                              onClick={() => setModalNfcColaboradorId(item.id)}
+                              className="bg-amber-50 hover:bg-amber-100 text-amber-900 px-3 py-1.5 text-xs font-bold rounded-xl border border-amber-300 cursor-pointer flex items-center gap-1.5 shadow-sm transition-all"
+                              title="Gravar / Alterar NFC"
+                            >
+                              <Wifi className="w-3.5 h-3.5" />
+                              <span>GRAVAR NFC</span>
+                            </button>
+                            <button
+                              onClick={() => setModalColaborador(item)}
+                              className="bg-slate-100 hover:bg-slate-200 text-[#331274] p-2 rounded-xl border border-slate-200 cursor-pointer transition-all shadow-sm"
+                              title="Editar Colaborador"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
-                            {item.status !== 'EM_USO' && (
-                              <button
-                                onClick={() => handleExcluirMaterial(item)}
-                                className="bg-red-50 hover:bg-red-100 text-red-700 p-1.5 rounded border border-red-300 cursor-pointer shadow-sm"
-                                title="Excluir Material"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
-                          </>
-                        )}
-                        {item.status !== 'EM_USO' && (
-                          <button
-                            onClick={() => handleAlternarManutencao(item)}
-                            className={`p-1.5 rounded border cursor-pointer shadow-sm ${
-                              item.status === 'MANUTENCAO'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
-                                : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
-                            }`}
-                            title={item.status === 'MANUTENCAO' ? 'Retornar da Manutenção' : 'Enviar para Manutenção'}
-                          >
-                            <ShieldAlert className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* TABELA DE COLABORADORES */}
-      {activeTab === 'colaboradores' && (
-        <div className="flex-1 overflow-auto border border-slate-300 bg-white rounded-sm shadow-sm">
-          <table className="table-industrial">
-            <thead>
-              <tr>
-                <th>MATRÍCULA</th>
-                <th>NOME DO COLABORADOR</th>
-                <th>SETOR</th>
-                <th>CARGO</th>
-                <th>CARTÃO NFC</th>
-                <th>STATUS</th>
-                <th className="text-center">AÇÕES</th>
-              </tr>
-            </thead>
-            <tbody>
-              {colaboradores.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-400 font-bold uppercase">
-                    Nenhum colaborador encontrado.
-                  </td>
-                </tr>
-              ) : (
-                colaboradores.map((item) => (
-                  <tr key={item.id} className={item.status === 'INATIVO' ? 'opacity-60 bg-slate-100' : ''}>
-                    <td className="font-mono font-bold text-blue-700">{item.matricula}</td>
-                    <td className="font-bold text-slate-900">{item.nome}</td>
-                    <td className="text-slate-600">{item.setor || '-'}</td>
-                    <td className="text-slate-600">{item.cargo || '-'}</td>
-                    <td className="font-mono text-amber-700">
-                      {item.nfc_id ? (
-                        <div className="flex items-center gap-1">
-                          <Wifi className="w-3.5 h-3.5 text-amber-600" />
-                          <span>{item.nfc_id}</span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400">NENHUM</span>
-                      )}
-                    </td>
-                    <td>
-                      <StatusBadge status={item.status} size="sm" />
-                    </td>
-                    <td className="text-center">
-                      <div className="flex justify-center gap-1">
-                        <button
-                          onClick={() => setModalNfcColaboradorId(item.id)}
-                          className="bg-amber-50 hover:bg-amber-100 text-amber-800 px-2 py-1 text-xs font-bold rounded border border-amber-300 cursor-pointer flex items-center gap-1 shadow-sm"
-                          title="Gravar / Alterar NFC"
-                        >
-                          <Wifi className="w-3.5 h-3.5" />
-                          <span>GRAVAR NFC</span>
-                        </button>
-                        <button
-                          onClick={() => setModalColaborador(item)}
-                          className="bg-slate-100 hover:bg-slate-200 text-blue-700 p-1.5 rounded border border-slate-300 cursor-pointer shadow-sm"
-                          title="Editar Colaborador"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatusColaborador(item)}
-                          className={`px-2 py-1 text-xs font-bold rounded border cursor-pointer shadow-sm ${
-                            item.status === 'ATIVO'
-                              ? 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100'
-                              : 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
-                          }`}
-                        >
-                          {item.status === 'ATIVO' ? 'INATIVAR' : 'ATIVAR'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* MODAL CRIAR/EDITAR MATERIAL */}
-      {modalMaterial && (
-        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white border-2 border-blue-500 w-full max-w-lg p-6 rounded shadow-2xl">
-            <h3 className="text-xl font-extrabold text-blue-700 uppercase tracking-wider mb-4 font-mono">
-              {modalMaterial.id ? 'EDITAR MATERIAL' : 'CADASTRAR NOVO MATERIAL'}
-            </h3>
-            <form onSubmit={handleSalvarMaterial} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">NOME DO MATERIAL:</label>
-                <input
-                  type="text"
-                  value={modalMaterial.nome || ''}
-                  onChange={(e) => setModalMaterial({ ...modalMaterial, nome: e.target.value })}
-                  placeholder="Ex: Lanterna de Capacete LED"
-                  required
-                  className="input-industrial text-sm py-2"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">CÓDIGO INTERNO:</label>
-                  <input
-                    type="text"
-                    value={modalMaterial.codigo_interno || ''}
-                    onChange={(e) =>
-                      setModalMaterial({
-                        ...modalMaterial,
-                        codigo_interno: e.target.value,
-                        codigo_barras: modalMaterial.codigo_barras || e.target.value
-                      })
-                    }
-                    placeholder="Ex: LAT-001"
-                    disabled={!!modalMaterial.id}
-                    required
-                    className="input-industrial text-sm py-2 text-amber-700"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">CÓDIGO DE BARRAS:</label>
-                  <input
-                    type="text"
-                    value={modalMaterial.codigo_barras || ''}
-                    onChange={(e) => setModalMaterial({ ...modalMaterial, codigo_barras: e.target.value })}
-                    placeholder="Ex: LAT-001"
-                    disabled={!!modalMaterial.id}
-                    className="input-industrial text-sm py-2 text-amber-700"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">CATEGORIA:</label>
-                <select
-                  value={modalMaterial.categoria_id || ''}
-                  onChange={(e) => setModalMaterial({ ...modalMaterial, categoria_id: parseInt(e.target.value) })}
-                  className="input-industrial text-sm py-2"
-                >
-                  <option value="">Selecione...</option>
-                  {categorias.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">OBSERVAÇÃO:</label>
-                <textarea
-                  value={modalMaterial.observacao || ''}
-                  onChange={(e) => setModalMaterial({ ...modalMaterial, observacao: e.target.value })}
-                  placeholder="Observações técnicas..."
-                  rows={2}
-                  className="input-industrial text-sm py-2 font-sans font-normal"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-3">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 uppercase rounded border border-blue-500 cursor-pointer shadow-md"
-                >
-                  SALVAR
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModalMaterial(null)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3 uppercase rounded border border-slate-300 cursor-pointer shadow-sm"
-                >
-                  CANCELAR
-                </button>
-              </div>
-            </form>
+                            <button
+                              onClick={() => handleToggleStatusColaborador(item)}
+                              className={`px-3 py-1.5 text-xs font-extrabold rounded-xl border cursor-pointer shadow-sm transition-all ${
+                                item.status === 'ATIVO'
+                                  ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                              }`}
+                            >
+                              {item.status === 'ATIVO' ? 'INATIVAR' : 'ATIVAR'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* MODAL CRIAR/EDITAR COLABORADOR */}
-      {modalColaborador && (
-        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white border-2 border-blue-500 w-full max-w-lg p-6 rounded shadow-2xl">
-            <h3 className="text-xl font-extrabold text-blue-700 uppercase tracking-wider mb-4 font-mono">
-              {modalColaborador.id ? 'EDITAR COLABORADOR' : 'CADASTRAR NOVO COLABORADOR'}
-            </h3>
-            <form onSubmit={handleSalvarColaborador} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">NOME COMPLETO:</label>
-                <input
-                  type="text"
-                  value={modalColaborador.nome || ''}
-                  onChange={(e) => setModalColaborador({ ...modalColaborador, nome: e.target.value })}
-                  placeholder="Ex: ENZO DE OLIVEIRA FIRMO"
-                  required
-                  className="input-industrial text-sm py-2"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">MATRÍCULA:</label>
-                <input
-                  type="text"
-                  value={modalColaborador.matricula || ''}
-                  onChange={(e) => setModalColaborador({ ...modalColaborador, matricula: e.target.value })}
-                  placeholder="Ex: 99300922"
-                  disabled={!!modalColaborador.id}
-                  required
-                  className="input-industrial text-sm py-2 text-blue-700"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
+        {/* MODAL CRIAR/EDITAR MATERIAL */}
+        {modalMaterial && (
+          <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
+            <div className="bg-white border border-slate-200 w-full max-w-lg p-6 sm:p-8 rounded-2xl shadow-2xl">
+              <h3 className="text-xl font-extrabold text-[#331274] uppercase tracking-tight mb-5 font-['Outfit']">
+                {modalMaterial.id ? 'EDITAR MATERIAL' : 'CADASTRAR NOVO MATERIAL'}
+              </h3>
+              <form onSubmit={handleSalvarMaterial} className="space-y-4 font-sans">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">SETOR:</label>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">NOME DO MATERIAL:</label>
                   <input
                     type="text"
-                    value={modalColaborador.setor || ''}
-                    onChange={(e) => setModalColaborador({ ...modalColaborador, setor: e.target.value })}
-                    placeholder="Ex: OPERAÇÃO"
-                    className="input-industrial text-sm py-2"
+                    value={modalMaterial.nome || ''}
+                    onChange={(e) => setModalMaterial({ ...modalMaterial, nome: e.target.value })}
+                    placeholder="Ex: Lanterna de Capacete LED"
+                    required
+                    className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CÓDIGO INTERNO:</label>
+                    <input
+                      type="text"
+                      value={modalMaterial.codigo_interno || ''}
+                      onChange={(e) =>
+                        setModalMaterial({
+                          ...modalMaterial,
+                          codigo_interno: e.target.value,
+                          codigo_barras: modalMaterial.codigo_barras || e.target.value
+                        })
+                      }
+                      placeholder="Ex: LAT-001"
+                      disabled={!!modalMaterial.id}
+                      required
+                      className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-bold font-mono text-[#331274] placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all disabled:opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CÓDIGO DE BARRAS:</label>
+                    <input
+                      type="text"
+                      value={modalMaterial.codigo_barras || ''}
+                      onChange={(e) => setModalMaterial({ ...modalMaterial, codigo_barras: e.target.value })}
+                      placeholder="Ex: LAT-001"
+                      disabled={!!modalMaterial.id}
+                      className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-bold font-mono text-[#331274] placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">CARGO:</label>
-                  <input
-                    type="text"
-                    value={modalColaborador.cargo || ''}
-                    onChange={(e) => setModalColaborador({ ...modalColaborador, cargo: e.target.value })}
-                    placeholder="Ex: Operador de LHD"
-                    className="input-industrial text-sm py-2"
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CATEGORIA:</label>
+                  <select
+                    value={modalMaterial.categoria_id || ''}
+                    onChange={(e) => setModalMaterial({ ...modalMaterial, categoria_id: parseInt(e.target.value) })}
+                    className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
+                  >
+                    <option value="">Selecione a categoria...</option>
+                    {categorias.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">OBSERVAÇÃO:</label>
+                  <textarea
+                    value={modalMaterial.observacao || ''}
+                    onChange={(e) => setModalMaterial({ ...modalMaterial, observacao: e.target.value })}
+                    placeholder="Observações técnicas..."
+                    rows={2}
+                    className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">CÓDIGO CARTÃO NFC:</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={modalColaborador.nfc_id || ''}
-                    onChange={(e) => setModalColaborador({ ...modalColaborador, nfc_id: e.target.value })}
-                    placeholder="Sem cartão vinculado"
-                    className="input-industrial text-sm py-2 font-mono text-amber-700 flex-1"
-                  />
+                <div className="flex gap-3 pt-3">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-[#331274] hover:bg-[#43208C] text-white font-extrabold py-3.5 uppercase rounded-xl cursor-pointer shadow-md transition-all text-xs tracking-wider"
+                  >
+                    SALVAR
+                  </button>
                   <button
                     type="button"
-                    onClick={() => setModalNfcColaboradorId(modalColaborador.id || 999)}
-                    className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 text-xs uppercase rounded cursor-pointer flex items-center gap-1 shrink-0 shadow-sm"
+                    onClick={() => setModalMaterial(null)}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3.5 uppercase rounded-xl border border-slate-300 cursor-pointer shadow-sm transition-all text-xs"
                   >
-                    <Wifi className="w-4 h-4" />
-                    <span>LER CARTÃO</span>
+                    CANCELAR
                   </button>
                 </div>
-              </div>
-
-              <div className="flex gap-2 pt-3">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 uppercase rounded border border-blue-500 cursor-pointer shadow-md"
-                >
-                  SALVAR
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModalColaborador(null)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3 uppercase rounded border border-slate-300 cursor-pointer shadow-sm"
-                >
-                  CANCELAR
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
+        )}
+
+        {/* MODAL CRIAR/EDITAR COLABORADOR */}
+        {modalColaborador && (
+          <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
+            <div className="bg-white border border-slate-200 w-full max-w-lg p-6 sm:p-8 rounded-2xl shadow-2xl">
+              <h3 className="text-xl font-extrabold text-[#331274] uppercase tracking-tight mb-5 font-['Outfit']">
+                {modalColaborador.id ? 'EDITAR COLABORADOR' : 'CADASTRAR NOVO COLABORADOR'}
+              </h3>
+              <form onSubmit={handleSalvarColaborador} className="space-y-4 font-sans">
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">NOME COMPLETO:</label>
+                  <input
+                    type="text"
+                    value={modalColaborador.nome || ''}
+                    onChange={(e) => setModalColaborador({ ...modalColaborador, nome: e.target.value })}
+                    placeholder="Ex: ENZO DE OLIVEIRA FIRMO"
+                    required
+                    className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">MATRÍCULA:</label>
+                  <input
+                    type="text"
+                    value={modalColaborador.matricula || ''}
+                    onChange={(e) => setModalColaborador({ ...modalColaborador, matricula: e.target.value })}
+                    placeholder="Ex: 99300922"
+                    disabled={!!modalColaborador.id}
+                    required
+                    className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-bold text-[#331274] placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">SETOR:</label>
+                    <input
+                      type="text"
+                      value={modalColaborador.setor || ''}
+                      onChange={(e) => setModalColaborador({ ...modalColaborador, setor: e.target.value })}
+                      placeholder="Ex: OPERAÇÃO"
+                      className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CARGO:</label>
+                    <input
+                      type="text"
+                      value={modalColaborador.cargo || ''}
+                      onChange={(e) => setModalColaborador({ ...modalColaborador, cargo: e.target.value })}
+                      placeholder="Ex: Operador de LHD"
+                      className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CÓDIGO CARTÃO NFC:</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={modalColaborador.nfc_id || ''}
+                      onChange={(e) => setModalColaborador({ ...modalColaborador, nfc_id: e.target.value })}
+                      placeholder="Sem cartão vinculado"
+                      className="flex-1 py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-mono font-bold text-[#331274] placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setModalNfcColaboradorId(modalColaborador.id || 999)}
+                      className="bg-[#331274] hover:bg-[#43208C] text-white font-extrabold px-4 py-3 text-xs uppercase rounded-xl cursor-pointer flex items-center gap-1.5 shrink-0 shadow-sm transition-all"
+                    >
+                      <Wifi className="w-4 h-4 text-amber-400" />
+                      <span>LER CARTÃO</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-3">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-[#331274] hover:bg-[#43208C] text-white font-extrabold py-3.5 uppercase rounded-xl cursor-pointer shadow-md transition-all text-xs tracking-wider"
+                  >
+                    SALVAR
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalColaborador(null)}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3.5 uppercase rounded-xl border border-slate-300 cursor-pointer shadow-sm transition-all text-xs"
+                  >
+                    CANCELAR
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* RODAPÉ INSTITUCIONAL */}
+        <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2 font-sans shrink-0">
+          <p>© {new Date().getFullYear()} Casa da Lanterna | Controle de Materiais de Mineração</p>
+          <p><span className="opacity-40 mx-1.5">|</span> <span className="font-semibold text-slate-700">Dev by WP & EF</span></p>
         </div>
-      )}
+
+      </div>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Boxes, User, Clock, Search, ShieldAlert, CheckCircle, RefreshCw, FileText, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Boxes, User, Clock, Search, ShieldAlert, CheckCircle, RefreshCw, FileText, AlertTriangle, PackageCheck, Wrench } from 'lucide-react';
 import { api } from '../services/api';
 import { Material, EmprestimoAtivo, Categoria } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
@@ -69,265 +69,285 @@ export const Estoque: React.FC = () => {
     .filter(item => calcularHorasEmUso(item.data_hora_saida).excedeu);
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-100 p-4 overflow-hidden select-none">
-      {/* Topo / Voltar */}
-      <div className="flex items-center justify-between bg-white p-3 rounded border border-slate-300 mb-4 shrink-0 shadow-sm">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/')}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2 rounded border border-slate-300 font-bold flex items-center gap-2 cursor-pointer shadow-sm"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>VOLTAR</span>
-          </button>
-          <h2 className="text-xl font-extrabold text-amber-700 uppercase tracking-wider font-mono">
-            CONTROLE DE ESTOQUE E LOCALIZAÇÃO
-          </h2>
-        </div>
-
-        {/* Sub-Abas do Estoque */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setTab('todos')}
-            className={`px-4 py-2 rounded font-extrabold text-xs uppercase cursor-pointer border ${
-              tab === 'todos'
-                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm'
-                : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
-            }`}
-          >
-            TODOS OS MATERIAIS ({resumo.total})
-          </button>
-          <button
-            onClick={() => setTab('em_uso')}
-            className={`px-4 py-2 rounded font-extrabold text-xs uppercase cursor-pointer border ${
-              tab === 'em_uso'
-                ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
-                : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
-            }`}
-          >
-            MATERIAIS EM USO ({resumo.emUso})
-          </button>
-          <button
-            onClick={() => setTab('manutencao')}
-            className={`px-4 py-2 rounded font-extrabold text-xs uppercase cursor-pointer border ${
-              tab === 'manutencao'
-                ? 'bg-amber-600 text-white border-amber-500 shadow-sm'
-                : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
-            }`}
-          >
-            EM MANUTENÇÃO ({resumo.manutencao})
-          </button>
-        </div>
-      </div>
-
-      {/* Alerta de Turno Excedido (>8 horas) */}
-      {emprestimosExcedidos.length > 0 && (
-        <div className="mb-4 bg-red-50 border-2 border-red-500 text-red-900 p-3 rounded font-bold text-sm flex items-center justify-between shrink-0 shadow-md">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-6 h-6 text-red-600 shrink-0" />
-            <div>
-              <div className="font-extrabold uppercase text-red-950 flex items-center gap-2">
-                <span>⚠️ ATENÇÃO: TURNO EXCEDIDO ({emprestimosExcedidos.length} EQUIPAMENTO{emprestimosExcedidos.length > 1 ? 'S' : ''})</span>
-              </div>
-              <div className="text-xs text-red-800 font-normal">
-                Materiais em posse de colaboradores ultrapassaram o tempo limite do turno (8 horas).
+    <div className="flex-1 flex flex-col bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans select-none overflow-y-auto min-h-screen">
+      <div className="max-w-[1380px] w-full mx-auto flex flex-col gap-6 flex-1">
+        
+        {/* 1. ALERTA DE TURNO EXCEDIDO */}
+        {emprestimosExcedidos.length > 0 && (
+          <div className="bg-red-50 border border-red-300 text-red-950 p-4 rounded-2xl font-bold text-xs flex items-center justify-between shadow-sm shrink-0">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-6 h-6 text-red-600 shrink-0 animate-pulse" />
+              <div>
+                <div className="font-extrabold uppercase text-red-950 font-['Outfit']">
+                  ⚠️ ATENÇÃO: TURNO EXCEDIDO ({emprestimosExcedidos.length} EQUIPAMENTO{emprestimosExcedidos.length > 1 ? 'S' : ''})
+                </div>
+                <div className="text-xs text-red-800 font-semibold mt-0.5">
+                  Materiais em posse de colaboradores ultrapassaram o tempo limite do turno (8 horas).
+                </div>
               </div>
             </div>
+            {tab !== 'em_uso' && (
+              <button
+                onClick={() => setTab('em_uso')}
+                className="bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-4 py-2 rounded-xl uppercase shadow-sm transition-all cursor-pointer"
+              >
+                VER MATERIAIS EXCEDIDOS
+              </button>
+            )}
           </div>
-          {tab !== 'em_uso' && (
-            <button
-              onClick={() => setTab('em_uso')}
-              className="bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-3 py-1.5 rounded uppercase border border-red-500 cursor-pointer shadow-sm"
-            >
-              VER MATERIAIS EXCEDIDOS
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Barra de Resumo de Contadores */}
-      <div className="grid grid-cols-4 gap-3 mb-4 shrink-0">
-        <div className="bg-white p-3 rounded border border-slate-300 flex items-center justify-between shadow-sm">
-          <span className="text-xs font-bold text-slate-600 uppercase">TOTAL MATERIAIS:</span>
-          <span className="text-xl font-black font-mono text-slate-900">{resumo.total}</span>
-        </div>
-        <div className="bg-white p-3 rounded border border-slate-300 flex items-center justify-between shadow-sm">
-          <span className="text-xs font-bold text-slate-600 uppercase">DISPONÍVEIS / GUARDADOS:</span>
-          <span className="text-xl font-black font-mono text-slate-800">{resumo.disponiveis}</span>
-        </div>
-        <div className="bg-white p-3 rounded border border-slate-300 flex items-center justify-between shadow-sm">
-          <span className="text-xs font-bold text-slate-600 uppercase">EM USO NA MINA:</span>
-          <span className="text-xl font-black font-mono text-emerald-700">{resumo.emUso}</span>
-        </div>
-        <div className="bg-white p-3 rounded border border-slate-300 flex items-center justify-between shadow-sm">
-          <span className="text-xs font-bold text-slate-600 uppercase">EM MANUTENÇÃO:</span>
-          <span className="text-xl font-black font-mono text-amber-700">{resumo.manutencao}</span>
-        </div>
-      </div>
-
-      {/* Filtros e Busca */}
-      <div className="flex items-center gap-3 mb-4 shrink-0 bg-white p-3 rounded border border-slate-300 shadow-sm">
-        <div className="relative flex-1 max-w-md">
-          <input
-            type="text"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Pesquisar por código, material ou colaborador..."
-            className="input-industrial text-sm py-2 pl-10"
-          />
-          <Search className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" />
-        </div>
-
-        {tab !== 'em_uso' && (
-          <select
-            value={categoriaFiltro}
-            onChange={(e) => setCategoriaFiltro(e.target.value)}
-            className="input-industrial text-sm py-2 max-w-xs"
-          >
-            <option value="">Todas as Categorias</option>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
-            ))}
-          </select>
         )}
 
-        <button
-          onClick={carregarEstoque}
-          className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2 rounded border border-slate-300 font-bold text-xs uppercase flex items-center gap-2 cursor-pointer shadow-sm"
-        >
-          <RefreshCw className="w-4 h-4 text-amber-600" />
-          <span>ATUALIZAR</span>
-        </button>
-      </div>
+        {/* 2. CARDS DE KPIS DA OPERAÇÃO (ROUNDED-2XL) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-all">
+            <div>
+              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider font-['Outfit']">TOTAL MATERIAIS</span>
+              <div className="text-3xl font-extrabold font-['Outfit'] text-[#331274] mt-1">{resumo.total}</div>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-[#331274]/10 text-[#331274] flex items-center justify-center font-bold">
+              <Boxes className="w-5 h-5" />
+            </div>
+          </div>
 
-      {/* VISUALIZAÇÃO: MATERIAIS EM USO ("QUEM ESTÁ COM QUAL MATERIAL?") */}
-      {tab === 'em_uso' ? (
-        <div className="flex-1 overflow-auto border border-slate-300 bg-white rounded-sm shadow-sm">
-          <table className="table-industrial">
-            <thead>
-              <tr>
-                <th>CÓDIGO ITEM</th>
-                <th>EQUIPAMENTO / MATERIAL</th>
-                <th>COLABORADOR RESPONSÁVEL</th>
-                <th>MATRÍCULA</th>
-                <th>SETOR / CARGO</th>
-                <th>DATA DA SAÍDA</th>
-                <th>TEMPO EM POSSE / TURNO</th>
-                <th>OPERADOR RESPONSÁVEL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {emprestimosAtivos.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-400 font-bold uppercase">
-                    Nenhum material está atualmente em uso na mina.
-                  </td>
-                </tr>
-              ) : (
-                emprestimosAtivos.map((emp) => {
-                  const uso = calcularHorasEmUso(emp.data_hora_saida);
-                  return (
-                    <tr key={emp.emprestimo_id} className={uso.excedeu ? 'bg-red-50/80 border-l-4 border-l-red-600' : ''}>
-                      <td className="font-mono font-bold text-emerald-700">{emp.codigo_interno}</td>
-                      <td className="font-bold text-slate-900">{emp.material_nome}</td>
-                      <td className="font-extrabold text-amber-800 uppercase">{emp.colaborador_nome}</td>
-                      <td className="font-mono text-blue-700 font-bold">{emp.colaborador_matricula}</td>
-                      <td className="text-slate-600 text-xs">
-                        {emp.setor || '-'} / {emp.cargo || '-'}
-                      </td>
-                      <td className="font-mono text-slate-600 text-xs">{emp.data_hora_saida}</td>
-                      <td>
-                        {uso.excedeu ? (
-                          <span className="bg-red-100 text-red-800 border border-red-400 px-2 py-1 rounded text-xs font-extrabold font-mono uppercase inline-flex items-center gap-1 shadow-sm">
-                            <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                            TURNO EXCEDIDO (+{uso.horas}h)
-                          </span>
-                        ) : (
-                          <span className="font-mono text-slate-600 text-xs">
-                            {uso.horas}h {uso.diffMinutos % 60}m (OK)
-                          </span>
-                        )}
-                      </td>
-                      <td className="text-slate-500 text-xs font-mono">{emp.operador_saida_nome || 'OPERADOR'}</td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-all">
+            <div>
+              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider font-['Outfit']">DISPONÍVEIS / GUARDADOS</span>
+              <div className="text-3xl font-extrabold font-['Outfit'] text-emerald-700 mt-1">{resumo.disponiveis}</div>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+              <PackageCheck className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-all">
+            <div>
+              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider font-['Outfit']">EM USO NA MINA</span>
+              <div className="text-3xl font-extrabold font-['Outfit'] text-[#331274] mt-1">{resumo.emUso}</div>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-[#331274]/10 text-[#331274] flex items-center justify-center font-bold">
+              <User className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-all">
+            <div>
+              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider font-['Outfit']">EM MANUTENÇÃO</span>
+              <div className="text-3xl font-extrabold font-['Outfit'] text-amber-700 mt-1">{resumo.manutencao}</div>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+              <Wrench className="w-5 h-5" />
+            </div>
+          </div>
         </div>
-      ) : (
-        /* VISUALIZAÇÃO: TODOS OU MANUTENÇÃO */
-        <div className="flex-1 overflow-auto border border-slate-300 bg-white rounded-sm shadow-sm">
-          <table className="table-industrial">
-            <thead>
-              <tr>
-                <th>CÓDIGO INTERNO</th>
-                <th>CÓDIGO BARRAS</th>
-                <th>MATERIAL</th>
-                <th>CATEGORIA</th>
-                <th>STATUS ATUAL</th>
-                <th>RESPONSÁVEL / POSSE</th>
-                <th>SAÍDA REGISTRADA / TEMPO</th>
-              </tr>
-            </thead>
-            <tbody>
-              {materiais.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-400 font-bold uppercase">
-                    Nenhum material encontrado no estoque.
-                  </td>
-                </tr>
-              ) : (
-                materiais.map((item) => {
-                  const uso = item.status === 'EM_USO' ? calcularHorasEmUso(item.data_hora_saida) : null;
-                  return (
-                    <tr key={item.id} className={uso?.excedeu ? 'bg-red-50/80 border-l-4 border-l-red-600' : ''}>
-                      <td className="font-mono font-bold text-amber-700">{item.codigo_interno}</td>
-                      <td className="font-mono text-slate-600">{item.codigo_barras}</td>
-                      <td className="font-bold text-slate-900">{item.nome}</td>
-                      <td className="text-slate-600">{item.categoria_nome || 'Geral'}</td>
-                      <td>
-                        <StatusBadge status={item.status} size="sm" />
-                      </td>
-                      <td>
-                        {item.colaborador_nome ? (
-                          <div className="font-bold text-emerald-700 uppercase">
-                            {item.colaborador_nome}
-                            <div className="text-[10px] font-mono text-slate-500 font-normal">
-                              MAT: {item.colaborador_matricula}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 font-mono text-xs">- DISPONÍVEL -</span>
-                        )}
-                      </td>
-                      <td>
-                        {uso?.excedeu ? (
-                          <div className="space-y-0.5">
-                            <div className="font-mono text-xs text-slate-600">{item.data_hora_saida}</div>
-                            <span className="bg-red-100 text-red-800 border border-red-400 px-2 py-0.5 rounded text-[10px] font-extrabold font-mono uppercase inline-flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3 text-red-600 shrink-0" />
-                              TURNO EXCEDIDO (+{uso.horas}h)
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="font-mono text-xs text-slate-600">
-                            {item.data_hora_saida || '-'}
-                          </span>
-                        )}
+
+        {/* 3. BARRA DE FILTROS, ABAS E PESQUISA */}
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm shrink-0">
+          
+          {/* SUB-ABAS DO ESTOQUE */}
+          <div className="bg-slate-100 p-1.5 rounded-xl border border-slate-200 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setTab('todos')}
+              className={`px-4 py-2 rounded-lg font-extrabold text-xs uppercase transition-all cursor-pointer ${
+                tab === 'todos'
+                  ? 'bg-[#331274] text-white shadow-sm'
+                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              TODOS OS MATERIAIS ({resumo.total})
+            </button>
+            <button
+              onClick={() => setTab('em_uso')}
+              className={`px-4 py-2 rounded-lg font-extrabold text-xs uppercase transition-all cursor-pointer ${
+                tab === 'em_uso'
+                  ? 'bg-[#331274] text-white shadow-sm'
+                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              MATERIAIS EM USO ({resumo.emUso})
+            </button>
+            <button
+              onClick={() => setTab('manutencao')}
+              className={`px-4 py-2 rounded-lg font-extrabold text-xs uppercase transition-all cursor-pointer ${
+                tab === 'manutencao'
+                  ? 'bg-[#331274] text-white shadow-sm'
+                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              EM MANUTENÇÃO ({resumo.manutencao})
+            </button>
+          </div>
+
+          <div className="relative flex-1 max-w-md">
+            <input
+              type="text"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Pesquisar por código, material ou colaborador..."
+              className="w-full py-2.5 pl-10 pr-4 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all shadow-sm"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          </div>
+
+          {tab !== 'em_uso' && (
+            <select
+              value={categoriaFiltro}
+              onChange={(e) => setCategoriaFiltro(e.target.value)}
+              className="py-2.5 px-4 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all max-w-xs shadow-sm"
+            >
+              <option value="">Todas as Categorias</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <button
+            onClick={carregarEstoque}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#331274] hover:bg-[#43208C] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>ATUALIZAR DADOS</span>
+          </button>
+        </div>
+
+        {/* 4. TABELA MATERIAIS EM USO */}
+        {tab === 'em_uso' ? (
+          <div className="flex-1 overflow-hidden border border-slate-200 bg-white rounded-2xl shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-800 text-xs font-extrabold uppercase tracking-wider border-b border-slate-200 font-['Outfit']">
+                    <th className="py-3.5 px-4">CÓDIGO ITEM</th>
+                    <th className="py-3.5 px-4">EQUIPAMENTO / MATERIAL</th>
+                    <th className="py-3.5 px-4">COLABORADOR RESPONSÁVEL</th>
+                    <th className="py-3.5 px-4">MATRÍCULA</th>
+                    <th className="py-3.5 px-4">SETOR / CARGO</th>
+                    <th className="py-3.5 px-4">DATA DA SAÍDA</th>
+                    <th className="py-3.5 px-4">TEMPO EM POSSE</th>
+                    <th className="py-3.5 px-4">OPERADOR SAÍDA</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 text-xs sm:text-sm">
+                  {emprestimosAtivos.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-12 text-slate-500 font-bold uppercase">
+                        Nenhum material está atualmente em uso na mina.
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  ) : (
+                    emprestimosAtivos.map((emp) => {
+                      const uso = calcularHorasEmUso(emp.data_hora_saida);
+                      return (
+                        <tr key={emp.emprestimo_id} className={`transition-colors ${uso.excedeu ? 'bg-red-50/80 border-l-4 border-l-red-600 font-bold' : 'hover:bg-slate-50'}`}>
+                          <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{emp.codigo_interno}</td>
+                          <td className="font-bold text-slate-900 py-3.5 px-4">{emp.material_nome}</td>
+                          <td className="font-extrabold text-slate-900 uppercase py-3.5 px-4">{emp.colaborador_nome}</td>
+                          <td className="font-mono text-[#331274] font-bold py-3.5 px-4">{emp.colaborador_matricula}</td>
+                          <td className="text-slate-600 text-xs font-medium py-3.5 px-4">
+                            {emp.setor || '-'} / {emp.cargo || '-'}
+                          </td>
+                          <td className="font-mono text-slate-700 text-xs font-semibold py-3.5 px-4">{emp.data_hora_saida}</td>
+                          <td className="py-3.5 px-4">
+                            {uso.excedeu ? (
+                              <span className="bg-red-600 text-white px-2.5 py-1 rounded-md text-xs font-black uppercase inline-flex items-center gap-1 shadow-sm">
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                TURNO EXCEDIDO (+{uso.horas}h)
+                              </span>
+                            ) : (
+                              <span className="font-mono text-slate-800 font-bold text-xs">
+                                {uso.horas}h {uso.diffMinutos % 60}m (OK)
+                              </span>
+                            )}
+                          </td>
+                          <td className="text-slate-600 text-xs font-semibold py-3.5 px-4">{emp.operador_saida_nome || 'OPERADOR'}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          /* TABELA TODOS OU MANUTENÇÃO */
+          <div className="flex-1 overflow-hidden border border-slate-200 bg-white rounded-2xl shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-800 text-xs font-extrabold uppercase tracking-wider border-b border-slate-200 font-['Outfit']">
+                    <th className="py-3.5 px-4">CÓDIGO INTERNO</th>
+                    <th className="py-3.5 px-4">CÓDIGO BARRAS</th>
+                    <th className="py-3.5 px-4">MATERIAL</th>
+                    <th className="py-3.5 px-4">CATEGORIA</th>
+                    <th className="py-3.5 px-4">STATUS ATUAL</th>
+                    <th className="py-3.5 px-4">RESPONSÁVEL / POSSE</th>
+                    <th className="py-3.5 px-4">SAÍDA REGISTRADA</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 text-xs sm:text-sm">
+                  {materiais.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-12 text-slate-500 font-bold uppercase">
+                        Nenhum material encontrado no estoque.
+                      </td>
+                    </tr>
+                  ) : (
+                    materiais.map((item) => {
+                      const uso = item.status === 'EM_USO' ? calcularHorasEmUso(item.data_hora_saida) : null;
+                      return (
+                        <tr key={item.id} className={`transition-colors ${uso?.excedeu ? 'bg-red-50/80 border-l-4 border-l-red-600 font-bold' : 'hover:bg-slate-50'}`}>
+                          <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.codigo_interno}</td>
+                          <td className="font-mono text-slate-600 py-3.5 px-4">{item.codigo_barras}</td>
+                          <td className="font-bold text-slate-900 py-3.5 px-4">{item.nome}</td>
+                          <td className="text-slate-600 font-medium py-3.5 px-4">{item.categoria_nome || 'Geral'}</td>
+                          <td className="py-3.5 px-4">
+                            <StatusBadge status={item.status} size="sm" />
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {item.colaborador_nome ? (
+                              <div>
+                                <div className="font-bold text-[#331274] uppercase">{item.colaborador_nome}</div>
+                                <div className="text-xs font-mono text-slate-500">MAT: {item.colaborador_matricula}</div>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 font-mono text-xs font-semibold">- DISPONÍVEL -</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {uso?.excedeu ? (
+                              <div>
+                                <div className="font-mono text-xs text-slate-700">{item.data_hora_saida}</div>
+                                <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase inline-flex items-center gap-1 mt-0.5 shadow-sm">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  TURNO EXCEDIDO (+{uso.horas}h)
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="font-mono text-xs text-slate-700 font-medium">
+                                {item.data_hora_saida || '-'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* RODAPÉ INSTITUCIONAL */}
+        <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2 font-sans shrink-0">
+          <p>© {new Date().getFullYear()} Casa da Lanterna | Controle de Materiais de Mineração</p>
+          <p><span className="opacity-40 mx-1.5">|</span> <span className="font-semibold text-slate-700">Dev by WP & EF</span></p>
         </div>
-      )}
+
+      </div>
     </div>
   );
 };
-
