@@ -135,7 +135,7 @@ export const DashboardAlertas: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* CARD 1: TOTAL NA MINA */}
-        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between relative">
+        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-[#331274]/30 transition-all duration-200 cursor-pointer flex flex-col justify-between relative group">
           <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
             <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
               TOTAL NA MINA
@@ -153,7 +153,7 @@ export const DashboardAlertas: React.FC = () => {
         </div>
 
         {/* CARD 2: DENTRO DO TURNO */}
-        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between relative">
+        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-[#331274]/30 transition-all duration-200 cursor-pointer flex flex-col justify-between relative group">
           <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
             <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
               DENTRO DO TURNO
@@ -171,7 +171,7 @@ export const DashboardAlertas: React.FC = () => {
         </div>
 
         {/* CARD 3: ALERTA (>7h30) — CONTORNO LEVE SEM AMARELO FORTE */}
-        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between relative">
+        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-[#331274]/30 transition-all duration-200 cursor-pointer flex flex-col justify-between relative group">
           <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
             <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
               ALERTA (&gt;7h30)
@@ -189,7 +189,7 @@ export const DashboardAlertas: React.FC = () => {
         </div>
 
         {/* CARD 4: CRÍTICO (>8h30) — CONTORNO LEVE SEM VERMELHO FORTE */}
-        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between relative">
+        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-[#331274]/30 transition-all duration-200 cursor-pointer flex flex-col justify-between relative group">
           <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
             <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
               CRÍTICO (&gt;8h30)
