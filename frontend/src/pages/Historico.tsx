@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, History as HistoryIcon, Search, Calendar, Filter, RefreshCw } from 'lucide-react';
+import { ArrowLeft, History as HistoryIcon, Search, Filter, RefreshCw } from 'lucide-react';
 import { api } from '../services/api';
 import { Movimentacao } from '../types';
 
@@ -46,140 +46,139 @@ export const Historico: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-100 p-4 overflow-hidden select-none">
-      {/* Topo / Voltar */}
-      <div className="flex items-center justify-between bg-white p-3 rounded border border-slate-300 mb-4 shrink-0 shadow-sm">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/')}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2 rounded border border-slate-300 font-bold flex items-center gap-2 cursor-pointer shadow-sm"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>VOLTAR</span>
-          </button>
-          <h2 className="text-xl font-extrabold text-slate-900 uppercase tracking-wider font-mono flex items-center gap-2">
-            <HistoryIcon className="w-6 h-6 text-amber-600" />
-            HISTÓRICO PERMANENTE DE MOVIMENTAÇÕES
-          </h2>
+    <div className="flex-1 flex flex-col bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans select-none overflow-y-auto min-h-screen">
+      <div className="max-w-[1380px] w-full mx-auto flex flex-col gap-6 flex-1">
+        
+        {/* PAINEL DE FILTROS & CONTADOR */}
+        <div className="flex items-center justify-between gap-4 shrink-0">
+          <div className="text-xs font-bold text-slate-600 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm">
+            EXIBINDO ÚLTIMOS {movimentacoes.length} REGISTROS
+          </div>
         </div>
 
-        <div className="text-xs font-mono text-slate-500 font-semibold">
-          EXIBINDO ÚLTIMOS {movimentacoes.length} REGISTROS (ORDEM CRONOLÓGICA INVERSA)
-        </div>
-      </div>
+        {/* PAINEL DE FILTROS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm shrink-0">
+          <div className="lg:col-span-2 relative">
+            <input
+              type="text"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar por material, código, colaborador..."
+              className="w-full py-3 pl-10 pr-4 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all shadow-sm"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+          </div>
 
-      {/* Painel de Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4 shrink-0 bg-white p-3 rounded border border-slate-300 shadow-sm">
-        <div className="md:col-span-2 relative">
-          <input
-            type="text"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por material, código, colaborador ou operador..."
-            className="input-industrial text-sm py-2 pl-10"
-          />
-          <Search className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" />
+          <div>
+            <select
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+              className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all shadow-sm"
+            >
+              <option value="TODOS">Todos os Tipos</option>
+              <option value="SAIDA">Somente SAÍDAS</option>
+              <option value="ENTRADA">Somente ENTRADAS</option>
+              <option value="MANUTENCAO">Somente MANUTENÇÃO</option>
+            </select>
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={dataInicio}
+              onChange={(e) => setDataInicio(e.target.value)}
+              className="w-1/2 py-3 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#331274] transition-all shadow-sm"
+              title="Data Inicial"
+            />
+            <input
+              type="date"
+              value={dataFim}
+              onChange={(e) => setDataFim(e.target.value)}
+              className="w-1/2 py-3 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#331274] transition-all shadow-sm"
+              title="Data Final"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={carregarHistorico}
+              disabled={loading}
+              className="flex-1 bg-[#331274] hover:bg-[#43208C] text-white font-extrabold text-xs uppercase rounded-xl border border-[#331274] cursor-pointer flex items-center justify-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>{loading ? 'CARREGANDO' : 'FILTRAR'}</span>
+            </button>
+            <button
+              onClick={handleLimparFiltros}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-3 text-xs uppercase rounded-xl border border-slate-300 cursor-pointer transition-all shadow-sm"
+            >
+              LIMPAR
+            </button>
+          </div>
         </div>
 
-        <div>
-          <select
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value)}
-            className="input-industrial text-sm py-2"
-          >
-            <option value="TODOS">Todos os Tipos</option>
-            <option value="SAIDA">Somente SAÍDAS</option>
-            <option value="ENTRADA">Somente ENTRADAS</option>
-            <option value="MANUTENCAO">Somente MANUTENÇÃO</option>
-          </select>
-        </div>
-
-        <div className="flex gap-2">
-          <input
-            type="date"
-            value={dataInicio}
-            onChange={(e) => setDataInicio(e.target.value)}
-            className="input-industrial text-xs py-2 text-slate-700"
-            title="Data Inicial"
-          />
-          <input
-            type="date"
-            value={dataFim}
-            onChange={(e) => setDataFim(e.target.value)}
-            className="input-industrial text-xs py-2 text-slate-700"
-            title="Data Final"
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={carregarHistorico}
-            className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs uppercase rounded border border-amber-400 cursor-pointer flex items-center justify-center gap-1 shadow-sm"
-          >
-            <Filter className="w-4 h-4" />
-            <span>FILTRAR</span>
-          </button>
-          <button
-            onClick={handleLimparFiltros}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-3 py-2 text-xs uppercase rounded border border-slate-300 cursor-pointer shadow-sm"
-          >
-            LIMPAR
-          </button>
-        </div>
-      </div>
-
-      {/* Tabela Permanente de Movimentações */}
-      <div className="flex-1 overflow-auto border border-slate-300 bg-white rounded-sm shadow-sm">
-        <table className="table-industrial">
-          <thead>
-            <tr>
-              <th>DATA / HORA</th>
-              <th>TIPO</th>
-              <th>CÓDIGO ITEM</th>
-              <th>MATERIAL</th>
-              <th>COLABORADOR</th>
-              <th>MATRÍCULA</th>
-              <th>OPERADOR BALCÃO</th>
-              <th>OBSERVAÇÃO</th>
-            </tr>
-          </thead>
-          <tbody>
-            {movimentacoes.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="text-center py-12 text-slate-400 font-bold uppercase">
-                  Nenhuma movimentação registrada para os filtros selecionados.
-                </td>
-              </tr>
-            ) : (
-              movimentacoes.map((log) => (
-                <tr key={log.id}>
-                  <td className="font-mono text-xs text-slate-700 font-bold">{log.data_hora}</td>
-                  <td>
-                    {log.tipo === 'SAIDA' ? (
-                      <span className="bg-red-100 text-red-700 border border-red-300 px-2.5 py-0.5 text-[11px] font-extrabold rounded font-mono uppercase">
-                        SAÍDA
-                      </span>
-                    ) : log.tipo === 'ENTRADA' ? (
-                      <span className="bg-emerald-100 text-emerald-700 border border-emerald-300 px-2.5 py-0.5 text-[11px] font-extrabold rounded font-mono uppercase">
-                        ENTRADA
-                      </span>
-                    ) : (
-                      <span className="bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-0.5 text-[11px] font-extrabold rounded font-mono uppercase">
-                        MANUTENÇÃO
-                      </span>
-                    )}
-                  </td>
-                  <td className="font-mono font-bold text-amber-700">{log.material_codigo}</td>
-                  <td className="font-bold text-slate-900">{log.material_nome}</td>
-                  <td className="font-bold text-slate-900 uppercase">{log.colaborador_nome}</td>
-                  <td className="font-mono text-blue-700 text-xs font-bold">{log.colaborador_matricula}</td>
-                  <td className="text-slate-600 text-xs font-mono">{log.operador_nome}</td>
-                  <td className="text-slate-500 text-xs italic">{log.observacao || '-'}</td>
+        {/* TABELA DE MOVIMENTAÇÕES */}
+        <div className="flex-1 overflow-hidden border border-slate-200 bg-white rounded-2xl shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-100 text-slate-800 text-xs font-extrabold uppercase tracking-wider border-b border-slate-200 font-['Outfit']">
+                  <th className="py-3 px-4">DATA / HORA</th>
+                  <th className="py-3 px-4">TIPO</th>
+                  <th className="py-3 px-4">CÓDIGO ITEM</th>
+                  <th className="py-3 px-4">MATERIAL</th>
+                  <th className="py-3 px-4">COLABORADOR</th>
+                  <th className="py-3 px-4">MATRÍCULA</th>
+                  <th className="py-3 px-4">OPERADOR BALCÃO</th>
+                  <th className="py-3 px-4">OBSERVAÇÃO</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody className="divide-y divide-slate-200 text-xs sm:text-sm">
+                {movimentacoes.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="text-center py-12 text-slate-500 font-bold uppercase">
+                      Nenhuma movimentação registrada para os filtros selecionados.
+                    </td>
+                  </tr>
+                ) : (
+                  movimentacoes.map((log) => (
+                    <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="font-mono text-xs text-slate-700 font-bold py-3.5 px-4">{log.data_hora}</td>
+                      <td className="py-3.5 px-4">
+                        {log.tipo === 'SAIDA' ? (
+                          <span className="bg-red-50 text-red-700 border border-red-200 px-2.5 py-1 text-xs font-extrabold rounded-lg uppercase">
+                            SAÍDA
+                          </span>
+                        ) : log.tipo === 'ENTRADA' ? (
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 text-xs font-extrabold rounded-lg uppercase">
+                            ENTRADA
+                          </span>
+                        ) : (
+                          <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 text-xs font-extrabold rounded-lg uppercase">
+                            MANUTENÇÃO
+                          </span>
+                        )}
+                      </td>
+                      <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{log.material_codigo}</td>
+                      <td className="font-bold text-slate-900 py-3.5 px-4">{log.material_nome}</td>
+                      <td className="font-bold text-slate-900 uppercase py-3.5 px-4">{log.colaborador_nome}</td>
+                      <td className="font-mono text-[#331274] text-xs font-bold py-3.5 px-4">{log.colaborador_matricula}</td>
+                      <td className="text-slate-600 text-xs font-medium py-3.5 px-4">{log.operador_nome}</td>
+                      <td className="text-slate-500 text-xs italic py-3.5 px-4">{log.observacao || '-'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* RODAPÉ INSTITUCIONAL */}
+        <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2 font-sans shrink-0">
+          <p>© {new Date().getFullYear()} Casa da Lanterna | Controle de Materiais de Mineração</p>
+          <p><span className="opacity-40 mx-1.5">|</span> <span className="font-semibold text-slate-700">Dev by WP & EF</span></p>
+        </div>
+
       </div>
     </div>
   );
