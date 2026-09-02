@@ -73,7 +73,7 @@ export const DashboardAlertas: React.FC = () => {
         {/* Esquerda: Botão Voltar + Título */}
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-white bg-[#331274] hover:bg-[#43208C] rounded-lg shadow-sm transition-all cursor-pointer group"
             title="Voltar à página anterior"
           >
