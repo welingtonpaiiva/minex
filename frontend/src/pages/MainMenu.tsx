@@ -1,20 +1,20 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  ClipboardList,
-  Boxes,
-  FileText,
-  History,
-  Monitor,
+import { 
+  ArrowUpRight, 
+  ArrowDownLeft, 
+  ClipboardList, 
+  Boxes, 
+  Monitor, 
+  FileText, 
   ExternalLink,
   ArrowRight
 } from 'lucide-react';
 import { Usuario } from '../types';
+import { motion } from 'framer-motion';
 
 interface MainMenuProps {
-  user: Usuario | null;
+  user: Usuario;
 }
 
 export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
@@ -25,128 +25,212 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
   };
 
   return (
-    <div className="h-full flex-1 flex flex-col bg-slate-100 p-4 sm:p-6 select-none gap-4 sm:gap-6 overflow-hidden">
-      {/* 1. SEÇÃO PRINCIPAL DE OPERAÇÃO: ENTRADA E SAÍDA GRANDES (Ocupa a maior parte da altura) */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {/* BOTÃO 1: SAÍDA — GRANDE DESTAQUE */}
-        <button
-          onClick={() => navigate('/saida')}
-          className="btn-industrial bg-red-600 hover:bg-red-700 active:bg-red-800 text-white p-6 sm:p-10 flex flex-col items-center justify-center text-center rounded-xl border-4 border-red-500 group cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-200 active:scale-[0.99] h-full"
-        >
-          <div className="bg-white/20 p-5 sm:p-7 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300 shadow-inner border border-white/30">
-            <ArrowUpRight className="w-16 h-16 sm:w-24 sm:h-24 text-white stroke-[2.5]" />
-          </div>
-          <h2 className="text-3xl sm:text-5xl font-black tracking-wider font-mono uppercase text-white drop-shadow-md">
-            SAÍDA DE MATERIAL
-          </h2>
-          <p className="mt-2 text-red-100 text-sm sm:text-base font-mono font-medium opacity-90">
-            Retirada por NFC / Código de Barras / Matrícula
-          </p>
-        </button>
+    <div 
+      className="min-h-full flex-1 flex flex-col justify-between p-6 sm:p-10 lg:p-12 relative overflow-y-auto bg-cover bg-center bg-fixed font-sans select-none"
+      style={{
+        backgroundImage: `linear-gradient(135deg, rgba(25, 8, 55, 0.95) 0%, rgba(51, 18, 116, 0.85) 50%, rgba(0, 0, 0, 0.75) 100%), url('/20250218LD0126.jpg')`
+      }}
+    >
+      {/* Overlay sutil */}
+      <div className="absolute inset-0 bg-black/20 pointer-events-none" />
 
-        {/* BOTÃO 2: ENTRADA — GRANDE DESTAQUE */}
-        <button
-          onClick={() => navigate('/entrada')}
-          className="btn-industrial bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white p-6 sm:p-10 flex flex-col items-center justify-center text-center rounded-xl border-4 border-emerald-500 group cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-200 active:scale-[0.99] h-full"
-        >
-          <div className="bg-white/20 p-5 sm:p-7 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300 shadow-inner border border-white/30">
-            <ArrowDownLeft className="w-16 h-16 sm:w-24 sm:h-24 text-white stroke-[2.5]" />
+      <div className="relative z-10 max-w-[1380px] w-full mx-auto flex flex-col justify-between flex-1 space-y-8 py-2">
+        
+        {/* CABEÇALHO INTERNO */}
+        <div className="flex items-center justify-between border-b border-white/15 pb-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white font-['Outfit'] tracking-tight">
+              Painel de Operações Subterrâneas
+            </h2>
+            <span className="text-white/40 text-lg font-normal">|</span>
+            <span className="text-white/80 text-sm lg:text-base font-medium">
+              Casa da Lanterna — CMOC Brasil
+            </span>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-black tracking-wider font-mono uppercase text-white drop-shadow-md">
-            ENTRADA DE MATERIAL
-          </h2>
-          <p className="mt-2 text-emerald-100 text-sm sm:text-base font-mono font-medium opacity-90">
-            Devolução / Devolução Rápida por Tag NFC
-          </p>
-        </button>
-      </div>
+        </div>
 
-      {/* 2. SEÇÃO SECUNDÁRIA: ESTOQUE, CADASTRO E DASHBOARD (SEGUNDA TELA) MENORES */}
-      <div className="h-32 sm:h-36 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 flex-shrink-0">
-        {/* RETÂNGULO CADASTRO */}
-        <button
-          onClick={() => navigate('/cadastro')}
-          className="btn-industrial bg-blue-600 hover:bg-blue-700 text-white p-4 flex flex-col justify-between rounded-lg border-2 border-blue-500 group cursor-pointer shadow-md hover:shadow-lg transition-all h-full"
-        >
-          <div className="flex items-center justify-between w-full">
-            <div className="bg-white/20 p-3 rounded-lg group-hover:scale-105 transition-transform">
-              <ClipboardList className="w-8 h-8 text-white" />
-            </div>
-            <ArrowRight className="w-6 h-6 text-blue-200 group-hover:translate-x-1 transition-transform" />
-          </div>
-          <div className="text-left">
-            <h3 className="text-xl sm:text-2xl font-black tracking-wider font-mono uppercase text-white">
-              CADASTROS
-            </h3>
-            <p className="text-xs text-blue-100 font-mono">Materiais, Colaboradores e Tags</p>
-          </div>
-        </button>
 
-        {/* RETÂNGULO ESTOQUE */}
-        <button
-          onClick={() => navigate('/estoque')}
-          className="btn-industrial bg-amber-500 hover:bg-amber-600 text-white p-4 flex flex-col justify-between rounded-lg border-2 border-amber-400 group cursor-pointer shadow-md hover:shadow-lg transition-all h-full"
-        >
-          <div className="flex items-center justify-between w-full">
-            <div className="bg-white/20 p-3 rounded-lg group-hover:scale-105 transition-transform">
-              <Boxes className="w-8 h-8 text-white" />
-            </div>
-            <ArrowRight className="w-6 h-6 text-amber-100 group-hover:translate-x-1 transition-transform" />
-          </div>
-          <div className="text-left">
-            <h3 className="text-xl sm:text-2xl font-black tracking-wider font-mono uppercase text-white">
-              ESTOQUE & CONSULTAS
-            </h3>
-            <p className="text-xs text-amber-100 font-mono">Saldos e Disponibilidade</p>
-          </div>
-        </button>
-
-        {/* BOTÃO DASHBOARD (NOVA ABA) */}
-        <button
-          onClick={handleOpenDashboardNewTab}
-          className="btn-industrial bg-slate-800 hover:bg-slate-900 text-white p-4 flex flex-col justify-between rounded-lg border-2 border-slate-600 group cursor-pointer shadow-md hover:shadow-lg transition-all h-full relative overflow-hidden"
-        >
-          <div className="flex items-center justify-between w-full">
-            <div className="bg-amber-500/20 p-3 rounded-lg border border-amber-500/40 text-amber-400 group-hover:scale-105 transition-transform flex items-center gap-2">
-              <Monitor className="w-8 h-8 text-amber-400" />
-            </div>
-            <div className="flex items-center gap-1 text-amber-400 bg-slate-700/80 px-2 py-1 rounded text-xs font-mono font-bold border border-slate-600 group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors">
-              <span>NOVA ABA</span>
-              <ExternalLink className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-center w-full">
-            <h3 className="text-xl sm:text-2xl font-black tracking-wider font-mono uppercase text-white">
-              DASHBOARD
-            </h3>
-            <p className="text-xs text-slate-100 font-mono opacity-90">Veja quais colaboradores estão dentro da mina</p>
-          </div>
-        </button>
-      </div>
-
-      {/* 3. BARRA INFERIOR DE ACESSO RÁPIDO */}
-      <div className="pt-3 border-t border-slate-300 flex flex-wrap items-center justify-between gap-4 flex-shrink-0">
-        <div className="flex gap-3">
-          <button
-            onClick={() => navigate('/historico')}
-            className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg border border-slate-300 font-bold text-xs uppercase flex items-center gap-2 cursor-pointer shadow-sm hover:border-slate-400 transition-all font-mono"
+        {/* 1. BOTÕES PRINCIPAIS EXPANDIDOS E MAIORES — SAÍDA E ENTRADA DE MATERIAL */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+          
+          {/* BOTÃO GRANDE — SAÍDA DE MATERIAL */}
+          <motion.button
+            whileHover={{ y: -4, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/saida')}
+            className="w-full bg-white rounded-2xl p-8 sm:p-10 lg:p-12 text-left border border-slate-200 shadow-xl hover:shadow-2xl transition-all cursor-pointer flex flex-col justify-between group min-h-[260px] lg:min-h-[280px] relative overflow-hidden"
           >
-            <History className="w-4 h-4 text-amber-600" />
-            <span>Histórico Completo</span>
-          </button>
-          <button
+            {/* Brilho decorativo no hover */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-[#331274]/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-125" />
+
+            <div className="flex items-start justify-between w-full relative z-10 mb-6">
+              <div className="flex items-center gap-4 sm:gap-5">
+                <div className="w-16 h-16 rounded-2xl bg-[#331274] text-white flex items-center justify-center shadow-lg shadow-[#331274]/30 group-hover:scale-110 transition-transform shrink-0">
+                  <ArrowUpRight className="w-8 h-8" />
+                </div>
+                <div>
+                  <span className="bg-[#331274]/10 text-[#331274] text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full inline-block mb-1.5">
+                    RETIRADA RÁPIDA
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#331274] tracking-tight font-['Outfit']">
+                    SAÍDA DE MATERIAL
+                  </h3>
+                </div>
+              </div>
+              <div className="w-11 h-11 rounded-full bg-slate-100 group-hover:bg-[#331274] group-hover:text-white text-slate-400 flex items-center justify-center transition-all shrink-0">
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </div>
+
+            <p className="text-sm sm:text-base text-slate-600 font-normal leading-relaxed relative z-10 max-w-lg">
+              Retirada automatizada e identificação instantânea por Tag NFC, Código de Barras ou Matrícula de colaborador.
+            </p>
+          </motion.button>
+
+          {/* BOTÃO GRANDE — ENTRADA DE MATERIAL */}
+          <motion.button
+            whileHover={{ y: -4, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/entrada')}
+            className="w-full bg-white rounded-2xl p-8 sm:p-10 lg:p-12 text-left border border-slate-200 shadow-xl hover:shadow-2xl transition-all cursor-pointer flex flex-col justify-between group min-h-[260px] lg:min-h-[280px] relative overflow-hidden"
+          >
+            {/* Brilho decorativo no hover */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-[#331274]/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-125" />
+
+            <div className="flex items-start justify-between w-full relative z-10 mb-6">
+              <div className="flex items-center gap-4 sm:gap-5">
+                <div className="w-16 h-16 rounded-2xl bg-[#331274] text-white flex items-center justify-center shadow-lg shadow-[#331274]/30 group-hover:scale-110 transition-transform shrink-0">
+                  <ArrowDownLeft className="w-8 h-8" />
+                </div>
+                <div>
+                  <span className="bg-[#331274]/10 text-[#331274] text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full inline-block mb-1.5">
+                    DEVOLUÇÃO RÁPIDA
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#331274] tracking-tight font-['Outfit']">
+                    ENTRADA DE MATERIAL
+                  </h3>
+                </div>
+              </div>
+              <div className="w-11 h-11 rounded-full bg-slate-100 group-hover:bg-[#331274] group-hover:text-white text-slate-400 flex items-center justify-center transition-all shrink-0">
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </div>
+
+            <p className="text-sm sm:text-base text-slate-600 font-normal leading-relaxed relative z-10 max-w-lg">
+              Devolução de equipamentos e lanternas com confirmação de presença e baixa automática no sistema.
+            </p>
+          </motion.button>
+
+        </div>
+
+
+        {/* 2. MÓDULOS EXPANDIDOS E MAIORES EM GRID DE 4 COLUNAS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
+          
+          {/* CARD CADASTROS */}
+          <motion.button
+            whileHover={{ y: -3, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/cadastro')}
+            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[190px] lg:min-h-[210px]"
+          >
+            <div className="flex items-center justify-between w-full mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-[#331274]/10 text-[#331274] flex items-center justify-center group-hover:bg-[#331274] group-hover:text-white transition-colors shrink-0">
+                <ClipboardList className="w-6 h-6" />
+              </div>
+              <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-[#331274] group-hover:translate-x-1 transition-all" />
+            </div>
+            <div>
+              <h4 className="text-lg font-bold text-[#331274] font-['Outfit'] uppercase tracking-wider mb-1.5">
+                CADASTROS
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
+                Gestão de materiais, colaboradores e vincular Tags NFC.
+              </p>
+            </div>
+          </motion.button>
+
+          {/* CARD ESTOQUE */}
+          <motion.button
+            whileHover={{ y: -3, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/estoque')}
+            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[190px] lg:min-h-[210px]"
+          >
+            <div className="flex items-center justify-between w-full mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-[#331274]/10 text-[#331274] flex items-center justify-center group-hover:bg-[#331274] group-hover:text-white transition-colors shrink-0">
+                <Boxes className="w-6 h-6" />
+              </div>
+              <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-[#331274] group-hover:translate-x-1 transition-all" />
+            </div>
+            <div>
+              <h4 className="text-lg font-bold text-[#331274] font-['Outfit'] uppercase tracking-wider mb-1.5">
+                ESTOQUE & CONSULTAS
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
+                Saldos, inventário e disponibilidade em tempo real.
+              </p>
+            </div>
+          </motion.button>
+
+          {/* CARD DASHBOARD (NOVA ABA) */}
+          <motion.button
+            whileHover={{ y: -3, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleOpenDashboardNewTab}
+            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[190px] lg:min-h-[210px]"
+          >
+            <div className="flex items-center justify-between w-full mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-[#331274]/10 text-[#331274] flex items-center justify-center group-hover:bg-[#331274] group-hover:text-white transition-colors shrink-0">
+                <Monitor className="w-6 h-6" />
+              </div>
+              <span className="flex items-center gap-1 text-[11px] font-bold text-[#331274] bg-[#331274]/10 px-2.5 py-1 rounded-full">
+                NOVA ABA <ExternalLink className="w-3.5 h-3.5" />
+              </span>
+            </div>
+            <div>
+              <h4 className="text-lg font-bold text-[#331274] font-['Outfit'] uppercase tracking-wider mb-1.5">
+                DASHBOARD
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
+                Monitorar presença e colaboradores ativos na mina.
+              </p>
+            </div>
+          </motion.button>
+
+          {/* CARD HISTÓRICO & RELATÓRIOS */}
+          <motion.button
+            whileHover={{ y: -3, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/relatorios')}
-            className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg border border-slate-300 font-bold text-xs uppercase flex items-center gap-2 cursor-pointer shadow-sm hover:border-slate-400 transition-all font-mono"
+            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[190px] lg:min-h-[210px]"
           >
-            <FileText className="w-4 h-4 text-blue-600" />
-            <span>Relatórios & Exportação</span>
-          </button>
+            <div className="flex items-center justify-between w-full mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-[#331274]/10 text-[#331274] flex items-center justify-center group-hover:bg-[#331274] group-hover:text-white transition-colors shrink-0">
+                <FileText className="w-6 h-6" />
+              </div>
+              <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-[#331274] group-hover:translate-x-1 transition-all" />
+            </div>
+            <div>
+              <h4 className="text-lg font-bold text-[#331274] font-['Outfit'] uppercase tracking-wider mb-1.5">
+                HISTÓRICO & RELATÓRIOS
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
+                Logs de movimentações e exportação completa.
+              </p>
+            </div>
+          </motion.button>
+
         </div>
 
-        <div className="text-right text-[11px] font-mono text-slate-500 font-normal">
-          MINEX CASA DA LANTERNA v1.0 | MONITORAMENTO INDUSTRIAL ATIVO
-        </div>
       </div>
+
+      {/* RODAPÉ LIMPO COM CRÉDITO "Dev by WP & EF" */}
+      <div className="relative z-10 max-w-[1380px] w-full mx-auto pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-white/70 gap-2 font-sans">
+        <p>© {new Date().getFullYear()} Casa da Lanterna | Controle de Materiais de Mineração</p>
+        <p><span className="opacity-40 mx-1.5">|</span> <span className="font-semibold text-white/90">Dev by WP & EF</span></p>
+      </div>
+
     </div>
   );
 };
