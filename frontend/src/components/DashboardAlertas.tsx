@@ -210,9 +210,9 @@ export const DashboardAlertas: React.FC = () => {
 
 
       {/* 3. BARRA DE FILTROS LIMPA SEM EMOJIS */}
-      <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-4">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm flex flex-col">
         
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="p-4 flex flex-wrap items-center justify-between gap-4">
           
           {/* Botões de Filtro */}
           <div className="bg-slate-100 p-1 rounded-lg flex flex-wrap items-center gap-2 border border-slate-200">
@@ -256,7 +256,7 @@ export const DashboardAlertas: React.FC = () => {
         </div>
 
         {/* 4. TABELA LIMPA COM BORDAS DISCRETAS E SEM EMOJIS */}
-        <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
+        <div className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
