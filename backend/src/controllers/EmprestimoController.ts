@@ -60,4 +60,14 @@ export class EmprestimoController {
       return res.status(400).json({ error: err.message || 'Erro ao registrar entrada' });
     }
   }
+
+  static async buscarAlertasTurno(req: AuthenticatedRequest, res: Response) {
+    try {
+      const alertas = await EmprestimoService.buscarAlertasTurno();
+      return res.json(alertas);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message || 'Erro ao buscar alertas de turno' });
+    }
+  }
 }
+

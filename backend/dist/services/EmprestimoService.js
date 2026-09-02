@@ -205,5 +205,79 @@ class EmprestimoService {
             };
         });
     }
+    /**
+     * BUSCAR ALERTAS DE TURNO (MONITORAMENTO EM TEMPO REAL DE POSSE > 8 HORAS)
+     */
+    static async buscarAlertasTurno() {
+        const rows = await (0, db_1.query)(`
+      SELECT e.id as emprestimo_id, e.data_hora_saida,
+             col.id as colaborador_id, col.nome as colaborador_nome, col.matricula as colaborador_matricula, col.setor, col.cargo,
+             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio,
+             c.nome as categoria_nome
+      FROM emprestimos e
+      JOIN colaboradores col ON e.colaborador_id = col.id
+      JOIN materiais m ON e.material_id = m.id
+      LEFT JOIN categorias c ON m.categoria_id = c.id
+      ORDER BY e.data_hora_saida ASC
+    `);
+        let normalCount = 0;
+        let atencaoCount = 0;
+        let criticoCount = 0;
+        const agora = new Date();
+        const alertas = rows.map((row) => {
+            // Calcular diferença em minutos
+            const dataSaida = new Date(row.data_hora_saida);
+            const diffMs = Math.max(0, agora.getTime() - dataSaida.getTime());
+            const minutosEmUso = Math.floor(diffMs / (1000 * 60));
+            const horasEmUso = Math.floor(minutosEmUso / 60);
+            const minsRestantes = minutosEmUso % 60;
+            const tempoFormatado = `${horasEmUso}h ${minsRestantes < 10 ? '0' : ''}${minsRestantes}min`;
+            const isEquipamentoVital = (row.categoria_nome && row.categoria_nome.toLowerCase().includes('gás')) ||
+                (row.material_nome && row.material_nome.toLowerCase().includes('detector'));
+            let nivel_alerta = 'NORMAL';
+            let mensagem_alerta = 'Em uso dentro do turno normal';
+            if (isEquipamentoVital) {
+                if (minutosEmUso >= 480) { // >= 8h00
+                    nivel_alerta = 'CRITICO';
+                    mensagem_alerta = 'Detector Multigás excedeu 8h00 de turno subterrâneo!';
+                }
+                else if (minutosEmUso >= 420) { // >= 7h00
+                    nivel_alerta = 'ATENCAO';
+                    mensagem_alerta = 'Detector Multigás próximo do fim de turno (7h+)';
+                }
+            }
+            else {
+                if (minutosEmUso >= 510) { // >= 8h30 (8.5h)
+                    nivel_alerta = 'CRITICO';
+                    mensagem_alerta = 'Material excedeu o tempo limite do turno (8h30+)!';
+                }
+                else if (minutosEmUso >= 450) { // >= 7h30 (7.5h)
+                    nivel_alerta = 'ATENCAO';
+                    mensagem_alerta = 'Material próximo do término de turno (7h30+)';
+                }
+            }
+            if (nivel_alerta === 'CRITICO')
+                criticoCount++;
+            else if (nivel_alerta === 'ATENCAO')
+                atencaoCount++;
+            else
+                normalCount++;
+            return {
+                ...row,
+                minutos_em_uso: minutosEmUso,
+                horas_em_uso: horasEmUso,
+                tempo_formatado: tempoFormatado,
+                nivel_alerta,
+                mensagem_alerta
+            };
+        });
+        return {
+            totalEmUso: rows.length,
+            normalCount,
+            atencaoCount,
+            criticoCount,
+            alertas
+        };
+    }
 }
 exports.EmprestimoService = EmprestimoService;

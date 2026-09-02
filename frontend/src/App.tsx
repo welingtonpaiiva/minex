@@ -9,6 +9,7 @@ import { Cadastro } from './pages/Cadastro';
 import { Estoque } from './pages/Estoque';
 import { Historico } from './pages/Historico';
 import { Relatorios } from './pages/Relatorios';
+import { DashboardPage } from './pages/DashboardPage';
 import { Usuario } from './types';
 import { api } from './services/api';
 
@@ -91,6 +92,10 @@ export const App: React.FC = () => {
             <Route
               path="/relatorios"
               element={user ? <Relatorios /> : <Navigate to="/login" replace />}
+            />
+            <Route
+              path="/dashboard"
+              element={user ? <DashboardPage /> : <Navigate to="/login" replace />}
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
