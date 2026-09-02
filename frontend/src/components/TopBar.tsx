@@ -48,7 +48,7 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
             (e.target as HTMLElement).setAttribute('src', '/logowhite.png');
           }}
         />
-        <div className={`h-4 w-[1px] ${isHome ? 'bg-white/20' : 'bg-slate-300'}`} />
+        
         <div>
           <h1 className={`font-bold text-sm tracking-wider uppercase leading-none font-['Outfit'] ${isHome ? 'text-white' : 'text-slate-900'}`}>
             CASA DA LANTERNA
