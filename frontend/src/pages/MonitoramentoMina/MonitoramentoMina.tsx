@@ -14,41 +14,41 @@ const now = Date.now();
 const h = (n: number) => new Date(now - n * 3600000).toISOString();
 
 const MOCK_ATIVOS = [
-  { acesso_id:'T01', nome:'CARLOS EDUARDO SILVA', matricula:'1234', cargo:'Operador de Mina', setor:'EXTRAÇÃO', status:'ATIVO', data_hora_entrada:h(2.5), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Lanterna de Capacete LED Subterrânea', codigo_interno:'LAN-001' }] },
+  { acesso_id:'T01', nome:'CARLOS EDUARDO SILVA', matricula:'1234', cargo:'Operador de Mina', setor:'EXTRAÇÃO', status:'ATIVO', data_hora_entrada:h(2.5), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Lanterna de Capacete LED Subterrânea' }] },
   { acesso_id:'T02', nome:'MARCOS ANTONIO FERREIRA', matricula:'5678', cargo:'Técnico de Segurança', setor:'SEGURANÇA', status:'ATIVO', data_hora_entrada:h(4.1), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T03', nome:'ANA PAULA RODRIGUES', matricula:'9012', cargo:'Geóloga Sr.', setor:'GEOLOGIA', status:'ATIVO', data_hora_entrada:h(1.2), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Detector Multi-Gás', codigo_interno:'DET-012' },{ nome:'Rádio Comunicador IS', codigo_interno:'RAD-003' }] },
-  { acesso_id:'T04', nome:'ROBERTO SOUZA LIMA', matricula:'3456', cargo:'Mecânico Industrial', setor:'MANUTENÇÃO', status:'ATIVO', data_hora_entrada:h(7.3), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Chave de Impacto K12', codigo_interno:'FER-089' }] },
+  { acesso_id:'T03', nome:'ANA PAULA RODRIGUES', matricula:'9012', cargo:'Geóloga Sr.', setor:'GEOLOGIA', status:'ATIVO', data_hora_entrada:h(1.2), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Detector Multi-Gás' },{ nome:'Rádio Comunicador IS' }] },
+  { acesso_id:'T04', nome:'ROBERTO SOUZA LIMA', matricula:'3456', cargo:'Mecânico Industrial', setor:'MANUTENÇÃO', status:'ATIVO', data_hora_entrada:h(7.3), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Chave de Impacto K12' }] },
   { acesso_id:'T05', nome:'ANTONIO CARLOS FERNANDES DE OLIVEIRA', matricula:'7890', cargo:'Supervisor de Operações', setor:'OPERAÇÃO', status:'ATIVO', data_hora_entrada:h(8.1), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T06', nome:'GUILHERME HENRIQUE MARTINS DA SILVA', matricula:'2345', cargo:'Eletricista', setor:'ELÉTRICA', status:'ATIVO', data_hora_entrada:h(3.7), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Multímetro Intrínseco', codigo_interno:'ELT-045' }] },
+  { acesso_id:'T06', nome:'GUILHERME HENRIQUE MARTINS DA SILVA', matricula:'2345', cargo:'Eletricista', setor:'ELÉTRICA', status:'ATIVO', data_hora_entrada:h(3.7), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Multímetro Intrínseco' }] },
   { acesso_id:'T07', nome:'FERNANDA CRISTINA ALVES', matricula:'6789', cargo:'Técnica de Geologia', setor:'GEOLOGIA', status:'ATIVO', data_hora_entrada:h(2.0), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T08', nome:'PAULO ROBERTO MENDES', matricula:'1122', cargo:'Técnico de Gases', setor:'SEGURANÇA', status:'ATIVO', data_hora_entrada:h(5.5), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Medidor O2 e CO', codigo_interno:'GAS-007' }] },
-  { acesso_id:'T09', nome:'LUCAS GABRIEL PEREIRA', matricula:'3344', cargo:'Operador de Equipamentos', setor:'EXTRAÇÃO', status:'ATIVO', data_hora_entrada:h(0.8), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Lanterna de Capacete LED Subterrânea', codigo_interno:'LAN-022' }] },
+  { acesso_id:'T08', nome:'PAULO ROBERTO MENDES', matricula:'1122', cargo:'Técnico de Gases', setor:'SEGURANÇA', status:'ATIVO', data_hora_entrada:h(5.5), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Medidor O2 e CO' }] },
+  { acesso_id:'T09', nome:'LUCAS GABRIEL PEREIRA', matricula:'3344', cargo:'Operador de Equipamentos', setor:'EXTRAÇÃO', status:'ATIVO', data_hora_entrada:h(0.8), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Lanterna de Capacete LED Subterrânea' }] },
   { acesso_id:'T10', nome:'FERNANDA AUGUSTO RODRIGUES PEREIRA', matricula:'5566', cargo:'Técnico de Instrumentação', setor:'INSTRUMENTAÇÃO', status:'ATIVO', data_hora_entrada:h(6.2), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T11', nome:'RAFAEL SOUZA BARBOSA', matricula:'7788', cargo:'Técnico de Manutenção', setor:'MANUTENÇÃO', status:'ATIVO', data_hora_entrada:h(3.3), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Auto-Resgatador Subterrâneo', codigo_interno:'RES-011' }] },
+  { acesso_id:'T11', nome:'RAFAEL SOUZA BARBOSA', matricula:'7788', cargo:'Técnico de Manutenção', setor:'MANUTENÇÃO', status:'ATIVO', data_hora_entrada:h(3.3), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Auto-Resgatador Subterrâneo' }] },
   { acesso_id:'T12', nome:'CAMILA SANTOS OLIVEIRA', matricula:'9900', cargo:'Técnica de Drenagem', setor:'DRENAGEM', status:'ATIVO', data_hora_entrada:h(1.9), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T13', nome:'DIEGO LIMA CARVALHO', matricula:'1133', cargo:'Técnico de Bombeamento', setor:'BOMBEAMENTO', status:'ATIVO', data_hora_entrada:h(7.8), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Lanterna de Capacete LED Subterrânea', codigo_interno:'LAN-033' }] },
-  { acesso_id:'T14', nome:'MARIANA COSTA FERREIRA', matricula:'2244', cargo:'Técnica de Comunicação', setor:'COMUNICAÇÃO', status:'ATIVO', data_hora_entrada:h(4.4), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Rádio Comunicador IS', codigo_interno:'RAD-014' }] },
+  { acesso_id:'T13', nome:'DIEGO LIMA CARVALHO', matricula:'1133', cargo:'Técnico de Bombeamento', setor:'BOMBEAMENTO', status:'ATIVO', data_hora_entrada:h(7.8), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Lanterna de Capacete LED Subterrânea' }] },
+  { acesso_id:'T14', nome:'MARIANA COSTA FERREIRA', matricula:'2244', cargo:'Técnica de Comunicação', setor:'COMUNICAÇÃO', status:'ATIVO', data_hora_entrada:h(4.4), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Rádio Comunicador IS' }] },
   { acesso_id:'T15', nome:'THIAGO MENDONÇA ALVES', matricula:'3355', cargo:'Operador de Mina', setor:'EXTRAÇÃO', status:'ATIVO', data_hora_entrada:h(2.6), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T16', nome:'PATRICIA ROCHA SANTOS', matricula:'4466', cargo:'Geóloga', setor:'GEOLOGIA', status:'ATIVO', data_hora_entrada:h(5.0), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Detector Multi-Gás', codigo_interno:'DET-021' }] },
-  { acesso_id:'T17', nome:'ANDERSON VIEIRA GOMES', matricula:'5577', cargo:'Mecânico Industrial', setor:'MANUTENÇÃO', status:'ATIVO', data_hora_entrada:h(8.5), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Chave de Impacto K12', codigo_interno:'FER-102' }] },
+  { acesso_id:'T16', nome:'PATRICIA ROCHA SANTOS', matricula:'4466', cargo:'Geóloga', setor:'GEOLOGIA', status:'ATIVO', data_hora_entrada:h(5.0), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Detector Multi-Gás' }] },
+  { acesso_id:'T17', nome:'ANDERSON VIEIRA GOMES', matricula:'5577', cargo:'Mecânico Industrial', setor:'MANUTENÇÃO', status:'ATIVO', data_hora_entrada:h(8.5), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Chave de Impacto K12' }] },
   { acesso_id:'T18', nome:'JESSICA NUNES RODRIGUES', matricula:'6688', cargo:'Técnica de Segurança', setor:'SEGURANÇA', status:'ATIVO', data_hora_entrada:h(1.5), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T19', nome:'FELIPE CARDOSO MELO', matricula:'7799', cargo:'Eletricista', setor:'ELÉTRICA', status:'ATIVO', data_hora_entrada:h(3.1), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Medidor O2 e CO', codigo_interno:'GAS-015' }] },
+  { acesso_id:'T19', nome:'FELIPE CARDOSO MELO', matricula:'7799', cargo:'Eletricista', setor:'ELÉTRICA', status:'ATIVO', data_hora_entrada:h(3.1), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Medidor O2 e CO' }] },
   { acesso_id:'T20', nome:'BEATRIZ ALBUQUERQUE LIMA', matricula:'8811', cargo:'Supervisora de Operações', setor:'OPERAÇÃO', status:'ATIVO', data_hora_entrada:h(9.0), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T21', nome:'RODRIGO FONSECA TEIXEIRA', matricula:'9922', cargo:'Técnico de Gases', setor:'SEGURANÇA', status:'ATIVO', data_hora_entrada:h(2.2), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Auto-Resgatador Subterrâneo', codigo_interno:'RES-022' }] },
+  { acesso_id:'T21', nome:'RODRIGO FONSECA TEIXEIRA', matricula:'9922', cargo:'Técnico de Gases', setor:'SEGURANÇA', status:'ATIVO', data_hora_entrada:h(2.2), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Auto-Resgatador Subterrâneo' }] },
   { acesso_id:'T22', nome:'SIMONE APARECIDA BORGES', matricula:'1044', cargo:'Técnica de Instrumentação', setor:'INSTRUMENTAÇÃO', status:'ATIVO', data_hora_entrada:h(4.8), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T23', nome:'MAURICIO HENRIQUE PINTO', matricula:'2155', cargo:'Operador de Equipamentos', setor:'EXTRAÇÃO', status:'ATIVO', data_hora_entrada:h(6.7), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Lanterna de Capacete LED Subterrânea', codigo_interno:'LAN-044' }] },
+  { acesso_id:'T23', nome:'MAURICIO HENRIQUE PINTO', matricula:'2155', cargo:'Operador de Equipamentos', setor:'EXTRAÇÃO', status:'ATIVO', data_hora_entrada:h(6.7), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Lanterna de Capacete LED Subterrânea' }] },
   { acesso_id:'T24', nome:'VANESSA LOPES DA CUNHA', matricula:'3266', cargo:'Técnica de Drenagem', setor:'DRENAGEM', status:'ATIVO', data_hora_entrada:h(1.0), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T25', nome:'ALEXANDRE MIRANDA BARBOSA', matricula:'4377', cargo:'Técnico de Manutenção', setor:'MANUTENÇÃO', status:'ATIVO', data_hora_entrada:h(7.6), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Chave de Impacto K12', codigo_interno:'FER-115' }] },
-  { acesso_id:'T26', nome:'RENATA FREITAS SILVA', matricula:'5488', cargo:'Geóloga Sr.', setor:'GEOLOGIA', status:'ATIVO', data_hora_entrada:h(3.4), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Detector Multi-Gás', codigo_interno:'DET-033' }] },
+  { acesso_id:'T25', nome:'ALEXANDRE MIRANDA BARBOSA', matricula:'4377', cargo:'Técnico de Manutenção', setor:'MANUTENÇÃO', status:'ATIVO', data_hora_entrada:h(7.6), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Chave de Impacto K12' }] },
+  { acesso_id:'T26', nome:'RENATA FREITAS SILVA', matricula:'5488', cargo:'Geóloga Sr.', setor:'GEOLOGIA', status:'ATIVO', data_hora_entrada:h(3.4), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Detector Multi-Gás' }] },
   { acesso_id:'T27', nome:'LEANDRO NASCIMENTO COSTA', matricula:'6599', cargo:'Técnico de Bombeamento', setor:'BOMBEAMENTO', status:'ATIVO', data_hora_entrada:h(5.8), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T28', nome:'TATIANE ROSA SOUSA', matricula:'7610', cargo:'Técnica de Comunicação', setor:'COMUNICAÇÃO', status:'ATIVO', data_hora_entrada:h(2.3), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Rádio Comunicador IS', codigo_interno:'RAD-027' }] },
-  { acesso_id:'T29', nome:'EDSON MARQUES XAVIER', matricula:'8721', cargo:'Mecânico Industrial', setor:'MANUTENÇÃO', status:'ATIVO', data_hora_entrada:h(8.9), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Chave de Impacto K12', codigo_interno:'FER-128' }] },
+  { acesso_id:'T28', nome:'TATIANE ROSA SOUSA', matricula:'7610', cargo:'Técnica de Comunicação', setor:'COMUNICAÇÃO', status:'ATIVO', data_hora_entrada:h(2.3), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Rádio Comunicador IS' }] },
+  { acesso_id:'T29', nome:'EDSON MARQUES XAVIER', matricula:'8721', cargo:'Mecânico Industrial', setor:'MANUTENÇÃO', status:'ATIVO', data_hora_entrada:h(8.9), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Chave de Impacto K12' }] },
   { acesso_id:'T30', nome:'CRISTIANE GONCALVES MOURA', matricula:'9832', cargo:'Operadora de Mina', setor:'EXTRAÇÃO', status:'ATIVO', data_hora_entrada:h(0.5), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T31', nome:'WELLINGTON FIGUEIREDO DIAS', matricula:'1043', cargo:'Técnico de Segurança', setor:'SEGURANÇA', status:'ATIVO', data_hora_entrada:h(4.0), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Medidor O2 e CO', codigo_interno:'GAS-031' }] },
+  { acesso_id:'T31', nome:'WELLINGTON FIGUEIREDO DIAS', matricula:'1043', cargo:'Técnico de Segurança', setor:'SEGURANÇA', status:'ATIVO', data_hora_entrada:h(4.0), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Medidor O2 e CO' }] },
   { acesso_id:'T32', nome:'KARINA MOREIRA AZEVEDO', matricula:'2154', cargo:'Técnica de Geologia', setor:'GEOLOGIA', status:'ATIVO', data_hora_entrada:h(6.5), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T33', nome:'FABIO CUNHA RAMOS', matricula:'3265', cargo:'Eletricista', setor:'ELÉTRICA', status:'ATIVO', data_hora_entrada:h(2.8), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Multímetro Intrínseco', codigo_interno:'ELT-077' }] },
+  { acesso_id:'T33', nome:'FABIO CUNHA RAMOS', matricula:'3265', cargo:'Eletricista', setor:'ELÉTRICA', status:'ATIVO', data_hora_entrada:h(2.8), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Multímetro Intrínseco' }] },
   { acesso_id:'T34', nome:'ADRIANA SALES MONTEIRO', matricula:'4376', cargo:'Supervisora de Operações', setor:'OPERAÇÃO', status:'ATIVO', data_hora_entrada:h(7.4), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T35', nome:'IGOR BATISTA CAVALCANTE', matricula:'5487', cargo:'Técnico de Instrumentação', setor:'INSTRUMENTAÇÃO', status:'ATIVO', data_hora_entrada:h(1.7), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Auto-Resgatador Subterrâneo', codigo_interno:'RES-035' }] },
+  { acesso_id:'T35', nome:'IGOR BATISTA CAVALCANTE', matricula:'5487', cargo:'Técnico de Instrumentação', setor:'INSTRUMENTAÇÃO', status:'ATIVO', data_hora_entrada:h(1.7), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Auto-Resgatador Subterrâneo' }] },
 ];
 
 const MOCK_HISTORICO = [
@@ -211,13 +211,13 @@ export const MonitoramentoMina: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setModoApresentacao(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold text-xs text-white transition-colors">
-              <Monitor className="w-3.5 h-3.5" /> MODO TV
+              className="flex items-center gap-2 px-3 py-2 font-bold text-[11px] uppercase tracking-widest text-white/50 hover:text-white transition-colors">
+              <Monitor className="w-4 h-4" /> MODO TV
             </button>
             <button onClick={() => { setModoTeste(t => !t); setPaginaAtual(0); }}
-              className={clsx('flex items-center gap-2 px-3 py-2 border rounded-xl font-bold text-xs transition-all',
-                modoTeste ? 'bg-amber-400 text-amber-900 border-amber-300' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white')}>
-              <FlaskConical className="w-3.5 h-3.5" />
+              className={clsx('flex items-center gap-2 px-3 py-2 font-bold text-[11px] uppercase tracking-widest transition-colors',
+                modoTeste ? 'text-amber-400' : 'text-white/50 hover:text-white')}>
+              <FlaskConical className="w-4 h-4" />
               {modoTeste ? 'TESTE ATIVO' : 'MODO TESTE'}
             </button>
           </div>
@@ -226,21 +226,19 @@ export const MonitoramentoMina: React.FC = () => {
         {/* KPIs */}
         <div className="grid grid-cols-4 gap-3">
           {[
-            { label: 'Na Mina Agora',  value: ativosExibidos.length,  unit: 'col.', icon: Users,            color: 'bg-indigo-500/20 text-indigo-300' },
-            { label: 'Entradas Hoje',  value: entradasHoje,           unit: 'ac.',  icon: ArrowRightToLine,  color: 'bg-sky-500/20 text-sky-300' },
-            { label: 'Saídas Hoje',    value: saidasHoje,             unit: 'ac.',  icon: ArrowLeftToLine,   color: 'bg-emerald-500/20 text-emerald-300' },
-            { label: 'Pendências',     value: pendencias,             unit: 'mat.', icon: AlertTriangle,     color: 'bg-rose-500/20 text-rose-300' },
+            { label: 'Na Mina Agora',  value: ativosExibidos.length,  unit: 'col.', icon: Users,            color: 'text-indigo-400' },
+            { label: 'Entradas Hoje',  value: entradasHoje,           unit: 'ac.',  icon: ArrowRightToLine,  color: 'text-sky-400' },
+            { label: 'Saídas Hoje',    value: saidasHoje,             unit: 'ac.',  icon: ArrowLeftToLine,   color: 'text-emerald-400' },
+            { label: 'Pendências',     value: pendencias,             unit: 'mat.', icon: AlertTriangle,     color: 'text-rose-400' },
           ].map(({ label, value, unit, icon: Icon, color }) => (
-            <div key={label} className="bg-white/8 border border-white/10 rounded-xl p-3 flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}>
-                <Icon className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+            <div key={label} className="flex flex-col py-1">
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <Icon className={`w-4.5 h-4.5 ${color}`} />
+                <p className="text-[11px] font-semibold text-white/50 uppercase tracking-[0.2em]">{label}</p>
               </div>
-              <div>
-                <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider">{label}</p>
-                <div className="flex items-end gap-0.5">
-                  <span className="text-2xl font-black text-white leading-none">{value}</span>
-                  <span className="text-[10px] text-white/30 pb-0.5">{unit}</span>
-                </div>
+              <div className="flex items-baseline gap-2 pl-7">
+                <span className="text-[2.5rem] font-light text-white leading-none tracking-tight">{value}</span>
+                <span className="text-[13px] font-medium text-white/30">{unit}</span>
               </div>
             </div>
           ))}
@@ -261,13 +259,13 @@ export const MonitoramentoMina: React.FC = () => {
 
           {/* Abas + pesquisa */}
           <div className="flex items-center justify-between mb-4 bg-white p-2.5 rounded-xl shadow-sm border border-slate-200/60">
-            <div className="flex items-center bg-slate-100 p-1 rounded-lg">
+            <div className="flex items-center gap-6 px-4">
               <button onClick={() => { setAba('ATIVOS'); setPaginaAtual(0); }}
-                className={clsx('px-4 py-1.5 rounded-md font-bold text-xs transition-all', aba === 'ATIVOS' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700')}>
+                className={clsx('font-bold text-xs uppercase tracking-wider transition-colors', aba === 'ATIVOS' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600')}>
                 ATIVOS NA MINA
               </button>
               <button onClick={() => { setAba('HISTORICO'); setPaginaAtual(0); }}
-                className={clsx('px-4 py-1.5 rounded-md font-bold text-xs transition-all', aba === 'HISTORICO' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700')}>
+                className={clsx('font-bold text-xs uppercase tracking-wider transition-colors', aba === 'HISTORICO' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600')}>
                 HISTÓRICO
               </button>
             </div>

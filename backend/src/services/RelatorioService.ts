@@ -59,8 +59,7 @@ export class RelatorioService {
   static async gerarPdfMateriaisEmUso(): Promise<Buffer> {
     const emUso = await query(`
       SELECT e.data_hora_saida,
-             col.nome as colaborador_nome, col.matricula as colaborador_matricula, col.setor, col.cargo,
-             m.codigo_interno, m.nome as material_nome, c.nome as categoria_nome
+             col.nome as colaborador_nome, col.matricula as colaborador_matricula, col.setor, col.cargo, m.nome as material_nome, c.nome as categoria_nome
       FROM emprestimos e
       JOIN colaboradores col ON e.colaborador_id = col.id
       JOIN materiais m ON e.material_id = m.id
@@ -92,8 +91,7 @@ export class RelatorioService {
 
     emUso.forEach((item: any) => {
       tableBody.push([
-        item.codigo_interno,
-        item.material_nome,
+        iteitem.material_nome,
         item.colaborador_nome,
         item.colaborador_matricula,
         item.setor || '-',

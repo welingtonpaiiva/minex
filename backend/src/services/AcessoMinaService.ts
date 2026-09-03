@@ -16,7 +16,7 @@ export class AcessoMinaService {
     const ativosIds = acessos.map((a: any) => a.colaborador_id);
     const emprestimos = await query(`
       SELECT e.id as emprestimo_id, e.colaborador_id, e.data_hora_saida,
-             m.id as material_id, m.nome, m.codigo_interno, m.codigo_barras
+             m.id as material_id, m.nome, m.codigo_barras
       FROM emprestimos e
       JOIN materiais m ON e.material_id = m.id
       WHERE e.colaborador_id IN (${ativosIds.join(',')})

@@ -242,7 +242,7 @@ export const Estoque: React.FC = () => {
                       const uso = calcularHorasEmUso(emp.data_hora_saida);
                       return (
                         <tr key={emp.emprestimo_id} className={`transition-colors ${uso.excedeu ? 'bg-red-50/80 border-l-4 border-l-red-600 font-bold' : 'hover:bg-slate-50'}`}>
-                          <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{emp.codigo_interno}</td>
+                          <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{emp.codigo_barras}</td>
                           <td className="font-bold text-slate-900 py-3.5 px-4">{emp.material_nome}</td>
                           <td className="font-extrabold text-slate-900 uppercase py-3.5 px-4">{emp.colaborador_nome}</td>
                           <td className="font-mono text-[#331274] font-bold py-3.5 px-4">{emp.colaborador_matricula}</td>
@@ -278,8 +278,7 @@ export const Estoque: React.FC = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 text-xs font-extrabold uppercase tracking-wider border-b border-slate-200 font-['Outfit']">
-                    <th className="py-3.5 px-4">CÓDIGO INTERNO</th>
-                    <th className="py-3.5 px-4">CÓDIGO BARRAS</th>
+                    <th className="py-3.5 px-4">CÓDIGO DE BARRAS</th>
                     <th className="py-3.5 px-4">MATERIAL</th>
                     <th className="py-3.5 px-4">CATEGORIA</th>
                     <th className="py-3.5 px-4">STATUS ATUAL</th>
@@ -299,7 +298,7 @@ export const Estoque: React.FC = () => {
                       const uso = item.status === 'EM_USO' ? calcularHorasEmUso(item.data_hora_saida) : null;
                       return (
                         <tr key={item.id} className={`transition-colors ${uso?.excedeu ? 'bg-red-50/80 border-l-4 border-l-red-600 font-bold' : 'hover:bg-slate-50'}`}>
-                          <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.codigo_interno}</td>
+                          <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.codigo_barras}</td>
                           <td className="font-mono text-slate-600 py-3.5 px-4">{item.codigo_barras}</td>
                           <td className="font-bold text-slate-900 py-3.5 px-4">{item.nome}</td>
                           <td className="text-slate-600 font-medium py-3.5 px-4">{item.categoria_nome || 'Geral'}</td>

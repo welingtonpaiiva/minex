@@ -7,13 +7,13 @@ export class EmprestimoService {
   static async buscarEmprestimosDoColaborador(colaboradorId: number) {
     return await query(`
       SELECT e.id as emprestimo_id, e.data_hora_saida,
-             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio,
+             m.id as material_id, m.nome as material_nome, m.codigo_barras, m.patrimonio,
              c.nome as categoria_nome
       FROM emprestimos e
       JOIN materiais m ON e.material_id = m.id
       LEFT JOIN categorias c ON m.categoria_id = c.id
       WHERE e.colaborador_id = ?
-      ORDER BY m.codigo_interno ASC
+      ORDER BY m.nome ASC
     `, [colaboradorId]);
   }
 
@@ -24,7 +24,7 @@ export class EmprestimoService {
     let sql = `
       SELECT e.id as emprestimo_id, e.data_hora_saida,
              col.id as colaborador_id, col.nome as colaborador_nome, col.matricula as colaborador_matricula, col.setor, col.cargo,
-             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio,
+             m.id as material_id, m.nome as material_nome, m.codigo_barras, m.patrimonio,
              u.nome as operador_saida_nome
       FROM emprestimos e
       JOIN colaboradores col ON e.colaborador_id = col.id
@@ -35,7 +35,7 @@ export class EmprestimoService {
     const params: any[] = [];
 
     if (busca) {
-      sql += ' AND (col.nome LIKE ? OR col.matricula LIKE ? OR m.nome LIKE ? OR m.codigo_interno LIKE ?)';
+      sql += ' AND (col.nome LIKE ? OR col.matricula LIKE ? OR m.nome LIKE ? )';
       const term = `%${busca.trim()}%`;
       params.push(term, term, term, term);
     }
@@ -80,8 +80,8 @@ export class EmprestimoService {
       for (const cod of materiaisCodigos) {
         const cleanCod = cod.trim();
         const matRows = await execQuery(
-          'SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?',
-          [cleanCod, cleanCod]
+          'SELECT * FROM materiais WHERE codigo_barras = ?',
+          [cleanCod]
         );
         const mat = matRows[0];
 
@@ -101,21 +101,21 @@ export class EmprestimoService {
           );
           const emp = empRows[0];
           const resp = emp ? emp.colaborador_nome : 'Outro colaborador';
-          throw new Error(`MATERIAL JÁ ESTÁ EM USO (${mat.codigo_interno} - ${mat.nome}) por ${resp}`);
+          throw new Error(`MATERIAL JÁ ESTÁ EM USO (${mat.nome}) por ${resp}`);
         }
 
         if (mat.status === 'MANUTENCAO') {
-          throw new Error(`MATERIAL EM MANUTENÇÃO (${mat.codigo_interno} - ${mat.nome}). Não pode ser entregue.`);
+          throw new Error(`MATERIAL EM MANUTENÇÃO (${mat.nome}). Não pode ser entregue.`);
         }
 
         if (mat.status !== 'DISPONIVEL') {
-          throw new Error(`MATERIAL FOI UTILIZADO EM OUTRA OPERAÇÃO: ${mat.codigo_interno}`);
+          throw new Error(`MATERIAL FOI UTILIZADO EM OUTRA OPERAÇÃO: ${mat.nome}`);
         }
 
         // Trava adicional: Verificar se já existe registro em emprestimos
         const activeLoanRows = await execQuery('SELECT id FROM emprestimos WHERE material_id = ?', [mat.id]);
         if (activeLoanRows.length > 0) {
-          throw new Error(`MATERIAL FOI UTILIZADO EM OUTRA OPERAÇÃO: ${mat.codigo_interno}`);
+          throw new Error(`MATERIAL FOI UTILIZADO EM OUTRA OPERAÇÃO: ${mat.nome}`);
         }
 
         // Atualizar status do material para EM_USO
@@ -137,8 +137,8 @@ export class EmprestimoService {
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'SAIDA', 'Saída registrada no balcão')`,
           [
             mat.id,
-            mat.codigo_interno,
             mat.nome,
+            colaborador.nome,
             colaborador.id,
             colaborador.nome,
             colaborador.matricula,
@@ -149,7 +149,7 @@ export class EmprestimoService {
 
         materiaisProcessados.push({
           id: mat.id,
-          codigo_interno: mat.codigo_interno,
+          
           nome: mat.nome
         });
       }
@@ -215,8 +215,8 @@ export class EmprestimoService {
       for (const cod of materiaisCodigos) {
         const cleanCod = cod.trim();
         const matRows = await execQuery(
-          'SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?',
-          [cleanCod, cleanCod]
+          'SELECT * FROM materiais WHERE codigo_barras = ?',
+          [cleanCod]
         );
         const mat = matRows[0];
 
@@ -233,7 +233,7 @@ export class EmprestimoService {
 
         if (!emp) {
           throw new Error(
-            `MATERIAL NÃO REGISTRADO PARA ESTE COLABORADOR (${mat.codigo_interno} - ${mat.nome}). Este material não consta nos empréstimos de ${colaborador.nome}.`
+            `MATERIAL NÃO REGISTRADO PARA ESTE COLABORADOR (${mat.nome}). Este material não consta nos empréstimos de ${colaborador.nome}.`
           );
         }
 
@@ -252,8 +252,8 @@ export class EmprestimoService {
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ENTRADA', 'Devolução registrada no balcão')`,
           [
             mat.id,
-            mat.codigo_interno,
             mat.nome,
+            colaborador.nome,
             colaborador.id,
             colaborador.nome,
             colaborador.matricula,
@@ -264,7 +264,7 @@ export class EmprestimoService {
 
         materiaisDevolvidos.push({
           id: mat.id,
-          codigo_interno: mat.codigo_interno,
+          
           nome: mat.nome
         });
       }
@@ -303,7 +303,7 @@ export class EmprestimoService {
     const rows = await query(`
       SELECT e.id as emprestimo_id, e.data_hora_saida,
              col.id as colaborador_id, col.nome as colaborador_nome, col.matricula as colaborador_matricula, col.setor, col.cargo,
-             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio,
+             m.id as material_id, m.nome as material_nome, m.codigo_barras, m.patrimonio,
              c.nome as categoria_nome
       FROM emprestimos e
       JOIN colaboradores col ON e.colaborador_id = col.id

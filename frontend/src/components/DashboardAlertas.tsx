@@ -105,7 +105,6 @@ const GERAR_ALERTAS_TESTE = (): ResumoAlertasTurno => {
       setor: 'SUBTERRÂNEO',
       material_id: 500 + index,
       material_nome: EQUIPAMENTOS_SIMULADOS[index % EQUIPAMENTOS_SIMULADOS.length],
-      codigo_interno: `LAT-${String(101 + index).padStart(3, '0')}`,
       codigo_barras: `LAT-${String(101 + index).padStart(3, '0')}`,
       categoria_nome: 'Lanternas',
       data_hora_saida: dataSaida.toISOString().replace('T', ' ').slice(0, 19),
@@ -474,7 +473,7 @@ export const DashboardAlertas: React.FC = () => {
                           Mat: <strong className="text-slate-800 font-mono">{item.colaborador_matricula}</strong>
                         </div>
                         <div className="text-[10px] font-semibold text-slate-700 truncate mt-0.5">
-                          {item.material_nome} ({item.codigo_interno})
+                          {item.material_nome} ({item.codigo_barras})
                         </div>
                       </div>
 
@@ -828,7 +827,7 @@ export const DashboardAlertas: React.FC = () => {
                         <td className="py-3.5 px-4">
                           <div className="font-bold text-slate-900">{item.material_nome}</div>
                           <div className="text-xs text-[#331274] font-mono font-extrabold">
-                            CÓD: {item.codigo_interno}
+                            CÓD: {item.codigo_barras}
                           </div>
                         </td>
 

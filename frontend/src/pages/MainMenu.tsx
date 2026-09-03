@@ -40,7 +40,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
         <div className="flex items-center justify-between border-b border-white/15 pb-4">
           <div className="flex items-center gap-3">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white font-['Outfit'] tracking-tight">
-              Painel de Operações Subterrâneas
+              OPERAÇÕES SUBTERRÂNEAS
             </h2>
             <span className="text-white/40 text-lg font-normal">|</span>
             <span className="text-white/80 text-sm lg:text-base font-medium">
@@ -58,7 +58,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
             whileHover={{ y: -4, scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/saida')}
-            className="w-full bg-white rounded-2xl p-8 sm:p-10 lg:p-12 text-left border border-slate-200 shadow-xl hover:shadow-2xl transition-all cursor-pointer flex flex-col justify-between group min-h-[260px] lg:min-h-[280px] relative overflow-hidden"
+            className="w-full bg-white rounded-2xl p-8 sm:p-10 lg:p-12 text-left border border-slate-200 shadow-xl hover:shadow-2xl transition-all cursor-pointer flex flex-col justify-between group min-h-[300px] lg:min-h-[340px] relative overflow-hidden"
           >
             {/* Brilho decorativo no hover */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-[#331274]/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-125" />
@@ -69,7 +69,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
                   <ArrowUpRight className="w-8 h-8" />
                 </div>
                 <div>
-                  <span className="bg-[#331274]/10 text-[#331274] text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full inline-block mb-1.5">
+                  <span className="text-[#331274] text-xs font-extrabold uppercase tracking-widest inline-block mb-1.5">
                     RETIRADA RÁPIDA
                   </span>
                   <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#331274] tracking-tight font-['Outfit']">
@@ -92,7 +92,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
             whileHover={{ y: -4, scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/entrada')}
-            className="w-full bg-white rounded-2xl p-8 sm:p-10 lg:p-12 text-left border border-slate-200 shadow-xl hover:shadow-2xl transition-all cursor-pointer flex flex-col justify-between group min-h-[260px] lg:min-h-[280px] relative overflow-hidden"
+            className="w-full bg-white rounded-2xl p-8 sm:p-10 lg:p-12 text-left border border-slate-200 shadow-xl hover:shadow-2xl transition-all cursor-pointer flex flex-col justify-between group min-h-[300px] lg:min-h-[340px] relative overflow-hidden"
           >
             {/* Brilho decorativo no hover */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-[#331274]/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-125" />
@@ -103,7 +103,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
                   <ArrowDownLeft className="w-8 h-8" />
                 </div>
                 <div>
-                  <span className="bg-[#331274]/10 text-[#331274] text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full inline-block mb-1.5">
+                  <span className="text-[#331274] text-xs font-extrabold uppercase tracking-widest inline-block mb-1.5">
                     DEVOLUÇÃO RÁPIDA
                   </span>
                   <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#331274] tracking-tight font-['Outfit']">
@@ -132,7 +132,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
             whileHover={{ y: -3, scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/cadastro')}
-            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[190px] lg:min-h-[210px]"
+            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[220px] lg:min-h-[250px]"
           >
             <div className="flex items-center justify-between w-full mb-5">
               <div className="w-12 h-12 rounded-2xl bg-[#331274]/10 text-[#331274] flex items-center justify-center group-hover:bg-[#331274] group-hover:text-white transition-colors shrink-0">
@@ -155,7 +155,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
             whileHover={{ y: -3, scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/estoque')}
-            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[190px] lg:min-h-[210px]"
+            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[220px] lg:min-h-[250px]"
           >
             <div className="flex items-center justify-between w-full mb-5">
               <div className="w-12 h-12 rounded-2xl bg-[#331274]/10 text-[#331274] flex items-center justify-center group-hover:bg-[#331274] group-hover:text-white transition-colors shrink-0">
@@ -178,13 +178,13 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
             whileHover={{ y: -3, scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleOpenCrachaNewTab}
-            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[190px] lg:min-h-[210px]"
+            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[220px] lg:min-h-[250px]"
           >
             <div className="flex items-center justify-between w-full mb-5">
               <div className="w-12 h-12 rounded-2xl bg-[#331274]/10 text-[#331274] flex items-center justify-center group-hover:bg-[#331274] group-hover:text-white transition-colors shrink-0">
                 <BadgeCheck className="w-6 h-6" />
               </div>
-              <span className="flex items-center gap-1 text-[11px] font-bold text-[#331274] bg-[#331274]/10 px-2.5 py-1 rounded-full">
+              <span className="flex items-center gap-1 text-[11px] font-bold text-[#331274]">
                 NOVA ABA <ExternalLink className="w-3.5 h-3.5" />
               </span>
             </div>
@@ -203,7 +203,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
             whileHover={{ y: -3, scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/relatorios')}
-            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[190px] lg:min-h-[210px]"
+            className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[220px] lg:min-h-[250px]"
           >
             <div className="flex items-center justify-between w-full mb-5">
               <div className="w-12 h-12 rounded-2xl bg-[#331274]/10 text-[#331274] flex items-center justify-center group-hover:bg-[#331274] group-hover:text-white transition-colors shrink-0">
