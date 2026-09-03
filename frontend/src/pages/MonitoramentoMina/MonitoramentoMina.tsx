@@ -199,10 +199,11 @@ export const MonitoramentoMina: React.FC = () => {
 
   // ── MODO NORMAL ────────────────────────────────────────────────────────────
   return (
-    <div className="h-full overflow-y-auto flex flex-col" style={{ background: 'linear-gradient(180deg, #110A2B 0%, #0a061a 100%)' }}>
+    <div className="flex-1 w-full h-full overflow-y-auto flex flex-col bg-slate-100">
 
-      {/* Topo roxo */}
-      <div className="px-8 pt-5 pb-4 max-w-[1400px] mx-auto w-full">
+      {/* Container do Topo Roxo */}
+      <div className="w-full pb-8" style={{ background: 'linear-gradient(180deg, #110A2B 0%, #0a061a 100%)' }}>
+        <div className="px-8 pt-5 max-w-[1400px] mx-auto w-full">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl font-black text-white tracking-tight">Crachá de Acesso à Mina</h1>
@@ -245,10 +246,11 @@ export const MonitoramentoMina: React.FC = () => {
           ))}
         </div>
       </div>
+      </div>
 
       {/* Área branca */}
-      <div className="bg-slate-100 rounded-t-3xl flex-1 flex flex-col min-h-0">
-        <div className="max-w-[1400px] mx-auto px-6 py-5">
+      <div className="bg-slate-100 rounded-t-3xl flex-1 w-full flex flex-col min-h-[500px] -mt-6">
+        <div className="max-w-[1400px] mx-auto w-full px-6 py-5">
 
           {modoTeste && (
             <div className="mb-4 flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2.5 rounded-xl text-xs font-medium">
@@ -308,17 +310,11 @@ export const MonitoramentoMina: React.FC = () => {
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <div className="flex items-center gap-1 font-medium text-emerald-600">
-                    <Radio className="w-3 h-3 animate-pulse" /> TRANSMISSÃO AO VIVO
-                  </div>
                 </div>
               )}
               {totalPaginas === 1 && (
-                <div className="flex items-center justify-between mt-3 px-1 text-xs text-slate-400">
+                <div className="flex items-center mt-3 px-1 text-xs text-slate-400">
                   <span>Exibindo {cardsDaPagina.length} colaborador{cardsDaPagina.length !== 1 ? 'es' : ''}</span>
-                  <div className="flex items-center gap-1 text-emerald-600 font-medium">
-                    <Radio className="w-3 h-3 animate-pulse" /> TRANSMISSÃO AO VIVO
-                  </div>
                 </div>
               )}
             </>
