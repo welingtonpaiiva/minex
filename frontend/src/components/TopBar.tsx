@@ -64,15 +64,24 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
 
   const isHome = location.pathname === '/';
   const isDashboard = location.pathname === '/dashboard';
+  const isMonitoramento = location.pathname === '/cracha-acesso-mina';
+  const isDarkTheme = isHome || isMonitoramento;
   const pageInfo = PAGE_TITLES[location.pathname];
 
+  let headerClass = 'bg-white border-b border-slate-200 text-slate-800';
+  if (isHome) {
+    headerClass = 'bg-[#190837]/95 border-b border-white/10 text-white';
+  } else if (isMonitoramento) {
+    headerClass = 'bg-[#110A2B] border-none text-white';
+  }
+
   return (
-    <header className={`${isHome ? 'bg-[#190837]/95 border-b border-white/10 text-white' : 'bg-white border-b border-slate-200 text-slate-800'} px-6 py-3 flex items-center justify-between shadow-sm select-none shrink-0 z-30 transition-colors`}>
+    <header className={`${headerClass} px-6 py-3 flex items-center justify-between shadow-sm select-none shrink-0 z-30 transition-colors`}>
       
       {/* Esquerda: Logo + Título Dinâmico da Aplicação ou Página */}
       <div className="flex items-center gap-4">
         <img 
-          src={isHome ? "/logowhite.png" : "/logo.svg"} 
+          src={isDarkTheme ? "/logowhite.png" : "/logo.svg"} 
           alt="CMOC Logo" 
           onClick={() => navigate('/')}
           className="h-7 object-contain cursor-pointer hover:opacity-90 transition-opacity"
@@ -97,13 +106,13 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
               <>
                 <button
                   onClick={() => navigate('/')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[#331274] hover:bg-[#43208C] rounded-lg shadow-sm transition-all cursor-pointer group shrink-0"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold ${isDarkTheme ? 'text-white/80 hover:text-white' : 'text-[#331274] hover:text-[#43208C]'} transition-all cursor-pointer group shrink-0`}
                   title="Voltar ao Menu Principal"
                 >
                   <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
                   <span className="hidden sm:inline">VOLTAR</span>
                 </button>
-                <div className="h-5 w-[1px] bg-slate-300 hidden sm:block" />
+                <div className={`h-5 w-[1px] ${isDarkTheme ? 'bg-white/20' : 'bg-slate-300'} hidden sm:block`} />
               </>
             )}
 
@@ -115,11 +124,11 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
             )}
 
             <div>
-              <h1 className="font-extrabold text-sm sm:text-base tracking-tight uppercase leading-none font-['Outfit'] text-[#331274]">
+              <h1 className={`font-extrabold text-sm sm:text-base tracking-tight uppercase leading-none font-['Outfit'] ${isDarkTheme ? 'text-white' : 'text-[#331274]'}`}>
                 {pageInfo?.title || 'CASA DA LANTERNA'}
               </h1>
               {pageInfo?.subtitle && (
-                <span className="text-[11px] font-medium text-slate-500 block mt-0.5 leading-none">
+                <span className={`text-[11px] font-medium block mt-0.5 leading-none ${isDarkTheme ? 'text-white/60' : 'text-slate-500'}`}>
                   {pageInfo.subtitle}
                 </span>
               )}
@@ -132,13 +141,13 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
       <div className="flex items-center gap-4 sm:gap-6">
         
         {/* Relógio e Data alinhados à direita */}
-        <div className="hidden md:flex items-center gap-2 text-xs border-r border-slate-200 pr-4">
-          <Clock className={`w-3.5 h-3.5 ${isHome ? 'text-white/70' : 'text-[#331274]'}`} />
-          <span className={`font-medium text-xs tracking-wide ${isHome ? 'text-white/80' : 'text-slate-600'}`}>
+        <div className={`hidden md:flex items-center gap-2 text-xs border-r ${isDarkTheme ? 'border-white/10' : 'border-slate-200'} pr-4`}>
+          <Clock className={`w-3.5 h-3.5 ${isDarkTheme ? 'text-white/70' : 'text-[#331274]'}`} />
+          <span className={`font-medium text-xs tracking-wide ${isDarkTheme ? 'text-white/80' : 'text-slate-600'}`}>
             {date}
           </span>
-          <span className={`mx-1 ${isHome ? 'text-white/30' : 'text-slate-300'}`}>•</span>
-          <span className={`font-semibold text-sm tracking-wider font-['Outfit'] ${isHome ? 'text-white' : 'text-[#331274]'}`}>
+          <span className={`mx-1 ${isDarkTheme ? 'text-white/30' : 'text-slate-300'}`}>•</span>
+          <span className={`font-semibold text-sm tracking-wider font-['Outfit'] ${isDarkTheme ? 'text-white' : 'text-[#331274]'}`}>
             {time}
           </span>
         </div>
@@ -146,14 +155,14 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
         {/* Informações do Operador & Logout */}
         {user && (
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${isHome ? 'bg-white/10 text-white' : 'bg-[#331274]/10 text-[#331274]'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${isDarkTheme ? 'bg-white/10 text-white' : 'bg-[#331274]/10 text-[#331274]'}`}>
               <User className="w-4 h-4" />
             </div>
             <div className="text-right hidden sm:block">
-              <div className={`text-xs font-bold tracking-wide font-['Outfit'] ${isHome ? 'text-white' : 'text-slate-900'}`}>
+              <div className={`text-xs font-bold tracking-wide font-['Outfit'] ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>
                 {user.nome}
               </div>
-              <div className={`text-[10px] font-medium tracking-wider mt-0.5 ${isHome ? 'text-white/70' : 'text-slate-500'}`}>
+              <div className={`text-[10px] font-medium tracking-wider mt-0.5 ${isDarkTheme ? 'text-white/70' : 'text-slate-500'}`}>
                 Mat: <span className="font-semibold">{user.matricula}</span> • <span className="font-semibold uppercase">{user.nivel_acesso}</span>
               </div>
             </div>
@@ -163,7 +172,7 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
         <button
           onClick={onLogout}
           title="Sair do Sistema"
-          className={`p-2 rounded-lg transition-all flex items-center justify-center cursor-pointer ${isHome ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-red-600 hover:bg-red-50'}`}
+          className={`p-2 rounded-lg transition-all flex items-center justify-center cursor-pointer ${isDarkTheme ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-red-600 hover:bg-red-50'}`}
         >
           <LogOut className="w-4 h-4" />
         </button>

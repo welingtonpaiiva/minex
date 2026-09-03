@@ -1,0 +1,1 @@
+export { MonitoramentoMina } from './MonitoramentoMina';

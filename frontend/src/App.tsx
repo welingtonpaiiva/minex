@@ -11,6 +11,7 @@ import { Estoque } from './pages/Estoque';
 import { Historico } from './pages/Historico';
 import { Relatorios } from './pages/Relatorios';
 import { DashboardPage } from './pages/DashboardPage';
+import { MonitoramentoMina } from './pages/MonitoramentoMina';
 import { Usuario } from './types';
 import { api } from './services/api';
 
@@ -98,6 +99,10 @@ export const App: React.FC = () => {
             <Route
               path="/dashboard"
               element={user ? <DashboardPage /> : <Navigate to="/login" replace />}
+            />
+            <Route
+              path="/cracha-acesso-mina"
+              element={user ? <MonitoramentoMina /> : <Navigate to="/login" replace />}
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

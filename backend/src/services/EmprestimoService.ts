@@ -154,6 +154,18 @@ export class EmprestimoService {
         });
       }
 
+      // Check for active access session
+      const activeAcessoRows = await execQuery(
+        "SELECT id FROM acessos_mina WHERE colaborador_id = ? AND status = 'ATIVO'",
+        [colaborador.id]
+      );
+      if (activeAcessoRows.length === 0) {
+        await execQuery(
+          "INSERT INTO acessos_mina (colaborador_id, data_hora_entrada, status) VALUES (?, (datetime('now', 'localtime')), 'ATIVO')",
+          [colaborador.id]
+        );
+      }
+
       return {
         sucesso: true,
         mensagem: 'SAÍDA REGISTRADA COM SUCESSO',
@@ -255,6 +267,18 @@ export class EmprestimoService {
           codigo_interno: mat.codigo_interno,
           nome: mat.nome
         });
+      }
+
+      // Check if there are any remaining materials borrowed
+      const pendingRows = await execQuery(
+        "SELECT count(id) as count FROM emprestimos WHERE colaborador_id = ?",
+        [colaborador.id]
+      );
+      if (pendingRows[0].count === 0) {
+        await execQuery(
+          "UPDATE acessos_mina SET status = 'ENCERRADO', data_hora_saida = (datetime('now', 'localtime')), updated_at = (datetime('now', 'localtime')) WHERE colaborador_id = ? AND status = 'ATIVO'",
+          [colaborador.id]
+        );
       }
 
       return {

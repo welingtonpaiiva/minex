@@ -92,3 +92,17 @@ CREATE INDEX IF NOT EXISTS idx_movimentacoes_tipo ON movimentacoes(tipo);
 CREATE INDEX IF NOT EXISTS idx_movimentacoes_colaborador ON movimentacoes(colaborador_id);
 CREATE INDEX IF NOT EXISTS idx_movimentacoes_material ON movimentacoes(material_id);
 CREATE INDEX IF NOT EXISTS idx_movimentacoes_data_hora ON movimentacoes(data_hora);
+
+-- 7. TABELA DE ACESSOS À MINA (SESSÃO EM TEMPO REAL)
+CREATE TABLE IF NOT EXISTS acessos_mina (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  colaborador_id INTEGER NOT NULL REFERENCES colaboradores(id),
+  data_hora_entrada TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+  data_hora_saida TEXT,
+  status TEXT NOT NULL DEFAULT 'ATIVO', -- ATIVO, ENCERRADO
+  created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_acessos_mina_colaborador ON acessos_mina(colaborador_id);
+CREATE INDEX IF NOT EXISTS idx_acessos_mina_status ON acessos_mina(status);

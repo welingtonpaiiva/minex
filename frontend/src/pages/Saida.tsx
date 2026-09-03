@@ -171,7 +171,7 @@ export const Saida: React.FC = () => {
               onClick={() => setShowNfcModal(true)}
               className="bg-[#331274] hover:bg-[#43208C] text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase flex items-center gap-2 cursor-pointer shadow-md transition-all"
             >
-              <Wifi className="w-4 h-4 text-amber-400 animate-pulse" />
+              <Wifi className="w-4 h-4 text-emerald-200 animate-pulse" />
               <span>APROXIMAR CRACHÁ NFC</span>
             </button>
           )}

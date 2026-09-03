@@ -5,7 +5,7 @@ import {
   ArrowDownLeft, 
   ClipboardList, 
   Boxes, 
-  Monitor, 
+  BadgeCheck, 
   FileText, 
   ExternalLink,
   ArrowRight
@@ -20,8 +20,8 @@ interface MainMenuProps {
 export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
   const navigate = useNavigate();
 
-  const handleOpenDashboardNewTab = () => {
-    window.open('/dashboard', '_blank');
+  const handleOpenCrachaNewTab = () => {
+    window.open('/cracha-acesso-mina', '_blank');
   };
 
   return (
@@ -173,16 +173,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
             </div>
           </motion.button>
 
-          {/* CARD DASHBOARD (NOVA ABA) */}
+          {/* CARD CRACHÁ DE ACESSO À MINA (NOVA ABA) */}
           <motion.button
             whileHover={{ y: -3, scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
-            onClick={handleOpenDashboardNewTab}
+            onClick={handleOpenCrachaNewTab}
             className="bg-white rounded-2xl p-7 lg:p-8 text-left border border-slate-200 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between group min-h-[190px] lg:min-h-[210px]"
           >
             <div className="flex items-center justify-between w-full mb-5">
               <div className="w-12 h-12 rounded-2xl bg-[#331274]/10 text-[#331274] flex items-center justify-center group-hover:bg-[#331274] group-hover:text-white transition-colors shrink-0">
-                <Monitor className="w-6 h-6" />
+                <BadgeCheck className="w-6 h-6" />
               </div>
               <span className="flex items-center gap-1 text-[11px] font-bold text-[#331274] bg-[#331274]/10 px-2.5 py-1 rounded-full">
                 NOVA ABA <ExternalLink className="w-3.5 h-3.5" />
@@ -190,7 +190,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
             </div>
             <div>
               <h4 className="text-lg font-bold text-[#331274] font-['Outfit'] uppercase tracking-wider mb-1.5">
-                DASHBOARD
+                CRACHÁ DE ACESSO
               </h4>
               <p className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed">
                 Monitorar presença e colaboradores ativos na mina.
