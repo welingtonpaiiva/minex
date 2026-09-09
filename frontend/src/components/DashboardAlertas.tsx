@@ -524,7 +524,7 @@ export const DashboardAlertas: React.FC = () => {
             <FlaskConical className="w-6 h-6 text-amber-400 animate-bounce shrink-0" />
             <div>
               <p className="text-xs sm:text-sm font-extrabold uppercase font-['Outfit'] tracking-wider text-amber-300">
-                🧪 MODO TESTE / SIMULAÇÃO ATIVO (25 COLABORADORES DADOS FAKE)
+                MODO TESTE / SIMULAÇÃO ATIVO (25 COLABORADORES DADOS FAKE)
               </p>
               <p className="text-xs font-medium text-purple-200 mt-0.5">
                 Simulando múltiplos colaboradores no subterrâneo para testar carrossel TV, cronômetro e alertas.

@@ -24,11 +24,11 @@ class MaterialService {
             params.push(filtros.categoria_id);
         }
         if (filtros?.busca) {
-            sql += ' AND (m.nome LIKE ? OR m.codigo_interno LIKE ? OR m.codigo_barras LIKE ?)';
+            sql += ' AND (m.nome LIKE ?  OR m.codigo_barras LIKE ?)';
             const term = `%${filtros.busca.trim()}%`;
             params.push(term, term, term);
         }
-        sql += ' ORDER BY m.codigo_interno ASC';
+        sql += ' ORDER BY m.nome ASC';
         return await (0, db_1.query)(sql, params);
     }
     static async buscarPorCodigo(codigo) {
@@ -36,15 +36,11 @@ class MaterialService {
             return null;
         const cleanCode = codigo.trim();
         return await (0, db_1.queryOne)(`
-      SELECT m.*, c.nome as categoria_nome,
-             e.colaborador_id, col.nome as colaborador_nome, col.matricula as colaborador_matricula,
-             e.data_hora_saida
+      SELECT m.*, c.nome as categoria_nome
       FROM materiais m
       LEFT JOIN categorias c ON m.categoria_id = c.id
-      LEFT JOIN emprestimos e ON m.id = e.material_id
-      LEFT JOIN colaboradores col ON e.colaborador_id = col.id
-      WHERE m.codigo_barras = ? OR m.codigo_interno = ?
-    `, [cleanCode, cleanCode]);
+      WHERE m.codigo_barras = ?
+    `, [cleanCode]);
     }
     static async buscarPorId(id) {
         return await (0, db_1.queryOne)(`
@@ -59,30 +55,24 @@ class MaterialService {
     `, [id]);
     }
     static async criar(dados) {
-        if (!dados.nome || !dados.codigo_interno) {
-            throw new Error('Nome e código interno são obrigatórios');
+        if (!dados.nome || !dados.codigo_barras) {
+            throw new Error('Nome e código de barras são obrigatórios.');
         }
-        const codInt = dados.codigo_interno.trim();
-        const codBar = (dados.codigo_barras || dados.codigo_interno).trim();
-        const existInt = await (0, db_1.queryOne)('SELECT id FROM materiais WHERE codigo_interno = ?', [codInt]);
-        if (existInt) {
-            throw new Error(`Já existe um material cadastrado com o código interno ${codInt}`);
-        }
+        const codBar = dados.codigo_barras.trim();
         const existBar = await (0, db_1.queryOne)('SELECT id FROM materiais WHERE codigo_barras = ?', [codBar]);
         if (existBar) {
             throw new Error(`Já existe um material cadastrado com o código de barras ${codBar}`);
         }
-        await (0, db_1.query)(`INSERT INTO materiais (nome, codigo_interno, codigo_barras, categoria_id, foto_url, status, observacao)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`, [
+        await (0, db_1.query)(`INSERT INTO materiais (nome, codigo_barras, categoria_id, foto_url, status, observacao)
+       VALUES (?, ?, ?, ?, ?, ?)`, [
             dados.nome.trim(),
-            codInt,
             codBar,
             dados.categoria_id || null,
             dados.foto_url || '',
             'DISPONIVEL',
             dados.observacao || ''
         ]);
-        return await this.buscarPorCodigo(codInt);
+        return await this.buscarPorCodigo(codBar);
     }
     static async editar(id, dados) {
         const mat = await this.buscarPorId(id);
@@ -112,7 +102,7 @@ class MaterialService {
         // Se mudou para MANUTENCAO, registrar movimentação
         if (novoStatus === 'MANUTENCAO') {
             await (0, db_1.query)(`INSERT INTO movimentacoes (material_id, material_codigo, material_nome, colaborador_id, colaborador_nome, colaborador_matricula, operador_id, operador_nome, tipo, observacao)
-         VALUES (?, ?, ?, NULL, 'N/A', 'N/A', ?, 'OPERADOR', 'MANUTENCAO', ?)`, [mat.id, mat.codigo_interno, mat.nome, operadorId || 1, observacao || 'Enviado para manutenção']);
+         VALUES (?, ?, ?, NULL, 'N/A', 'N/A', ?, 'OPERADOR', 'MANUTENCAO', ?)`, [mat.id, mat.nome, operadorId || 1, observacao || 'Enviado para manutenção']);
         }
         return await this.buscarPorId(id);
     }

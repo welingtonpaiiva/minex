@@ -13,7 +13,7 @@ import clsx from 'clsx';
 const now = Date.now();
 const h = (n: number) => new Date(now - n * 3600000).toISOString();
 
-const MOCK_ATIVOS = [
+const MOCK_ATIVOS_RAW = [
   { acesso_id:'T01', nome:'CARLOS EDUARDO SILVA', matricula:'1234', cargo:'Operador de Mina', setor:'EXTRAÇÃO', status:'ATIVO', data_hora_entrada:h(2.5), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Lanterna de Capacete LED Subterrânea' }] },
   { acesso_id:'T02', nome:'MARCOS ANTONIO FERREIRA', matricula:'5678', cargo:'Técnico de Segurança', setor:'SEGURANÇA', status:'ATIVO', data_hora_entrada:h(4.1), data_hora_saida:null, foto_url:null, materiais:[] },
   { acesso_id:'T03', nome:'ANA PAULA RODRIGUES', matricula:'9012', cargo:'Geóloga Sr.', setor:'GEOLOGIA', status:'ATIVO', data_hora_entrada:h(1.2), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Detector Multi-Gás' },{ nome:'Rádio Comunicador IS' }] },
@@ -50,14 +50,17 @@ const MOCK_ATIVOS = [
   { acesso_id:'T34', nome:'ADRIANA SALES MONTEIRO', matricula:'4376', cargo:'Supervisora de Operações', setor:'OPERAÇÃO', status:'ATIVO', data_hora_entrada:h(7.4), data_hora_saida:null, foto_url:null, materiais:[] },
   { acesso_id:'T35', nome:'IGOR BATISTA CAVALCANTE', matricula:'5487', cargo:'Técnico de Instrumentação', setor:'INSTRUMENTAÇÃO', status:'ATIVO', data_hora_entrada:h(1.7), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Auto-Resgatador Subterrâneo' }] },
 ];
+const MOCK_ATIVOS = MOCK_ATIVOS_RAW.map(a => ({ ...a, foto_url: `https://i.pravatar.cc/150?u=${a.acesso_id}` }));
 
-const MOCK_HISTORICO = [
+const MOCK_HISTORICO_RAW = [
   { acesso_id:'H01', nome:'JULIANA COSTA MENDES', matricula:'7890', cargo:'Supervisora', setor:'OPERAÇÃO', status:'ENCERRADO', data_hora_entrada:h(9), data_hora_saida:new Date(now - 1.5*3600000).toISOString(), foto_url:null, materiais:[] },
   { acesso_id:'H02', nome:'CARLOS MENEZES PORTO', matricula:'2211', cargo:'Operador de Mina', setor:'EXTRAÇÃO', status:'ENCERRADO', data_hora_entrada:h(10), data_hora_saida:new Date(now - 0.5*3600000).toISOString(), foto_url:null, materiais:[] },
 ];
+const MOCK_HISTORICO = MOCK_HISTORICO_RAW.map(a => ({ ...a, foto_url: `https://i.pravatar.cc/150?u=${a.acesso_id}` }));
 
-const PAGE_SIZE = 25;
-const TV_INTERVAL_MS = 15000; // 15 segundos por página no Modo TV
+const PAGE_SIZE = 25; // Usado apenas como fallback se necessário
+const TV_SCROLL_SPEED = 40; // px/s
+const TV_PAUSE_MS = 2500; // pausa nos extremos
 
 // ─────────────────────────────────────────────────────────────────────────────
 export const MonitoramentoMina: React.FC = () => {
@@ -69,23 +72,37 @@ export const MonitoramentoMina: React.FC = () => {
   const [painelAberto, setPainelAberto] = useState(false);
   const [acessoSelecionado, setAcessoSelecionado] = useState<any>(null);
   const [modoApresentacao, setModoApresentacao] = useState(false);
-  const [paginaAtual, setPaginaAtual] = useState(0);
-  const [paginaTV, setPaginaTV] = useState(0);
   const [tvPausado, setTvPausado] = useState(false);
   const [clock, setClock] = useState(new Date());
-  const tvTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const tvScrollRef = useRef<HTMLDivElement>(null);
+  const tvAnimRef = useRef<number | null>(null);
+  const tvDirRef = useRef<1 | -1>(1); // 1 descendo, -1 subindo
+  const tvPausadoRef = useRef(false);
 
   const ativosExibidos  = modoTeste ? MOCK_ATIVOS    : ativos;
   const historicoExibido = modoTeste ? MOCK_HISTORICO : historico;
 
-  const listaAtual = aba === 'ATIVOS' ? ativosExibidos : historicoExibido;
-  const totalPaginas = Math.max(1, Math.ceil(listaAtual.length / PAGE_SIZE));
-  const paginaSegura  = Math.min(paginaAtual, totalPaginas - 1);
-  const cardsDaPagina = listaAtual.slice(paginaSegura * PAGE_SIZE, (paginaSegura + 1) * PAGE_SIZE);
+  // Separar colaboradores com material pendente há mais de 8h (pinados no topo)
+  const agora = Date.now();
+  const isPendente8h = (acesso: any) =>
+    acesso.materiais?.length > 0 &&
+    Math.floor((agora - new Date(acesso.data_hora_entrada).getTime()) / 3600000) >= 8;
 
-  // Paginação TV
-  const totalPaginasTV = Math.max(1, Math.ceil(ativosExibidos.length / PAGE_SIZE));
-  const cardsTV = ativosExibidos.slice(paginaTV * PAGE_SIZE, (paginaTV + 1) * PAGE_SIZE);
+  const listaAtualRaw = aba === 'ATIVOS' ? ativosExibidos : historicoExibido;
+  const listaAtual = aba === 'ATIVOS'
+    ? [
+        ...listaAtualRaw.filter(isPendente8h),
+        ...listaAtualRaw.filter(a => !isPendente8h(a)),
+      ]
+    : listaAtualRaw;
+  const pinados = aba === 'ATIVOS' ? listaAtual.filter(isPendente8h) : [];
+
+  // No modo TV os pinados sempre vão em cima
+  const ativosTV = [
+    ...ativosExibidos.filter(isPendente8h),
+    ...ativosExibidos.filter(a => !isPendente8h(a)),
+  ];
 
   const fetchDados = async () => {
     try {
@@ -101,14 +118,51 @@ export const MonitoramentoMina: React.FC = () => {
 
   useEffect(() => { const id = setInterval(() => setClock(new Date()), 1000); return () => clearInterval(id); }, []);
 
-  // Auto-rotação TV
+  useEffect(() => { tvPausadoRef.current = tvPausado; }, [tvPausado]);
+
+  // Auto-rotação TV suave
   useEffect(() => {
-    if (!modoApresentacao || tvPausado) { if (tvTimerRef.current) clearInterval(tvTimerRef.current); return; }
-    tvTimerRef.current = setInterval(() => {
-      setPaginaTV(p => (p + 1) % totalPaginasTV);
-    }, TV_INTERVAL_MS);
-    return () => { if (tvTimerRef.current) clearInterval(tvTimerRef.current); };
-  }, [modoApresentacao, tvPausado, totalPaginasTV]);
+    if (!modoApresentacao) {
+      if (tvAnimRef.current) cancelAnimationFrame(tvAnimRef.current);
+      return;
+    }
+
+    const el = tvScrollRef.current;
+    if (!el) return;
+
+    let lastTime: number | null = null;
+    let pauseUntil = 0;
+
+    const step = (ts: number) => {
+      if (lastTime === null) lastTime = ts;
+      const dt = ts - lastTime;
+      lastTime = ts;
+
+      if (!tvPausadoRef.current) {
+        if (ts >= pauseUntil) {
+          const delta = (TV_SCROLL_SPEED * dt) / 1000;
+          el.scrollTop += tvDirRef.current * delta;
+
+          const maxScroll = el.scrollHeight - el.clientHeight;
+
+          if (tvDirRef.current === 1 && el.scrollTop >= maxScroll - 1) {
+            el.scrollTop = maxScroll;
+            tvDirRef.current = -1;
+            pauseUntil = ts + TV_PAUSE_MS;
+          } else if (tvDirRef.current === -1 && el.scrollTop <= 1) {
+            el.scrollTop = 0;
+            tvDirRef.current = 1;
+            pauseUntil = ts + TV_PAUSE_MS;
+          }
+        }
+      }
+
+      tvAnimRef.current = requestAnimationFrame(step);
+    };
+
+    tvAnimRef.current = requestAnimationFrame(step);
+    return () => { if (tvAnimRef.current) cancelAnimationFrame(tvAnimRef.current); };
+  }, [modoApresentacao]);
 
   const pendencias   = ativosExibidos.filter(a => a.materiais?.length > 0).length;
   const hoje         = new Date().toLocaleDateString();
@@ -149,14 +203,19 @@ export const MonitoramentoMina: React.FC = () => {
           </div>
         </header>
 
-        {/* Grid TV — flex-1 para ocupar espaço disponível */}
-        <div className="flex-1 px-6 pt-4 pb-2 overflow-hidden">
+        {/* Grid TV — flex-1 para ocupar espaço disponível e usar scroll suave */}
+        <div 
+          ref={tvScrollRef} 
+          className="flex-1 px-6 pt-4 pb-2 overflow-y-auto"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          <style>{`.tv-scroll-area::-webkit-scrollbar { display: none; }`}</style>
           <div
-            className="grid gap-2.5 h-full"
-            style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gridTemplateRows: 'repeat(5, minmax(0, 1fr))' }}
+            className="tv-scroll-area grid gap-2.5"
+            style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}
           >
-            {cardsTV.map(acesso => (
-              <ColaboradorCardCompacto key={acesso.acesso_id} acesso={acesso} onExibirMais={() => abrirPainel(acesso)} />
+            {ativosTV.map(acesso => (
+              <ColaboradorCardCompacto key={acesso.acesso_id} acesso={acesso} onExibirMais={() => abrirPainel(acesso)} isPendente8h={isPendente8h(acesso)} />
             ))}
           </div>
         </div>
@@ -164,31 +223,23 @@ export const MonitoramentoMina: React.FC = () => {
         {/* Rodapé TV */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-2 border-t border-white/10 bg-[#110A2B]">
           <span className="text-xs text-slate-400">
-            Exibindo {cardsTV.length} de {ativosExibidos.length} colaboradores
+            {ativosExibidos.length} colaboradores na mina
           </span>
           <div className="flex items-center gap-3">
-            <button onClick={() => setPaginaTV(p => (p - 1 + totalPaginasTV) % totalPaginasTV)}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-sm font-bold text-white">{paginaTV + 1} / {totalPaginasTV}</span>
-            <button onClick={() => setPaginaTV(p => (p + 1) % totalPaginasTV)}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
-              <ChevronRight className="w-4 h-4" />
-            </button>
             <button onClick={() => setTvPausado(p => !p)}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+              className="flex items-center gap-1.5 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-xs font-bold">
               {tvPausado ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+              {tvPausado ? 'RETOMAR' : 'PAUSAR'}
             </button>
             <button
-              onClick={() => { setModoApresentacao(false); setPaginaTV(0); setTvPausado(false); }}
+              onClick={() => { setModoApresentacao(false); setTvPausado(false); tvDirRef.current = 1; }}
               className="px-4 py-1.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500/40 rounded-xl font-bold text-xs transition-colors"
             >
               SAIR DA TV
             </button>
           </div>
           <div className="flex items-center gap-1 text-xs text-emerald-400 font-bold">
-            <Radio className="w-3 h-3 animate-pulse" /> AO VIVO
+            <Radio className="w-3 h-3 animate-pulse" />
           </div>
         </div>
 
@@ -214,7 +265,7 @@ export const MonitoramentoMina: React.FC = () => {
               className="flex items-center gap-2 px-3 py-2 font-bold text-[11px] uppercase tracking-widest text-white/50 hover:text-white transition-colors">
               <Monitor className="w-4 h-4" /> MODO TV
             </button>
-            <button onClick={() => { setModoTeste(t => !t); setPaginaAtual(0); }}
+            <button onClick={() => setModoTeste(t => !t)}
               className={clsx('flex items-center gap-2 px-3 py-2 font-bold text-[11px] uppercase tracking-widest transition-colors',
                 modoTeste ? 'text-amber-400' : 'text-white/50 hover:text-white')}>
               <FlaskConical className="w-4 h-4" />
@@ -260,11 +311,11 @@ export const MonitoramentoMina: React.FC = () => {
           {/* Abas + pesquisa */}
           <div className="flex items-center justify-between mb-4 bg-white p-2.5 rounded-xl shadow-sm border border-slate-200/60">
             <div className="flex items-center gap-6 px-4">
-              <button onClick={() => { setAba('ATIVOS'); setPaginaAtual(0); }}
+              <button onClick={() => setAba('ATIVOS')}
                 className={clsx('font-bold text-xs uppercase tracking-wider transition-colors', aba === 'ATIVOS' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600')}>
                 ATIVOS NA MINA
               </button>
-              <button onClick={() => { setAba('HISTORICO'); setPaginaAtual(0); }}
+              <button onClick={() => setAba('HISTORICO')}
                 className={clsx('font-bold text-xs uppercase tracking-wider transition-colors', aba === 'HISTORICO' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600')}>
                 HISTÓRICO
               </button>
@@ -280,41 +331,28 @@ export const MonitoramentoMina: React.FC = () => {
             </div>
           </div>
 
-          {/* Grid 5×5 */}
-          {cardsDaPagina.length > 0 ? (
+          {/* Grid — todos de uma vez, sem paginação */}
+          {listaAtual.length > 0 ? (
             <>
-              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gridAutoRows: '1fr' }}>
-                {cardsDaPagina.map(acesso => (
-                  <ColaboradorCardCompacto key={acesso.acesso_id} acesso={acesso} onExibirMais={() => abrirPainel(acesso)} />
+              {/* Banner de alerta para pendentes > 8h */}
+              {pinados.length > 0 && (
+                <div className="mb-3 flex items-center gap-3 bg-red-600 text-white px-4 py-2.5 rounded-xl shadow-lg animate-pulse">
+                  <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-black text-sm uppercase tracking-wide">
+                    {pinados.length} COLABORADOR{pinados.length > 1 ? 'ES' : ''} COM MATERIAL PENDENTE HÁ MAIS DE 8 HORAS!
+                  </span>
+                </div>
+              )}
+
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
+                {listaAtual.map(acesso => (
+                  <ColaboradorCardCompacto key={acesso.acesso_id} acesso={acesso} onExibirMais={() => abrirPainel(acesso)} isPendente8h={isPendente8h(acesso)} />
                 ))}
               </div>
               
-              {totalPaginas > 1 && (
-                <div className="flex items-center justify-between px-1 mt-3 text-xs text-slate-500 select-none">
-                  <span className="font-medium">Exibindo {Math.min(PAGE_SIZE, listaAtual.length - paginaSegura * PAGE_SIZE)} de {listaAtual.length} colaboradores</span>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setPaginaAtual(Math.max(0, paginaSegura - 1))} disabled={paginaSegura === 0}
-                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition-colors">
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                    </button>
-                    {Array.from({ length: totalPaginas }).map((_, i) => (
-                      <button key={i} onClick={() => setPaginaAtual(i)}
-                        className={clsx('w-7 h-7 rounded-lg text-xs font-bold transition-colors', i === paginaSegura ? 'bg-[#331274] text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50')}>
-                        {i + 1}
-                      </button>
-                    ))}
-                    <button onClick={() => setPaginaAtual(Math.min(totalPaginas - 1, paginaSegura + 1))} disabled={paginaSegura === totalPaginas - 1}
-                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition-colors">
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              )}
-              {totalPaginas === 1 && (
-                <div className="flex items-center mt-3 px-1 text-xs text-slate-400">
-                  <span>Exibindo {cardsDaPagina.length} colaborador{cardsDaPagina.length !== 1 ? 'es' : ''}</span>
-                </div>
-              )}
+              <div className="flex items-center justify-center mt-6 mb-4 px-1 text-xs text-slate-400">
+                <span>Exibindo todos os {listaAtual.length} colaborador{listaAtual.length !== 1 ? 'es' : ''}</span>
+              </div>
             </>
           ) : (
             !loading && (

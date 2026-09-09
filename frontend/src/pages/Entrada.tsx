@@ -212,7 +212,7 @@ export const Entrada: React.FC = () => {
               <AlertTriangle className="w-6 h-6 text-red-600 shrink-0 animate-bounce" />
               <div>
                 <div className="font-extrabold uppercase text-red-950 font-['Outfit']">
-                  ⚠️ ATENÇÃO: TURNO EXCEDIDO (+8 HORAS DE POSSE)
+                  ATENÇÃO: TURNO EXCEDIDO (+8 HORAS DE POSSE)
                 </div>
                 <div className="text-xs text-red-800 font-semibold mt-0.5">
                   Este colaborador possui {itensExcedidosCount} equipamento(s) retirados há mais de 8 horas!
@@ -404,7 +404,7 @@ export const Entrada: React.FC = () => {
                             <td className="text-center py-3.5 px-4">
                               {item.devolvido ? (
                                 <span className="bg-emerald-600 text-white px-3 py-1 text-xs font-extrabold rounded-lg uppercase shadow-sm">
-                                  ✓ DEVOLVIDO
+                                  DEVOLVIDO
                                 </span>
                               ) : (
                                 <span className="bg-slate-100 text-slate-700 border border-slate-300 px-3 py-1 text-xs font-bold rounded-lg uppercase">

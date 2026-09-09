@@ -79,7 +79,7 @@ export const Estoque: React.FC = () => {
               <AlertTriangle className="w-6 h-6 text-red-600 shrink-0 animate-pulse" />
               <div>
                 <div className="font-extrabold uppercase text-red-950 font-['Outfit']">
-                  ⚠️ ATENÇÃO: TURNO EXCEDIDO ({emprestimosExcedidos.length} EQUIPAMENTO{emprestimosExcedidos.length > 1 ? 'S' : ''})
+                  ATENÇÃO: TURNO EXCEDIDO ({emprestimosExcedidos.length} EQUIPAMENTO{emprestimosExcedidos.length > 1 ? 'S' : ''})
                 </div>
                 <div className="text-xs text-red-800 font-semibold mt-0.5">
                   Materiais em posse de colaboradores ultrapassaram o tempo limite do turno (8 horas).
