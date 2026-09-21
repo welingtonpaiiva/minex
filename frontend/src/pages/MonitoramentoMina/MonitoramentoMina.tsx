@@ -49,15 +49,14 @@ const MOCK_ATIVOS = [
   { acesso_id:'T33', nome:'FABIO CUNHA RAMOS', matricula:'3265', cargo:'Eletricista', setor:'ELÉTRICA', status:'ATIVO', data_hora_entrada:h(2.8), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Multímetro Intrínseco', codigo_interno:'ELT-077' }] },
   { acesso_id:'T34', nome:'ADRIANA SALES MONTEIRO', matricula:'4376', cargo:'Supervisora de Operações', setor:'OPERAÇÃO', status:'ATIVO', data_hora_entrada:h(7.4), data_hora_saida:null, foto_url:null, materiais:[] },
   { acesso_id:'T35', nome:'IGOR BATISTA CAVALCANTE', matricula:'5487', cargo:'Técnico de Instrumentação', setor:'INSTRUMENTAÇÃO', status:'ATIVO', data_hora_entrada:h(1.7), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Auto-Resgatador Subterrâneo', codigo_interno:'RES-035' }] },
-];
+].map(item => ({ ...item, foto_url: `https://i.pravatar.cc/150?u=${item.matricula}` }));
 
 const MOCK_HISTORICO = [
   { acesso_id:'H01', nome:'JULIANA COSTA MENDES', matricula:'7890', cargo:'Supervisora', setor:'OPERAÇÃO', status:'ENCERRADO', data_hora_entrada:h(9), data_hora_saida:new Date(now - 1.5*3600000).toISOString(), foto_url:null, materiais:[] },
   { acesso_id:'H02', nome:'CARLOS MENEZES PORTO', matricula:'2211', cargo:'Operador de Mina', setor:'EXTRAÇÃO', status:'ENCERRADO', data_hora_entrada:h(10), data_hora_saida:new Date(now - 0.5*3600000).toISOString(), foto_url:null, materiais:[] },
-];
+].map(item => ({ ...item, foto_url: `https://i.pravatar.cc/150?u=${item.matricula}` }));
 
 const PAGE_SIZE = 25;
-const TV_INTERVAL_MS = 15000; // 15 segundos por página no Modo TV
 
 // ─────────────────────────────────────────────────────────────────────────────
 export const MonitoramentoMina: React.FC = () => {
@@ -70,22 +69,28 @@ export const MonitoramentoMina: React.FC = () => {
   const [acessoSelecionado, setAcessoSelecionado] = useState<any>(null);
   const [modoApresentacao, setModoApresentacao] = useState(false);
   const [paginaAtual, setPaginaAtual] = useState(0);
-  const [paginaTV, setPaginaTV] = useState(0);
   const [tvPausado, setTvPausado] = useState(false);
   const [clock, setClock] = useState(new Date());
-  const tvTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContentRef = useRef<HTMLDivElement>(null);
 
   const ativosExibidos  = modoTeste ? MOCK_ATIVOS    : ativos;
   const historicoExibido = modoTeste ? MOCK_HISTORICO : historico;
 
-  const listaAtual = aba === 'ATIVOS' ? ativosExibidos : historicoExibido;
-  const totalPaginas = Math.max(1, Math.ceil(listaAtual.length / PAGE_SIZE));
-  const paginaSegura  = Math.min(paginaAtual, totalPaginas - 1);
-  const cardsDaPagina = listaAtual.slice(paginaSegura * PAGE_SIZE, (paginaSegura + 1) * PAGE_SIZE);
+  // Listas divididas por tempo limite (8h)
+  const excedidos = ativosExibidos.filter(a => {
+    const h = Math.floor((Date.now() - new Date(a.data_hora_entrada).getTime()) / 3600000);
+    return h >= 8;
+  });
+  const normais = ativosExibidos.filter(a => {
+    const h = Math.floor((Date.now() - new Date(a.data_hora_entrada).getTime()) / 3600000);
+    return h < 8;
+  });
 
-  // Paginação TV
-  const totalPaginasTV = Math.max(1, Math.ceil(ativosExibidos.length / PAGE_SIZE));
-  const cardsTV = ativosExibidos.slice(paginaTV * PAGE_SIZE, (paginaTV + 1) * PAGE_SIZE);
+  const listaPaginada = aba === 'ATIVOS' ? normais : historicoExibido;
+  const totalPaginas = Math.max(1, Math.ceil(listaPaginada.length / PAGE_SIZE));
+  const paginaSegura  = Math.min(paginaAtual, totalPaginas - 1);
+  const cardsDaPagina = listaPaginada.slice(paginaSegura * PAGE_SIZE, (paginaSegura + 1) * PAGE_SIZE);
 
   const fetchDados = async () => {
     try {
@@ -101,14 +106,46 @@ export const MonitoramentoMina: React.FC = () => {
 
   useEffect(() => { const id = setInterval(() => setClock(new Date()), 1000); return () => clearInterval(id); }, []);
 
-  // Auto-rotação TV
+  // Auto-rolagem TV
   useEffect(() => {
-    if (!modoApresentacao || tvPausado) { if (tvTimerRef.current) clearInterval(tvTimerRef.current); return; }
-    tvTimerRef.current = setInterval(() => {
-      setPaginaTV(p => (p + 1) % totalPaginasTV);
-    }, TV_INTERVAL_MS);
-    return () => { if (tvTimerRef.current) clearInterval(tvTimerRef.current); };
-  }, [modoApresentacao, tvPausado, totalPaginasTV]);
+    if (!modoApresentacao || tvPausado) return;
+    const container = scrollContainerRef.current;
+    const content = scrollContentRef.current;
+    if (!container || !content) return;
+
+    const maxScroll = content.scrollHeight - container.clientHeight;
+    if (maxScroll <= 0) return;
+
+    let startTime: number | null = null;
+    let animationFrameId: number;
+    const duration = maxScroll * 60; // 60ms por pixel (~16px/s)
+
+    const scroll = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = timestamp - startTime;
+      
+      if (progress < duration) {
+        const y = (progress / duration) * maxScroll;
+        content.style.transform = `translateY(-${y}px)`;
+        animationFrameId = requestAnimationFrame(scroll);
+      } else {
+        setTimeout(() => {
+          if (!scrollContentRef.current) return;
+          scrollContentRef.current.style.transform = `translateY(0px)`;
+          startTime = null;
+          if (!tvPausado) {
+            animationFrameId = requestAnimationFrame(scroll);
+          }
+        }, 2000);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(scroll);
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      if (content) content.style.transform = `translateY(0px)`;
+    };
+  }, [modoApresentacao, tvPausado, normais.length]);
 
   const pendencias   = ativosExibidos.filter(a => a.materiais?.length > 0).length;
   const hoje         = new Date().toLocaleDateString();
@@ -135,11 +172,11 @@ export const MonitoramentoMina: React.FC = () => {
               <p className="text-[9px] text-slate-400 uppercase tracking-wider">Na Mina</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-black text-emerald-400">{ativosExibidos.filter(a => { const h = Math.floor((Date.now() - new Date(a.data_hora_entrada).getTime()) / 3600000); return h < 7; }).length}</p>
-              <p className="text-[9px] text-slate-400 uppercase tracking-wider">&lt;7h30</p>
+              <p className="text-2xl font-black text-emerald-400">{ativosExibidos.filter(a => { const h = Math.floor((Date.now() - new Date(a.data_hora_entrada).getTime()) / 3600000); return h < 8; }).length}</p>
+              <p className="text-[9px] text-slate-400 uppercase tracking-wider">&lt;8h</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-black text-rose-400">{ativosExibidos.filter(a => { const h = Math.floor((Date.now() - new Date(a.data_hora_entrada).getTime()) / 3600000); return h >= 7; }).length}</p>
+              <p className="text-2xl font-black text-rose-400">{ativosExibidos.filter(a => { const h = Math.floor((Date.now() - new Date(a.data_hora_entrada).getTime()) / 3600000); return h >= 8; }).length}</p>
               <p className="text-[9px] text-slate-400 uppercase tracking-wider">Excedido</p>
             </div>
             <div className="text-right">
@@ -150,38 +187,40 @@ export const MonitoramentoMina: React.FC = () => {
         </header>
 
         {/* Grid TV — flex-1 para ocupar espaço disponível */}
-        <div className="flex-1 px-6 pt-4 pb-2 overflow-hidden">
-          <div
-            className="grid gap-2.5 h-full"
-            style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gridTemplateRows: 'repeat(5, minmax(0, 1fr))' }}
-          >
-            {cardsTV.map(acesso => (
-              <ColaboradorCardCompacto key={acesso.acesso_id} acesso={acesso} onExibirMais={() => abrirPainel(acesso)} />
-            ))}
+        <div className="flex-1 px-6 pt-4 pb-2 overflow-hidden flex flex-col gap-4">
+          {/* Fixados no Topo (Excedidos) */}
+          {excedidos.length > 0 && (
+            <div className="flex-shrink-0">
+              <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
+                {excedidos.map(acesso => (
+                  <ColaboradorCardCompacto key={acesso.acesso_id} acesso={acesso} onExibirMais={() => abrirPainel(acesso)} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Container de Rolagem (Normais) */}
+          <div className="flex-1 overflow-hidden relative" ref={scrollContainerRef}>
+            <div className="grid gap-2.5 pb-20" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }} ref={scrollContentRef}>
+              {normais.map(acesso => (
+                <ColaboradorCardCompacto key={acesso.acesso_id} acesso={acesso} onExibirMais={() => abrirPainel(acesso)} />
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Rodapé TV */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-2 border-t border-white/10 bg-[#110A2B]">
           <span className="text-xs text-slate-400">
-            Exibindo {cardsTV.length} de {ativosExibidos.length} colaboradores
+            Monitoramento Contínuo — {ativosExibidos.length} colaboradores
           </span>
           <div className="flex items-center gap-3">
-            <button onClick={() => setPaginaTV(p => (p - 1 + totalPaginasTV) % totalPaginasTV)}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-sm font-bold text-white">{paginaTV + 1} / {totalPaginasTV}</span>
-            <button onClick={() => setPaginaTV(p => (p + 1) % totalPaginasTV)}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
-              <ChevronRight className="w-4 h-4" />
-            </button>
             <button onClick={() => setTvPausado(p => !p)}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
-              {tvPausado ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white font-bold text-xs flex items-center gap-2">
+              {tvPausado ? <><Play className="w-4 h-4" /> RETOMAR</> : <><Pause className="w-4 h-4" /> PAUSAR</>}
             </button>
             <button
-              onClick={() => { setModoApresentacao(false); setPaginaTV(0); setTvPausado(false); }}
+              onClick={() => { setModoApresentacao(false); setTvPausado(false); }}
               className="px-4 py-1.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500/40 rounded-xl font-bold text-xs transition-colors"
             >
               SAIR DA TV
@@ -283,39 +322,59 @@ export const MonitoramentoMina: React.FC = () => {
           </div>
 
           {/* Grid 5×5 */}
-          {cardsDaPagina.length > 0 ? (
+          {cardsDaPagina.length > 0 || (aba === 'ATIVOS' && excedidos.length > 0) ? (
             <>
-              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gridAutoRows: '1fr' }}>
-                {cardsDaPagina.map(acesso => (
-                  <ColaboradorCardCompacto key={acesso.acesso_id} acesso={acesso} onExibirMais={() => abrirPainel(acesso)} />
-                ))}
-              </div>
-              
-              {totalPaginas > 1 && (
-                <div className="flex items-center justify-between px-1 mt-3 text-xs text-slate-500 select-none">
-                  <span className="font-medium">Exibindo {Math.min(PAGE_SIZE, listaAtual.length - paginaSegura * PAGE_SIZE)} de {listaAtual.length} colaboradores</span>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setPaginaAtual(Math.max(0, paginaSegura - 1))} disabled={paginaSegura === 0}
-                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition-colors">
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                    </button>
-                    {Array.from({ length: totalPaginas }).map((_, i) => (
-                      <button key={i} onClick={() => setPaginaAtual(i)}
-                        className={clsx('w-7 h-7 rounded-lg text-xs font-bold transition-colors', i === paginaSegura ? 'bg-[#331274] text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50')}>
-                        {i + 1}
-                      </button>
+              {aba === 'ATIVOS' && excedidos.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-xs font-black text-rose-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" /> TEMPO LIMITE EXCEDIDO NA MINA
+                  </h3>
+                  <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gridAutoRows: '1fr' }}>
+                    {excedidos.map(acesso => (
+                      <ColaboradorCardCompacto key={acesso.acesso_id} acesso={acesso} onExibirMais={() => abrirPainel(acesso)} />
                     ))}
-                    <button onClick={() => setPaginaAtual(Math.min(totalPaginas - 1, paginaSegura + 1))} disabled={paginaSegura === totalPaginas - 1}
-                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition-colors">
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
                   </div>
                 </div>
               )}
-              {totalPaginas === 1 && (
-                <div className="flex items-center mt-3 px-1 text-xs text-slate-400">
-                  <span>Exibindo {cardsDaPagina.length} colaborador{cardsDaPagina.length !== 1 ? 'es' : ''}</span>
-                </div>
+
+              {cardsDaPagina.length > 0 && (
+                <>
+                  {aba === 'ATIVOS' && excedidos.length > 0 && (
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 mt-2">DENTRO DO HORÁRIO REGULAR</h3>
+                  )}
+                  <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gridAutoRows: '1fr' }}>
+                    {cardsDaPagina.map(acesso => (
+                      <ColaboradorCardCompacto key={acesso.acesso_id} acesso={acesso} onExibirMais={() => abrirPainel(acesso)} />
+                    ))}
+                  </div>
+                  
+                  {totalPaginas > 1 && (
+                    <div className="flex items-center justify-between px-1 mt-3 text-xs text-slate-500 select-none">
+                      <span className="font-medium">Exibindo {Math.min(PAGE_SIZE, listaPaginada.length - paginaSegura * PAGE_SIZE)} de {listaPaginada.length} colaboradores</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setPaginaAtual(Math.max(0, paginaSegura - 1))} disabled={paginaSegura === 0}
+                          className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition-colors">
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                        {Array.from({ length: totalPaginas }).map((_, i) => (
+                          <button key={i} onClick={() => setPaginaAtual(i)}
+                            className={clsx('w-7 h-7 rounded-lg text-xs font-bold transition-colors', i === paginaSegura ? 'bg-[#331274] text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50')}>
+                            {i + 1}
+                          </button>
+                        ))}
+                        <button onClick={() => setPaginaAtual(Math.min(totalPaginas - 1, paginaSegura + 1))} disabled={paginaSegura === totalPaginas - 1}
+                          className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition-colors">
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {totalPaginas === 1 && (
+                    <div className="flex items-center mt-3 px-1 text-xs text-slate-400">
+                      <span>Exibindo {cardsDaPagina.length} colaborador{cardsDaPagina.length !== 1 ? 'es' : ''}</span>
+                    </div>
+                  )}
+                </>
               )}
             </>
           ) : (

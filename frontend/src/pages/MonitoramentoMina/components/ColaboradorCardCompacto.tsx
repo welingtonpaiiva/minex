@@ -29,7 +29,7 @@ export const ColaboradorCardCompacto: React.FC<ColaboradorCardCompactoProps> = (
     }
   }, [acesso]);
 
-  const excedido = horasEmUso >= 7;
+  const excedido = horasEmUso >= 8;
   const temMateriais = acesso.materiais && acesso.materiais.length > 0;
   const materialTexto = !temMateriais
     ? 'Sem material'
