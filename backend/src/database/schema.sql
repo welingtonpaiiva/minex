@@ -106,3 +106,19 @@ CREATE TABLE IF NOT EXISTS acessos_mina (
 
 CREATE INDEX IF NOT EXISTS idx_acessos_mina_colaborador ON acessos_mina(colaborador_id);
 CREATE INDEX IF NOT EXISTS idx_acessos_mina_status ON acessos_mina(status);
+
+-- 8. TABELA DE KITS (PRÉ-MONTAGEM DE MATERIAIS)
+CREATE TABLE IF NOT EXISTS kits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome TEXT UNIQUE NOT NULL,
+  status TEXT NOT NULL DEFAULT 'DISPONIVEL', -- DISPONIVEL, EM_USO
+  created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+-- 9. TABELA DE RELACIONAMENTO KITS <-> MATERIAIS
+CREATE TABLE IF NOT EXISTS kit_materiais (
+  kit_id INTEGER NOT NULL REFERENCES kits(id) ON DELETE CASCADE,
+  material_id INTEGER NOT NULL REFERENCES materiais(id) ON DELETE CASCADE,
+  PRIMARY KEY (kit_id, material_id)
+);

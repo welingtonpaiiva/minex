@@ -115,3 +115,11 @@ export interface ResumoAlertasTurno {
   alertas: AlertaTurnoItem[];
 }
 
+export interface Kit {
+  id: number;
+  nome: string;
+  status: 'DISPONIVEL' | 'EM_USO';
+  materiais?: Material[];
+  created_at?: string;
+  updated_at?: string;
+}

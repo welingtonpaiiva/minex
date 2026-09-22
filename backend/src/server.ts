@@ -11,6 +11,7 @@ import emprestimoRoutes from './routes/emprestimoRoutes';
 import historicoRoutes from './routes/historicoRoutes';
 import relatorioRoutes from './routes/relatorioRoutes';
 import acessoMinaRoutes from './routes/acessoMinaRoutes';
+import kitRoutes from './routes/kitRoutes';
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use('/api/emprestimos', emprestimoRoutes);
 app.use('/api/historico', historicoRoutes);
 app.use('/api/relatorios', relatorioRoutes);
 app.use('/api/acessos-mina', acessoMinaRoutes);
+app.use('/api/kits', kitRoutes);
 
 // Servir frontend compilado em produção se existir
 const frontendDist = path.resolve(__dirname, '../../frontend/dist');
