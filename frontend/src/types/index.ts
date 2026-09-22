@@ -22,7 +22,7 @@ export interface Colaborador {
   updated_at?: string;
 }
 
-export type StatusMaterial = 'DISPONIVEL' | 'EM_USO' | 'MANUTENCAO';
+export type StatusMaterial = 'DISPONIVEL' | 'EM_USO' | 'MANUTENCAO' | 'EXTRAVIADO';
 
 export interface Categoria {
   id: number;
@@ -64,7 +64,7 @@ export interface EmprestimoAtivo {
   operador_saida_nome?: string;
 }
 
-export type TipoMovimentacao = 'SAIDA' | 'ENTRADA' | 'MANUTENCAO';
+export type TipoMovimentacao = 'SAIDA' | 'ENTRADA' | 'MANUTENCAO' | 'EXTRAVIO';
 
 export interface Movimentacao {
   id: number;

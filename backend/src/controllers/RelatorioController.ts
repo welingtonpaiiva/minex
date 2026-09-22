@@ -4,7 +4,12 @@ import { RelatorioService } from '../services/RelatorioService';
 export class RelatorioController {
   static async obterResumo(req: Request, res: Response) {
     try {
-      const resumo = await RelatorioService.obterResumo();
+      const { busca, categoria_id } = req.query;
+      const filtros = {
+        busca: busca ? String(busca) : undefined,
+        categoria_id: categoria_id ? parseInt(String(categoria_id)) : undefined
+      };
+      const resumo = await RelatorioService.obterResumo(filtros);
       return res.json(resumo);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });

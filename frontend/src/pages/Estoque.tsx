@@ -9,7 +9,7 @@ import { calcularHorasEmUso } from '../utils/dateUtils';
 export const Estoque: React.FC = () => {
   const navigate = useNavigate();
 
-  const [tab, setTab] = useState<'todos' | 'em_uso' | 'manutencao'>('todos');
+  const [tab, setTab] = useState<'todos' | 'em_uso' | 'manutencao' | 'extraviados'>('todos');
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [emprestimosAtivos, setEmprestimosAtivos] = useState<EmprestimoAtivo[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -22,7 +22,8 @@ export const Estoque: React.FC = () => {
     total: 0,
     disponiveis: 0,
     emUso: 0,
-    manutencao: 0
+    manutencao: 0,
+    extraviados: 0
   });
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export const Estoque: React.FC = () => {
         const res = await api.get('/materiais', {
           params: {
             busca,
-            status: tab === 'manutencao' ? 'MANUTENCAO' : undefined,
+            status: tab === 'todos' ? undefined : (tab === 'manutencao' ? 'MANUTENCAO' : 'EXTRAVIADO'),
             categoria_id: categoriaFiltro ? parseInt(categoriaFiltro) : undefined
           }
         });
@@ -47,12 +48,18 @@ export const Estoque: React.FC = () => {
       }
 
       // Carregar estatísticas gerais
-      const summaryRes = await api.get('/relatorios/resumo');
+      const summaryRes = await api.get('/relatorios/resumo', {
+        params: {
+          busca,
+          categoria_id: categoriaFiltro ? parseInt(categoriaFiltro) : undefined
+        }
+      });
       setResumo({
         total: summaryRes.data.totalMateriais,
         disponiveis: summaryRes.data.disponiveis,
         emUso: summaryRes.data.emUso,
-        manutencao: summaryRes.data.manutencao
+        manutencao: summaryRes.data.manutencao,
+        extraviados: summaryRes.data.extraviados
       });
 
       const catRes = await api.get('/materiais/categorias');
@@ -174,6 +181,16 @@ export const Estoque: React.FC = () => {
               }`}
             >
               EM MANUTENÇÃO ({resumo.manutencao})
+            </button>
+            <button
+              onClick={() => setTab('extraviados')}
+              className={`px-4 py-2 rounded-lg font-extrabold text-xs uppercase transition-all cursor-pointer ${
+                tab === 'extraviados'
+                  ? 'bg-red-600 text-white shadow-sm'
+                  : 'bg-white text-slate-700 hover:bg-red-50 border border-slate-200'
+              }`}
+            >
+              EXTRAVIADOS ({resumo.extraviados})
             </button>
           </div>
 

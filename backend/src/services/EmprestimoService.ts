@@ -297,6 +297,115 @@ export class EmprestimoService {
   }
 
   /**
+   * REGISTRAR EXTRAVIO DE MATERIAIS (PERDA/DANO)
+   */
+  static async realizarExtravio(dados: {
+    colaboradorId: number;
+    materiaisCodigos: string[];
+    operadorId: number;
+    operadorNome?: string;
+  }) {
+    const { colaboradorId, materiaisCodigos, operadorId } = dados;
+
+    if (!colaboradorId) throw new Error('Colaborador não identificado');
+    if (!materiaisCodigos || materiaisCodigos.length === 0) {
+      throw new Error('Nenhum material selecionado para extravio');
+    }
+
+    return await withTransaction(async (execQuery) => {
+      const colabRows = await execQuery('SELECT * FROM colaboradores WHERE id = ?', [colaboradorId]);
+      const colaborador = colabRows[0];
+      if (!colaborador) throw new Error('Colaborador não encontrado');
+
+      const opRows = await execQuery('SELECT * FROM usuarios WHERE id = ?', [operadorId]);
+      const operador = opRows[0] || { nome: dados.operadorNome || 'OPERADOR' };
+
+      const materiaisExtraviados: any[] = [];
+
+      for (const cod of materiaisCodigos) {
+        const cleanCod = cod.trim();
+        const matRows = await execQuery(
+          'SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?',
+          [cleanCod, cleanCod]
+        );
+        const mat = matRows[0];
+
+        if (!mat) {
+          throw new Error(`MATERIAL NÃO CADASTRADO: ${cleanCod}`);
+        }
+
+        const empRows = await execQuery(
+          'SELECT * FROM emprestimos WHERE material_id = ? AND colaborador_id = ?',
+          [mat.id, colaborador.id]
+        );
+        const emp = empRows[0];
+
+        if (!emp) {
+          throw new Error(
+            `MATERIAL NÃO REGISTRADO PARA ESTE COLABORADOR (${mat.codigo_interno} - ${mat.nome}). Este material não consta nos empréstimos de ${colaborador.nome}.`
+          );
+        }
+
+        // Atualizar status do material para EXTRAVIADO
+        await execQuery(
+          "UPDATE materiais SET status = 'EXTRAVIADO', updated_at = (datetime('now', 'localtime')) WHERE id = ?",
+          [mat.id]
+        );
+
+        // Encerrar / remover empréstimo ativo
+        await execQuery('DELETE FROM emprestimos WHERE id = ?', [emp.id]);
+
+        // Criar registro permanente de histórico (EXTRAVIO)
+        await execQuery(
+          `INSERT INTO movimentacoes (material_id, material_codigo, material_nome, colaborador_id, colaborador_nome, colaborador_matricula, operador_id, operador_nome, tipo, observacao)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'EXTRAVIO', 'Material marcado como extraviado/perdido pelo operador')`,
+          [
+            mat.id,
+            mat.codigo_interno,
+            mat.nome,
+            colaborador.id,
+            colaborador.nome,
+            colaborador.matricula,
+            operadorId,
+            operador.nome
+          ]
+        );
+
+        materiaisExtraviados.push({
+          id: mat.id,
+          codigo_interno: mat.codigo_interno,
+          nome: mat.nome
+        });
+      }
+
+      // Check if there are any remaining materials borrowed
+      const pendingRows = await execQuery(
+        "SELECT count(id) as count FROM emprestimos WHERE colaborador_id = ?",
+        [colaborador.id]
+      );
+      if (pendingRows[0].count === 0) {
+        await execQuery(
+          "UPDATE acessos_mina SET status = 'ENCERRADO', data_hora_saida = (datetime('now', 'localtime')), updated_at = (datetime('now', 'localtime')) WHERE colaborador_id = ? AND status = 'ATIVO'",
+          [colaborador.id]
+        );
+      }
+
+      return {
+        sucesso: true,
+        mensagem: 'EXTRAVIO REGISTRADO COM SUCESSO',
+        colaborador: {
+          id: colaborador.id,
+          nome: colaborador.nome,
+          matricula: colaborador.matricula
+        },
+        materiaisCount: materiaisExtraviados.length,
+        materiais: materiaisExtraviados,
+        dataHora: new Date().toISOString()
+      };
+    });
+  }
+
+  /**
    * BUSCAR ALERTAS DE TURNO (MONITORAMENTO EM TEMPO REAL DE POSSE > 8 HORAS)
    */
   static async buscarAlertasTurno() {

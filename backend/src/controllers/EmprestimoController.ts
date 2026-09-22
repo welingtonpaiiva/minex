@@ -61,6 +61,25 @@ export class EmprestimoController {
     }
   }
 
+  static async realizarExtravio(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { colaboradorId, materiaisCodigos } = req.body;
+      const operadorId = req.user?.id || 1;
+      const operadorNome = req.user?.nome || 'OPERADOR';
+
+      const result = await EmprestimoService.realizarExtravio({
+        colaboradorId: parseInt(colaboradorId),
+        materiaisCodigos,
+        operadorId,
+        operadorNome
+      });
+
+      return res.json(result);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message || 'Erro ao registrar extravio' });
+    }
+  }
+
   static async buscarAlertasTurno(req: AuthenticatedRequest, res: Response) {
     try {
       const alertas = await EmprestimoService.buscarAlertasTurno();

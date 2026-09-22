@@ -1,23 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, UserCheck, Barcode, CheckCircle2, AlertTriangle, Wifi, ArrowRight } from 'lucide-react';
+import { ArrowLeft, UserCheck, Barcode, CheckCircle2, AlertTriangle, Wifi, ArrowRight, ShieldAlert, PackageCheck } from 'lucide-react';
 import { api } from '../services/api';
 import { soundFX } from '../services/soundFX';
 import { Colaborador, EmprestimoAtivo, EntradaStep } from '../types';
 import { NfcReaderModal } from '../components/NfcReaderModal';
 import { calcularHorasEmUso } from '../utils/dateUtils';
 
-interface ItemDevolucaoTemp extends EmprestimoAtivo {
-  devolvido: boolean;
+interface ItemEntradaTemp extends EmprestimoAtivo {
+  selecionado: boolean;
 }
 
 export const Entrada: React.FC = () => {
   const navigate = useNavigate();
 
+  // Abas
+  const [activeTab, setActiveTab] = useState<'NORMAL' | 'EXTRAVIO'>('NORMAL');
+
   // Máquina de Estados da Entrada
   const [step, setStep] = useState<EntradaStep>('WAITING_NFC');
   const [colaborador, setColaborador] = useState<Colaborador | null>(null);
-  const [emprestimosTemp, setEmprestimosTemp] = useState<ItemDevolucaoTemp[]>([]);
+  const [emprestimosTemp, setEmprestimosTemp] = useState<ItemEntradaTemp[]>([]);
   const [barcodeInput, setBarcodeInput] = useState('');
   const [mensagemErro, setMensagemErro] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,7 +33,12 @@ export const Entrada: React.FC = () => {
     if (step === 'SCANNING_RETURNS' && barcodeInputRef.current) {
       barcodeInputRef.current.focus();
     }
-  }, [step, emprestimosTemp]);
+  }, [step, emprestimosTemp, activeTab]);
+
+  // Limpar estado ao trocar de aba
+  useEffect(() => {
+    handleReiniciar();
+  }, [activeTab]);
 
   // Handler de Leitura NFC
   const handleNfcRead = async (nfcId: string) => {
@@ -52,7 +60,7 @@ export const Entrada: React.FC = () => {
 
       soundFX.playSuccess();
       setColaborador(colab);
-      setEmprestimosTemp(emprestimos.map((e) => ({ ...e, devolvido: false })));
+      setEmprestimosTemp(emprestimos.map((e) => ({ ...e, selecionado: false })));
       setShowNfcModal(false);
       setStep('SCANNING_RETURNS');
     } catch (err: any) {
@@ -61,7 +69,7 @@ export const Entrada: React.FC = () => {
     }
   };
 
-  // Handler de Escaneamento/Digitação do Material Devolvido
+  // Handler de Escaneamento/Digitação do Material
   const handleMaterialScan = (e: React.FormEvent) => {
     e.preventDefault();
     if (!barcodeInput.trim()) return;
@@ -83,40 +91,48 @@ export const Entrada: React.FC = () => {
       return;
     }
 
-    if (emprestimosTemp[index].devolvido) {
+    if (emprestimosTemp[index].selecionado) {
       soundFX.playError();
-      setMensagemErro(`MATERIAL JÁ REGISTRADO COMO DEVOLVIDO: ${codigo}`);
+      setMensagemErro(`MATERIAL JÁ REGISTRADO NA LISTA DE ${activeTab === 'NORMAL' ? 'DEVOLUÇÃO' : 'EXTRAVIO'}: ${codigo}`);
       return;
     }
 
-    // Marcar como devolvido na lista temporária
+    // Marcar na lista temporária
     soundFX.playScan();
     setEmprestimosTemp((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, devolvido: true } : item))
+      prev.map((item, i) => (i === index ? { ...item, selecionado: true } : item))
     );
   };
 
   // Alternar devolução manualmente por clique na tabela
-  const toggleDevolucaoItem = (index: number) => {
+  const toggleSelecaoItem = (index: number) => {
     soundFX.playScan();
     setEmprestimosTemp((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, devolvido: !item.devolvido } : item))
+      prev.map((item, i) => (i === index ? { ...item, selecionado: !item.selecionado } : item))
     );
   };
 
-  // Confirmar Devolução no Backend
-  const handleConfirmarEntrada = async () => {
+  // Confirmar no Backend
+  const handleConfirmarAcao = async () => {
     if (!colaborador) return;
 
-    const selecionados = emprestimosTemp.filter((e) => e.devolvido);
+    const selecionados = emprestimosTemp.filter((e) => e.selecionado);
     if (selecionados.length === 0) return;
+
+    if (activeTab === 'EXTRAVIO') {
+      if (!confirm(`ATENÇÃO: Você está prestes a registrar ${selecionados.length} item(ns) como EXTRAVIADO(S) (Perdido/Destruído). Deseja continuar?`)) {
+        return;
+      }
+    }
 
     setLoading(true);
     setMensagemErro('');
 
     try {
       const materiaisCodigos = selecionados.map((e) => e.codigo_interno);
-      const res = await api.post('/emprestimos/entrada', {
+      const endpoint = activeTab === 'NORMAL' ? '/emprestimos/entrada' : '/emprestimos/extravio';
+      
+      const res = await api.post(endpoint, {
         colaboradorId: colaborador.id,
         materiaisCodigos
       });
@@ -126,7 +142,7 @@ export const Entrada: React.FC = () => {
       setStep('SUCCESS');
     } catch (err: any) {
       soundFX.playError();
-      setMensagemErro(err.response?.data?.error || 'Erro ao registrar devolução. Tente novamente.');
+      setMensagemErro(err.response?.data?.error || `Erro ao registrar ${activeTab === 'NORMAL' ? 'devolução' : 'extravio'}. Tente novamente.`);
     } finally {
       setLoading(false);
     }
@@ -142,47 +158,71 @@ export const Entrada: React.FC = () => {
     setStep('WAITING_NFC');
   };
 
-  const devolvidosCount = emprestimosTemp.filter((e) => e.devolvido).length;
+  const selecionadosCount = emprestimosTemp.filter((e) => e.selecionado).length;
   const itensExcedidosCount = emprestimosTemp.filter((e) => calcularHorasEmUso(e.data_hora_saida).excedeu).length;
 
   return (
     <div className="flex-1 flex flex-col bg-slate-100 p-4 sm:p-6 lg:p-8 font-sans select-none overflow-y-auto min-h-screen">
       <div className="max-w-[1380px] w-full mx-auto flex flex-col gap-6 flex-1">
         
-        {/* STATUS / AÇÃO DO CRACHÁ NFC */}
-        <div className="flex justify-end shrink-0">
-          {colaborador ? (
-            <div className="bg-emerald-50 border border-emerald-300 text-emerald-950 px-4 py-2 rounded-xl flex items-center gap-3 shadow-sm">
-              <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold">
-                <UserCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-extrabold text-sm uppercase leading-none font-['Outfit']">{colaborador.nome}</div>
-                <div className="text-xs font-semibold text-emerald-700 mt-0.5">MAT: {colaborador.matricula}</div>
-              </div>
-              <button
-                onClick={() => {
-                  setShowNfcModal(true);
-                  setStep('WAITING_NFC');
-                }}
-                className="ml-2 text-xs font-bold text-emerald-800 hover:text-emerald-950 underline cursor-pointer"
-              >
-                TROCAR
-              </button>
-            </div>
-          ) : (
+        {/* TABS E STATUS / AÇÃO DO CRACHÁ NFC */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+          
+          <div className="flex bg-slate-200 p-1 rounded-xl w-full sm:w-auto">
             <button
-              onClick={() => setShowNfcModal(true)}
-              className="bg-[#331274] hover:bg-[#43208C] text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase flex items-center gap-2 cursor-pointer shadow-md transition-all"
+              onClick={() => setActiveTab('NORMAL')}
+              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                activeTab === 'NORMAL' ? 'bg-white text-[#331274] shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}
             >
-              <Wifi className="w-4 h-4 text-emerald-200 animate-pulse" />
-              <span>APROXIMAR CRACHÁ NFC</span>
+              <PackageCheck className="w-4 h-4" />
+              ENTRADA NORMAL
             </button>
-          )}
+            <button
+              onClick={() => setActiveTab('EXTRAVIO')}
+              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                activeTab === 'EXTRAVIO' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-500 hover:text-red-700'
+              }`}
+            >
+              <ShieldAlert className="w-4 h-4" />
+              REGISTRAR EXTRAVIO
+            </button>
+          </div>
+
+          <div className="flex justify-end">
+            {colaborador ? (
+              <div className="bg-emerald-50 border border-emerald-300 text-emerald-950 px-4 py-2 rounded-xl flex items-center gap-3 shadow-sm">
+                <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-sm uppercase leading-none font-['Outfit']">{colaborador.nome}</div>
+                  <div className="text-xs font-semibold text-emerald-700 mt-0.5">MAT: {colaborador.matricula}</div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowNfcModal(true);
+                    setStep('WAITING_NFC');
+                  }}
+                  className="ml-2 text-xs font-bold text-emerald-800 hover:text-emerald-950 underline cursor-pointer"
+                >
+                  TROCAR
+                </button>
+              </div>
+            ) : step !== 'SUCCESS' && (
+              <button
+                onClick={() => setShowNfcModal(true)}
+                className="bg-[#331274] hover:bg-[#43208C] text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase flex items-center gap-2 cursor-pointer shadow-md transition-all"
+              >
+                <Wifi className="w-4 h-4 text-emerald-200 animate-pulse" />
+                <span>APROXIMAR CRACHÁ NFC</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ALERTA DE TURNO EXCEDIDO NO COLABORADOR */}
-        {colaborador && itensExcedidosCount > 0 && (
+        {colaborador && itensExcedidosCount > 0 && activeTab === 'NORMAL' && (
           <div className="bg-red-50 border border-red-300 text-red-900 p-4 rounded-2xl font-bold text-xs flex items-center justify-between shadow-sm shrink-0">
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-6 h-6 text-red-600 shrink-0 animate-bounce" />
@@ -192,6 +232,23 @@ export const Entrada: React.FC = () => {
                 </div>
                 <div className="text-xs text-red-800 font-semibold mt-0.5">
                   Este colaborador possui {itensExcedidosCount} equipamento(s) retirados há mais de 8 horas!
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ALERTA DE MODO EXTRAVIO */}
+        {activeTab === 'EXTRAVIO' && (
+          <div className="bg-orange-50 border border-orange-300 text-orange-900 p-4 rounded-2xl font-bold text-xs flex items-center justify-between shadow-sm shrink-0">
+            <div className="flex items-center gap-3">
+              <ShieldAlert className="w-6 h-6 text-orange-600 shrink-0" />
+              <div>
+                <div className="font-extrabold uppercase text-orange-950 font-['Outfit']">
+                  MODO DE REGISTRO DE EXTRAVIO ATIVADO
+                </div>
+                <div className="text-xs text-orange-800 font-semibold mt-0.5">
+                  Os itens marcados aqui serão baixados do sistema como perdidos/danificados. Esta ação é irreversível.
                 </div>
               </div>
             </div>
@@ -211,31 +268,31 @@ export const Entrada: React.FC = () => {
 
         {/* MODAL LEITOR NFC */}
         <NfcReaderModal
-          isOpen={showNfcModal}
+          isOpen={showNfcModal && step === 'WAITING_NFC'}
           onClose={() => setShowNfcModal(false)}
           onNfcRead={handleNfcRead}
-          title="ENTRADA — APROXIME O CRACHÁ"
+          title={activeTab === 'NORMAL' ? "ENTRADA — APROXIME O CRACHÁ" : "EXTRAVIO — APROXIME O CRACHÁ"}
           subtitle="Aproxime o cartão NFC para buscar os materiais sob posse do colaborador"
         />
 
         {/* CONTEÚDO PRINCIPAL */}
         {step === 'SUCCESS' && resumoSucesso ? (
           <div className="flex-1 bg-white border border-emerald-300 rounded-2xl p-8 sm:p-12 flex flex-col items-center justify-center text-center shadow-lg">
-            <CheckCircle2 className="w-20 h-20 text-emerald-600 mb-4 animate-bounce" />
-            <h2 className="text-3xl font-extrabold text-emerald-800 uppercase tracking-tight font-['Outfit'] mb-2">
-              ENTRADA REGISTRADA COM SUCESSO!
+            <CheckCircle2 className={`w-20 h-20 mb-4 animate-bounce ${activeTab === 'NORMAL' ? 'text-emerald-600' : 'text-orange-600'}`} />
+            <h2 className={`text-3xl font-extrabold uppercase tracking-tight font-['Outfit'] mb-2 ${activeTab === 'NORMAL' ? 'text-emerald-800' : 'text-orange-800'}`}>
+              {activeTab === 'NORMAL' ? 'ENTRADA REGISTRADA COM SUCESSO!' : 'EXTRAVIO REGISTRADO COM SUCESSO!'}
             </h2>
             <p className="text-lg text-slate-700 font-bold mb-6">
-              {resumoSucesso.materiaisCount} material(is) devolvidos por {resumoSucesso.colaborador?.nome}
+              {resumoSucesso.materiaisCount} material(is) {activeTab === 'NORMAL' ? 'devolvidos por' : 'extraviados por'} {resumoSucesso.colaborador?.nome}
             </p>
 
             <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 w-full max-w-lg mb-8 text-left text-xs font-sans shadow-inner">
-              <div className="text-emerald-700 font-extrabold border-b border-slate-200 pb-2 mb-3 uppercase tracking-wider">
-                ITENS RETORNADOS AO ESTOQUE:
+              <div className={`${activeTab === 'NORMAL' ? 'text-emerald-700' : 'text-orange-700'} font-extrabold border-b border-slate-200 pb-2 mb-3 uppercase tracking-wider`}>
+                ITENS REGISTRADOS:
               </div>
               {resumoSucesso.materiais?.map((item: any) => (
                 <div key={item.id} className="flex justify-between py-1.5 border-b border-slate-200 font-semibold">
-                  <span className="text-[#331274] font-mono font-extrabold">{item.codigo_interno}</span>
+                  <span className={`font-mono font-extrabold ${activeTab === 'NORMAL' ? 'text-[#331274]' : 'text-red-700'}`}>{item.codigo_interno}</span>
                   <span className="text-slate-700">{item.nome}</span>
                 </div>
               ))}
@@ -246,7 +303,7 @@ export const Entrada: React.FC = () => {
                 onClick={handleReiniciar}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-8 py-3.5 text-sm uppercase rounded-xl cursor-pointer shadow-md transition-all"
               >
-                NOVA ENTRADA
+                {activeTab === 'NORMAL' ? 'NOVA ENTRADA' : 'NOVO REGISTRO'}
               </button>
               <button
                 onClick={() => navigate('/')}
@@ -261,14 +318,14 @@ export const Entrada: React.FC = () => {
             
             {/* PAINEL ESQUERDO: SCANNER INPUT */}
             <div className="w-full md:w-1/3 bg-white p-6 rounded-2xl border border-slate-200 flex flex-col shrink-0 shadow-sm">
-              <h3 className="text-sm font-extrabold text-[#331274] uppercase tracking-wider mb-4 flex items-center gap-2 font-['Outfit']">
-                <Barcode className="w-5 h-5 text-[#331274]" />
-                1. LEITURA DE DEVOLUÇÃO
+              <h3 className={`text-sm font-extrabold uppercase tracking-wider mb-4 flex items-center gap-2 font-['Outfit'] ${activeTab === 'NORMAL' ? 'text-[#331274]' : 'text-red-700'}`}>
+                <Barcode className="w-5 h-5" />
+                1. LEITURA DE {activeTab === 'NORMAL' ? 'DEVOLUÇÃO' : 'EXTRAVIO'}
               </h3>
 
               <form onSubmit={handleMaterialScan} className="mb-6">
                 <label className="block text-xs font-extrabold text-slate-700 uppercase mb-2">
-                  ESCANEAR MATERIAL DEVOLVIDO:
+                  ESCANEAR MATERIAL {activeTab === 'NORMAL' ? 'DEVOLVIDO' : 'EXTRAVIADO'}:
                 </label>
                 <input
                   ref={barcodeInputRef}
@@ -280,19 +337,19 @@ export const Entrada: React.FC = () => {
                   className="w-full py-3.5 px-4 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all shadow-sm disabled:opacity-50"
                 />
                 <span className="text-[11px] text-slate-500 font-medium mt-1.5 block">
-                  Escaneie o código para marcar automaticamente como DEVOLVIDO
+                  Escaneie o código para marcar automaticamente
                 </span>
               </form>
 
               {colaborador && (
                 <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 mt-auto shadow-inner">
-                  <div className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">RESPONSÁVEL PELA ENTRADA:</div>
+                  <div className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">RESPONSÁVEL:</div>
                   <div className="text-base font-extrabold text-[#331274] uppercase font-['Outfit']">{colaborador.nome}</div>
                   <div className="text-xs text-slate-600 font-semibold mt-1">MATRÍCULA: <span className="text-slate-900 font-bold">{colaborador.matricula}</span></div>
                   <div className="text-xs text-slate-600 font-semibold">SETOR: {colaborador.setor || '-'}</div>
                   <div className="text-xs text-slate-600 font-semibold">CARGO: {colaborador.cargo || '-'}</div>
                   <div className="text-xs text-[#331274] font-extrabold mt-3 pt-3 border-t border-slate-200">
-                    EMPRÉSTIMOS PENDENTES: {emprestimosTemp.length - devolvidosCount} DE {emprestimosTemp.length}
+                    EMPRÉSTIMOS PENDENTES: {emprestimosTemp.length - selecionadosCount} DE {emprestimosTemp.length}
                   </div>
                 </div>
               )}
@@ -304,8 +361,8 @@ export const Entrada: React.FC = () => {
                 <h3 className="text-sm font-extrabold text-[#331274] uppercase tracking-wider font-['Outfit']">
                   2. MATERIAIS EM POSSE DO COLABORADOR ({emprestimosTemp.length})
                 </h3>
-                <div className="text-xs font-bold font-mono text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                  MARCADOS PARA DEVOLUÇÃO: {devolvidosCount}
+                <div className={`text-xs font-bold font-mono px-3 py-1 rounded-full border ${activeTab === 'NORMAL' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'}`}>
+                  MARCADOS: {selecionadosCount}
                 </div>
               </div>
 
@@ -316,7 +373,7 @@ export const Entrada: React.FC = () => {
                       <th className="py-3 px-4">CÓDIGO</th>
                       <th className="py-3 px-4">MATERIAL</th>
                       <th className="py-3 px-4">DATA DA SAÍDA / POSSE</th>
-                      <th className="py-3 px-4 text-center">STATUS DEVOLUÇÃO</th>
+                      <th className="py-3 px-4 text-center">STATUS {activeTab === 'NORMAL' ? 'DEVOLUÇÃO' : 'EXTRAVIO'}</th>
                       <th className="py-3 px-4 text-center">AÇÃO</th>
                     </tr>
                   </thead>
@@ -330,22 +387,20 @@ export const Entrada: React.FC = () => {
                     ) : (
                       emprestimosTemp.map((item, index) => {
                         const uso = calcularHorasEmUso(item.data_hora_saida);
+                        const rowBg = item.selecionado
+                          ? (activeTab === 'NORMAL' ? 'bg-emerald-50/70 border-l-4 border-l-emerald-600' : 'bg-red-50/70 border-l-4 border-l-red-600')
+                          : (uso.excedeu ? 'bg-red-50/70 border-l-4 border-l-red-600' : 'hover:bg-slate-50');
+                          
                         return (
                           <tr
                             key={item.emprestimo_id}
-                            className={`transition-colors ${
-                              item.devolvido
-                                ? 'bg-emerald-50/70 border-l-4 border-l-emerald-600'
-                                : uso.excedeu
-                                ? 'bg-red-50/70 border-l-4 border-l-red-600'
-                                : 'hover:bg-slate-50'
-                            }`}
+                            className={`transition-colors ${rowBg}`}
                           >
                             <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.codigo_interno}</td>
                             <td className="font-bold text-slate-900 py-3.5 px-4">{item.material_nome}</td>
                             <td className="py-3.5 px-4">
                               <div className="font-mono text-xs font-semibold text-slate-700">{item.data_hora_saida}</div>
-                              {uso.excedeu && (
+                              {uso.excedeu && activeTab === 'NORMAL' && (
                                 <span className="bg-red-100 text-red-800 border border-red-300 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase inline-flex items-center gap-1 mt-1">
                                   <AlertTriangle className="w-3 h-3 text-red-600 shrink-0" />
                                   TURNO EXCEDIDO (+{uso.horas}h)
@@ -353,9 +408,9 @@ export const Entrada: React.FC = () => {
                               )}
                             </td>
                             <td className="text-center py-3.5 px-4">
-                              {item.devolvido ? (
-                                <span className="bg-emerald-600 text-white px-3 py-1 text-xs font-extrabold rounded-lg uppercase shadow-sm">
-                                  ✓ DEVOLVIDO
+                              {item.selecionado ? (
+                                <span className={`${activeTab === 'NORMAL' ? 'bg-emerald-600' : 'bg-red-600'} text-white px-3 py-1 text-xs font-extrabold rounded-lg uppercase shadow-sm`}>
+                                  ✓ {activeTab === 'NORMAL' ? 'DEVOLVIDO' : 'EXTRAVIADO'}
                                 </span>
                               ) : (
                                 <span className="bg-slate-100 text-slate-700 border border-slate-300 px-3 py-1 text-xs font-bold rounded-lg uppercase">
@@ -365,14 +420,14 @@ export const Entrada: React.FC = () => {
                             </td>
                             <td className="text-center py-3.5 px-4">
                               <button
-                                onClick={() => toggleDevolucaoItem(index)}
+                                onClick={() => toggleSelecaoItem(index)}
                                 className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border cursor-pointer transition-all ${
-                                  item.devolvido
+                                  item.selecionado
                                     ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
-                                    : 'bg-[#331274] text-white border-[#331274] hover:bg-[#43208C]'
+                                    : (activeTab === 'NORMAL' ? 'bg-[#331274] text-white border-[#331274] hover:bg-[#43208C]' : 'bg-red-600 text-white border-red-600 hover:bg-red-700')
                                 }`}
                               >
-                                {item.devolvido ? 'DESMARCAR' : 'MARCAR'}
+                                {item.selecionado ? 'DESMARCAR' : 'MARCAR'}
                               </button>
                             </td>
                           </tr>
@@ -383,13 +438,17 @@ export const Entrada: React.FC = () => {
                 </table>
               </div>
 
-              {/* BOTÃO CONFIRMAR ENTRADA */}
+              {/* BOTÃO CONFIRMAR */}
               <button
-                onClick={handleConfirmarEntrada}
-                disabled={!colaborador || devolvidosCount === 0 || loading}
-                className="w-full bg-[#331274] hover:bg-[#43208C] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold py-4 px-6 uppercase tracking-wider text-sm sm:text-base rounded-xl cursor-pointer shadow-md transition-all shrink-0 flex items-center justify-center gap-2"
+                onClick={handleConfirmarAcao}
+                disabled={!colaborador || selecionadosCount === 0 || loading}
+                className={`w-full text-white font-extrabold py-4 px-6 uppercase tracking-wider text-sm sm:text-base rounded-xl cursor-pointer shadow-md transition-all shrink-0 flex items-center justify-center gap-2 ${
+                  activeTab === 'NORMAL'
+                    ? 'bg-[#331274] hover:bg-[#43208C] disabled:bg-slate-200 disabled:text-slate-400'
+                    : 'bg-red-600 hover:bg-red-700 disabled:bg-slate-200 disabled:text-slate-400'
+                }`}
               >
-                <span>{loading ? 'PROCESSANDO ENTRADA...' : `CONFIRMAR ENTRADA (${devolvidosCount} MATERIAIS)`}</span>
+                <span>{loading ? 'PROCESSANDO...' : `CONFIRMAR ${activeTab === 'NORMAL' ? 'ENTRADA' : 'EXTRAVIO'} (${selecionadosCount} MATERIAIS)`}</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>

@@ -4,11 +4,26 @@ import { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { query, queryOne } from '../config/db';
 
 export class RelatorioService {
-  static async obterResumo() {
-    const totalMateriais = await queryOne<{ total: number }>('SELECT COUNT(*) as total FROM materiais');
-    const disponiveis = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'DISPONIVEL'");
-    const emUso = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'EM_USO'");
-    const manutencao = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'MANUTENCAO'");
+  static async obterResumo(filtros?: { busca?: string; categoria_id?: number }) {
+    let whereClause = '1=1';
+    const params: any[] = [];
+
+    if (filtros?.busca) {
+      whereClause += ' AND (nome LIKE ? OR codigo_interno LIKE ? OR codigo_barras LIKE ?)';
+      const term = `%${filtros.busca}%`;
+      params.push(term, term, term);
+    }
+
+    if (filtros?.categoria_id) {
+      whereClause += ' AND categoria_id = ?';
+      params.push(filtros.categoria_id);
+    }
+
+    const totalMateriais = await queryOne<{ total: number }>(`SELECT COUNT(*) as total FROM materiais WHERE ${whereClause}`, params);
+    const disponiveis = await queryOne<{ total: number }>(`SELECT COUNT(*) as total FROM materiais WHERE status = 'DISPONIVEL' AND ${whereClause}`, params);
+    const emUso = await queryOne<{ total: number }>(`SELECT COUNT(*) as total FROM materiais WHERE status = 'EM_USO' AND ${whereClause}`, params);
+    const manutencao = await queryOne<{ total: number }>(`SELECT COUNT(*) as total FROM materiais WHERE status = 'MANUTENCAO' AND ${whereClause}`, params);
+    const extraviados = await queryOne<{ total: number }>(`SELECT COUNT(*) as total FROM materiais WHERE status = 'EXTRAVIADO' AND ${whereClause}`, params);
     const totalColaboradores = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM colaboradores WHERE status = 'ATIVO'");
 
     return {
@@ -16,6 +31,7 @@ export class RelatorioService {
       disponiveis: disponiveis?.total || 0,
       emUso: emUso?.total || 0,
       manutencao: manutencao?.total || 0,
+      extraviados: extraviados?.total || 0,
       totalColaboradoresAtivos: totalColaboradores?.total || 0
     };
   }
