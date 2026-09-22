@@ -226,7 +226,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
       </div>
 
       {/* RODAPÉ LIMPO COM CRÉDITO "Dev by WP & EF" */}
-      <div className="relative z-10 max-w-[1380px] w-full mx-auto pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-white/70 gap-2 font-sans">
+      <div className="relative z-10 max-w-[1380px] w-full mx-auto pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-center text-xs text-white/70 gap-2 font-sans">
         <p>© {new Date().getFullYear()} Casa da Lanterna | Controle de Materiais de Mineração</p>
         <p><span className="opacity-40 mx-1.5">|</span> <span className="font-semibold text-white/90">Dev by WP & EF</span></p>
       </div>

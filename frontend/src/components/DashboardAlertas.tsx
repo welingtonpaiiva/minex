@@ -934,7 +934,7 @@ export const DashboardAlertas: React.FC = () => {
       )}
 
       {/* RODAPÉ INSTITUCIONAL */}
-      <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2 font-sans shrink-0">
+      <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-center text-xs text-slate-500 gap-2 font-sans shrink-0 text-center">
         <p>© {new Date().getFullYear()} Casa da Lanterna | Controle de Materiais de Mineração</p>
         <p><span className="opacity-40 mx-1.5">|</span> <span className="font-semibold text-slate-700">Dev by WP & EF</span></p>
       </div>
