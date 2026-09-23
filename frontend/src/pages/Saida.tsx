@@ -212,7 +212,7 @@ export const Saida: React.FC = () => {
     setKitBarcodeInput('');
     setMensagemErro('');
 
-    if (carrinhoKit.some((item) => item.codigo_barras === codigo || item.codigo_interno === codigo)) {
+    if (carrinhoKit.some((item) => item.codigo_barras === codigo )) {
       soundFX.playError();
       setMensagemErro(`MATERIAL JÁ ADICIONADO NO KIT: ${codigo}`);
       return;
@@ -224,7 +224,7 @@ export const Saida: React.FC = () => {
 
       if (mat.status !== 'DISPONIVEL') {
         soundFX.playError();
-        setMensagemErro(`MATERIAL NÃO ESTÁ DISPONÍVEL (${mat.codigo_interno} - Status: ${mat.status})`);
+        setMensagemErro(`MATERIAL NÃO ESTÁ DISPONÍVEL (${mat.codigo_barras} - Status: ${mat.status})`);
         return;
       }
 
@@ -396,6 +396,8 @@ export const Saida: React.FC = () => {
                     <div key={item.id} className="flex justify-between py-1.5 border-b border-slate-200 font-semibold">
                       <span className="text-[#331274] font-mono font-extrabold">{item.codigo_barras}</span>
                       <span className="text-slate-700">{item.nome}</span>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-4">
