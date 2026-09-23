@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { query, queryOne, runTransaction } from '../config/db';
+import { query, queryOne, withTransaction } from '../config/db';
 
 export class KitController {
   // Criar um novo kit
@@ -10,13 +10,13 @@ export class KitController {
         return res.status(400).json({ error: 'Nome do kit é obrigatório' });
       }
 
-      await runTransaction(async () => {
+      await withTransaction(async () => {
         // Criar o kit
         const result = await query(
           'INSERT INTO kits (nome, status) VALUES (?, ?)',
           [nome, 'DISPONIVEL']
         );
-        const kitId = result.lastID;
+        const kitId = result[0].id;
 
         // Adicionar materiais ao kit se fornecidos
         if (materiais && materiais.length > 0) {
@@ -69,7 +69,7 @@ export class KitController {
     try {
       const { id } = req.params;
       
-      await runTransaction(async () => {
+      await withTransaction(async () => {
         await query('DELETE FROM kit_materiais WHERE kit_id = ?', [id]);
         await query('DELETE FROM kits WHERE id = ?', [id]);
       });
@@ -91,7 +91,7 @@ export class KitController {
 
       let resumo = { materiaisCount: 0, materiais: [] as any[], colaborador: null as any };
 
-      await runTransaction(async () => {
+      await withTransaction(async () => {
         // Verificar se colaborador existe e está ativo
         const colab = await queryOne('SELECT * FROM colaboradores WHERE id = ?', [colaboradorId]);
         if (!colab || colab.status === 'INATIVO') {
