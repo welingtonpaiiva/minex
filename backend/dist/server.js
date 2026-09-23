@@ -14,6 +14,7 @@ const materialRoutes_1 = __importDefault(require("./routes/materialRoutes"));
 const emprestimoRoutes_1 = __importDefault(require("./routes/emprestimoRoutes"));
 const historicoRoutes_1 = __importDefault(require("./routes/historicoRoutes"));
 const relatorioRoutes_1 = __importDefault(require("./routes/relatorioRoutes"));
+const acessoMinaRoutes_1 = __importDefault(require("./routes/acessoMinaRoutes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
@@ -33,6 +34,7 @@ app.use('/api/materiais', materialRoutes_1.default);
 app.use('/api/emprestimos', emprestimoRoutes_1.default);
 app.use('/api/historico', historicoRoutes_1.default);
 app.use('/api/relatorios', relatorioRoutes_1.default);
+app.use('/api/acessos-mina', acessoMinaRoutes_1.default);
 // Servir frontend compilado em produção se existir
 const frontendDist = path_1.default.resolve(__dirname, '../../frontend/dist');
 app.use(express_1.default.static(frontendDist));

@@ -121,7 +121,7 @@ export const NfcReaderModal: React.FC<NfcReaderModalProps> = ({
         .nfc-breathe { animation: nfc-breathe 1.8s ease-in-out infinite; }
       `}</style>
 
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[60] flex items-center justify-center p-4">
         <div className="bg-white border-2 border-emerald-500 w-full max-w-md p-8 rounded-3xl shadow-2xl relative select-none">
           <button
             onClick={onClose}

@@ -6,6 +6,7 @@ import { soundFX } from '../services/soundFX';
 import { Material, Colaborador, Categoria, Usuario } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { NfcReaderModal } from '../components/NfcReaderModal';
+import { ColaboradorModal } from '../components/ColaboradorModal';
 
 interface CadastroProps {
   user: Usuario | null;
@@ -54,7 +55,7 @@ export const Cadastro: React.FC<CadastroProps> = ({ user }) => {
   // Salvar Material
   const handleSalvarMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!modalMaterial?.nome || !modalMaterial?.codigo_interno) {
+    if (!modalMaterial?.nome || !modalMaterial?.codigo_barras) {
       setMensagem({ tipo: 'erro', texto: 'Nome e Código Interno são obrigatórios' });
       soundFX.playError();
       return;
@@ -85,14 +86,14 @@ export const Cadastro: React.FC<CadastroProps> = ({ user }) => {
       return;
     }
 
-    if (!window.confirm(`Tem certeza que deseja excluir permanentemente o material "${mat.nome}" (${mat.codigo_interno})?`)) {
+    if (!window.confirm(`Tem certeza que deseja excluir permanentemente o material "${mat.nome}" (${mat.codigo_barras})?`)) {
       return;
     }
 
     try {
       await api.delete(`/materiais/${mat.id}`);
       soundFX.playSuccess();
-      setMensagem({ tipo: 'sucesso', texto: `Material ${mat.codigo_interno} excluído com sucesso!` });
+      setMensagem({ tipo: 'sucesso', texto: `Material ${mat.codigo_barras} excluído com sucesso!` });
       carregarDados();
     } catch (err: any) {
       soundFX.playError();
@@ -100,44 +101,11 @@ export const Cadastro: React.FC<CadastroProps> = ({ user }) => {
     }
   };
 
-  // Salvar Colaborador
-  const handleSalvarColaborador = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!modalColaborador?.nome || !modalColaborador?.matricula) {
-      setMensagem({ tipo: 'erro', texto: 'Nome e Matrícula são obrigatórios' });
-      soundFX.playError();
-      return;
-    }
-
-    try {
-      if (modalColaborador.id) {
-        await api.put(`/colaboradores/${modalColaborador.id}`, modalColaborador);
-        setMensagem({ tipo: 'sucesso', texto: 'COLABORADOR ATUALIZADO COM SUCESSO' });
-      } else {
-        await api.post('/colaboradores', modalColaborador);
-        setMensagem({ tipo: 'sucesso', texto: 'COLABORADOR CADASTRADO COM SUCESSO' });
-      }
-      soundFX.playSuccess();
-      setModalColaborador(null);
-      carregarDados();
-    } catch (err: any) {
-      soundFX.playError();
-      setMensagem({ tipo: 'erro', texto: err.response?.data?.error || 'Erro ao salvar colaborador' });
-    }
-  };
-
-  // Associar NFC ao Colaborador
+  // Associar NFC ao Colaborador (Atualização Direta na Tabela)
   const handleAssociarNfc = async (nfcId: string) => {
-    if (!modalNfcColaboradorId && !modalColaborador) return;
+    if (!modalNfcColaboradorId) return;
 
     try {
-      if (modalColaborador) {
-        setModalColaborador({ ...modalColaborador, nfc_id: nfcId });
-        setModalNfcColaboradorId(null);
-        setMensagem({ tipo: 'sucesso', texto: `NFC CAPTURADO: ${nfcId}` });
-        soundFX.playSuccess();
-        return;
-      }
 
       if (modalNfcColaboradorId) {
         await api.patch(`/colaboradores/${modalNfcColaboradorId}/nfc`, { nfc_id: nfcId });
@@ -175,7 +143,7 @@ export const Cadastro: React.FC<CadastroProps> = ({ user }) => {
         observacao: novoStatus === 'MANUTENCAO' ? 'Enviado para manutenção via cadastro' : 'Retornado da manutenção'
       });
       soundFX.playSuccess();
-      setMensagem({ tipo: 'sucesso', texto: `MATERIAL ${mat.codigo_interno} ALTERADO PARA ${novoStatus}` });
+      setMensagem({ tipo: 'sucesso', texto: `MATERIAL ${mat.codigo_barras} ALTERADO PARA ${novoStatus}` });
       carregarDados();
     } catch (err: any) {
       soundFX.playError();
@@ -258,7 +226,7 @@ export const Cadastro: React.FC<CadastroProps> = ({ user }) => {
             <button
               onClick={() => {
                 if (activeTab === 'materiais') {
-                  setModalMaterial({ nome: '', codigo_interno: '', codigo_barras: '', status: 'DISPONIVEL' });
+                  setModalMaterial({ nome: '', codigo_barras: '', status: 'DISPONIVEL' });
                 } else {
                   setModalColaborador({ nome: '', matricula: '', status: 'ATIVO' });
                 }
@@ -287,7 +255,6 @@ export const Cadastro: React.FC<CadastroProps> = ({ user }) => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 text-xs font-extrabold uppercase tracking-wider border-b border-slate-200 font-['Outfit']">
-                    <th className="py-3.5 px-4">CÓDIGO INTERNO</th>
                     <th className="py-3.5 px-4">CÓDIGO BARRAS</th>
                     <th className="py-3.5 px-4">MATERIAL</th>
                     <th className="py-3.5 px-4">CATEGORIA</th>
@@ -306,8 +273,7 @@ export const Cadastro: React.FC<CadastroProps> = ({ user }) => {
                   ) : (
                     materiais.map((item) => (
                       <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.codigo_interno}</td>
-                        <td className="font-mono text-slate-600 py-3.5 px-4">{item.codigo_barras}</td>
+                        <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.codigo_barras}</td>
                         <td className="font-bold text-slate-900 py-3.5 px-4">{item.nome}</td>
                         <td className="text-slate-600 font-medium py-3.5 px-4">{item.categoria_nome || 'Geral'}</td>
                         <td className="py-3.5 px-4">
@@ -470,62 +436,45 @@ export const Cadastro: React.FC<CadastroProps> = ({ user }) => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CÓDIGO INTERNO:</label>
-                    <input
-                      type="text"
-                      value={modalMaterial.codigo_interno || ''}
-                      onChange={(e) =>
-                        setModalMaterial({
-                          ...modalMaterial,
-                          codigo_interno: e.target.value,
-                          codigo_barras: modalMaterial.codigo_barras || e.target.value
-                        })
-                      }
-                      placeholder="Ex: LAT-001"
-                      disabled={!!modalMaterial.id}
-                      required
-                      className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-bold font-mono text-[#331274] placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all disabled:opacity-50"
-                    />
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CATEGORIA:</label>
+                    <select
+                      value={modalMaterial.categoria_id || ''}
+                      onChange={(e) => setModalMaterial({ ...modalMaterial, categoria_id: parseInt(e.target.value) })}
+                      className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
+                    >
+                      <option value="">Selecione a categoria...</option>
+                      {categorias.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nome}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CÓDIGO DE BARRAS:</label>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">OBSERVAÇÃO:</label>
                     <input
                       type="text"
-                      value={modalMaterial.codigo_barras || ''}
-                      onChange={(e) => setModalMaterial({ ...modalMaterial, codigo_barras: e.target.value })}
-                      placeholder="Ex: LAT-001"
-                      disabled={!!modalMaterial.id}
-                      className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-bold font-mono text-[#331274] placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all disabled:opacity-50"
+                      value={modalMaterial.observacao || ''}
+                      onChange={(e) => setModalMaterial({ ...modalMaterial, observacao: e.target.value })}
+                      placeholder="Ex: Sensor precisa calibrar"
+                      className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CATEGORIA:</label>
-                  <select
-                    value={modalMaterial.categoria_id || ''}
-                    onChange={(e) => setModalMaterial({ ...modalMaterial, categoria_id: parseInt(e.target.value) })}
-                    className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
-                  >
-                    <option value="">Selecione a categoria...</option>
-                    {categorias.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">OBSERVAÇÃO:</label>
-                  <textarea
-                    value={modalMaterial.observacao || ''}
-                    onChange={(e) => setModalMaterial({ ...modalMaterial, observacao: e.target.value })}
-                    placeholder="Observações técnicas..."
-                    rows={2}
-                    className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CÓDIGO DE BARRAS:</label>
+                  <input
+                    type="text"
+                    value={modalMaterial.codigo_barras || ''}
+                    onChange={(e) => setModalMaterial({ ...modalMaterial, codigo_barras: e.target.value })}
+                    placeholder="Ex: BIPAR CÓDIGO DE BARRAS..."
+                    disabled={!!modalMaterial.id}
+                    required
+                    autoFocus
+                    className="w-full py-3 px-4 bg-white border border-[#331274]/30 rounded-xl text-sm font-bold font-mono text-[#331274] placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/30 transition-all disabled:opacity-50"
                   />
                 </div>
 
@@ -550,101 +499,16 @@ export const Cadastro: React.FC<CadastroProps> = ({ user }) => {
         )}
 
         {/* MODAL CRIAR/EDITAR COLABORADOR */}
-        {modalColaborador && (
-          <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
-            <div className="bg-white border border-slate-200 w-full max-w-lg p-6 sm:p-8 rounded-2xl shadow-2xl">
-              <h3 className="text-xl font-extrabold text-[#331274] uppercase tracking-tight mb-5 font-['Outfit']">
-                {modalColaborador.id ? 'EDITAR COLABORADOR' : 'CADASTRAR NOVO COLABORADOR'}
-              </h3>
-              <form onSubmit={handleSalvarColaborador} className="space-y-4 font-sans">
-                <div>
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">NOME COMPLETO:</label>
-                  <input
-                    type="text"
-                    value={modalColaborador.nome || ''}
-                    onChange={(e) => setModalColaborador({ ...modalColaborador, nome: e.target.value })}
-                    placeholder="Ex: ENZO DE OLIVEIRA FIRMO"
-                    required
-                    className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">MATRÍCULA:</label>
-                  <input
-                    type="text"
-                    value={modalColaborador.matricula || ''}
-                    onChange={(e) => setModalColaborador({ ...modalColaborador, matricula: e.target.value })}
-                    placeholder="Ex: 99300922"
-                    disabled={!!modalColaborador.id}
-                    required
-                    className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-bold text-[#331274] placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all disabled:opacity-50"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">SETOR:</label>
-                    <input
-                      type="text"
-                      value={modalColaborador.setor || ''}
-                      onChange={(e) => setModalColaborador({ ...modalColaborador, setor: e.target.value })}
-                      placeholder="Ex: OPERAÇÃO"
-                      className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CARGO:</label>
-                    <input
-                      type="text"
-                      value={modalColaborador.cargo || ''}
-                      onChange={(e) => setModalColaborador({ ...modalColaborador, cargo: e.target.value })}
-                      placeholder="Ex: Operador de LHD"
-                      className="w-full py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1.5 font-['Outfit']">CÓDIGO CARTÃO NFC:</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={modalColaborador.nfc_id || ''}
-                      onChange={(e) => setModalColaborador({ ...modalColaborador, nfc_id: e.target.value })}
-                      placeholder="Sem cartão vinculado"
-                      className="flex-1 py-3 px-4 bg-white border border-slate-300 rounded-xl text-sm font-mono font-bold text-[#331274] placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setModalNfcColaboradorId(modalColaborador.id || 999)}
-                      className="bg-[#331274] hover:bg-[#43208C] text-white font-extrabold px-4 py-3 text-xs uppercase rounded-xl cursor-pointer flex items-center gap-1.5 shrink-0 shadow-sm transition-all"
-                    >
-                      <Wifi className="w-4 h-4 text-amber-400" />
-                      <span>LER CARTÃO</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-3">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-[#331274] hover:bg-[#43208C] text-white font-extrabold py-3.5 uppercase rounded-xl cursor-pointer shadow-md transition-all text-xs tracking-wider"
-                  >
-                    SALVAR
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setModalColaborador(null)}
-                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3.5 uppercase rounded-xl border border-slate-300 cursor-pointer shadow-sm transition-all text-xs"
-                  >
-                    CANCELAR
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        <ColaboradorModal
+          isOpen={!!modalColaborador}
+          colaboradorInicial={modalColaborador}
+          onClose={() => setModalColaborador(null)}
+          onSave={(colab) => {
+            setModalColaborador(null);
+            setMensagem({ tipo: 'sucesso', texto: `COLABORADOR ${colab.nome} SALVO COM SUCESSO` });
+            carregarDados();
+          }}
+        />
 
         {/* RODAPÉ INSTITUCIONAL */}
         <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-center text-xs text-slate-500 gap-2 font-sans shrink-0 text-center">

@@ -43,7 +43,6 @@ CREATE TABLE IF NOT EXISTS categorias (
 CREATE TABLE IF NOT EXISTS materiais (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   nome TEXT NOT NULL,
-  codigo_interno TEXT UNIQUE NOT NULL,
   codigo_barras TEXT UNIQUE NOT NULL,
   categoria_id INTEGER REFERENCES categorias(id),
   patrimonio TEXT DEFAULT '',
@@ -55,7 +54,7 @@ CREATE TABLE IF NOT EXISTS materiais (
 );
 
 CREATE INDEX IF NOT EXISTS idx_materiais_codigo_barras ON materiais(codigo_barras);
-CREATE INDEX IF NOT EXISTS idx_materiais_codigo_interno ON materiais(codigo_interno);
+CREATE INDEX IF NOT EXISTS idx_materiais_categoria ON materiais(categoria_id);
 CREATE INDEX IF NOT EXISTS idx_materiais_status ON materiais(status);
 
 -- 5. TABELA DE EMPRÉSTIMOS ATIVOS (1 MATERIAL = NO MÁXIMO 1 EMPRÉSTIMO ATIVO)

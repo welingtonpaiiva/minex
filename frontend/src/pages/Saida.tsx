@@ -5,6 +5,8 @@ import { api } from '../services/api';
 import { soundFX } from '../services/soundFX';
 import { Colaborador, Material, SaidaStep, Kit } from '../types';
 import { NfcReaderModal } from '../components/NfcReaderModal';
+import { ColaboradorModal } from '../components/ColaboradorModal';
+import { motion } from 'framer-motion';
 
 export const Saida: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +22,8 @@ export const Saida: React.FC = () => {
   const [mensagemErro, setMensagemErro] = useState('');
   const [loading, setLoading] = useState(false);
   const [showNfcModal, setShowNfcModal] = useState(true);
+  const [showColaboradorModal, setShowColaboradorModal] = useState(false);
+  const [unknownNfcId, setUnknownNfcId] = useState('');
   const [resumoSucesso, setResumoSucesso] = useState<any>(null);
 
   // Estados - Aba de Kits
@@ -54,6 +58,20 @@ export const Saida: React.FC = () => {
 
   // --- HANDLERS: MODO NORMAL ---
 
+  // Esconder botão de voltar durante o escaneamento
+  useEffect(() => {
+    const btn = document.getElementById('btn-voltar-home');
+    if (btn) {
+      if (step === 'SCANNING_ITEMS') {
+        btn.style.display = 'none';
+      } else {
+        btn.style.display = '';
+      }
+    }
+    return () => {
+      if (btn) btn.style.display = '';
+    };
+  }, [step]);
   const handleNfcRead = async (nfcId: string) => {
     setMensagemErro('');
     try {
@@ -71,8 +89,14 @@ export const Saida: React.FC = () => {
       setShowNfcModal(false);
       setStep('SCANNING_ITEMS');
     } catch (err: any) {
-      soundFX.playError();
-      setMensagemErro(err.response?.data?.error || 'COLABORADOR NÃO ENCONTRADO PARA ESTE CARTÃO NFC');
+      if (err.response?.status === 404) {
+        setUnknownNfcId(nfcId);
+        setShowNfcModal(false);
+        setShowColaboradorModal(true);
+      } else {
+        soundFX.playError();
+        setMensagemErro(err.response?.data?.error || 'COLABORADOR NÃO ENCONTRADO PARA ESTE CARTÃO NFC');
+      }
     }
   };
 
@@ -84,7 +108,8 @@ export const Saida: React.FC = () => {
     setBarcodeInput('');
     setMensagemErro('');
 
-    if (carrinho.some((item) => item.codigo_barras === codigo || item.codigo_interno === codigo)) {
+    // Verificar se já está na lista temporária
+    if (carrinho.some((item) => item.codigo_barras === codigo )) {
       soundFX.playError();
       setMensagemErro(`MATERIAL JÁ ADICIONADO NA LISTA: ${codigo}`);
       return;
@@ -97,17 +122,17 @@ export const Saida: React.FC = () => {
       if (mat.status === 'EM_USO') {
         soundFX.playError();
         const resp = mat.colaborador_nome ? ` por ${mat.colaborador_nome}` : '';
-        setMensagemErro(`MATERIAL JÁ ESTÁ EM USO (${mat.codigo_interno} - ${mat.nome})${resp}`);
+        setMensagemErro(`MATERIAL JÁ ESTÁ EM USO (${mat.nome})${resp}`);
         return;
       }
       if (mat.status === 'MANUTENCAO') {
         soundFX.playError();
-        setMensagemErro(`MATERIAL EM MANUTENÇÃO (${mat.codigo_interno} - ${mat.nome}). Saída não permitida.`);
+        setMensagemErro(`MATERIAL EM MANUTENÇÃO (${mat.nome}). Saída não permitida.`);
         return;
       }
       if (mat.status !== 'DISPONIVEL') {
         soundFX.playError();
-        setMensagemErro(`MATERIAL INDISPONÍVEL (${mat.codigo_interno} - ${mat.nome})`);
+        setMensagemErro(`MATERIAL INDISPONÍVEL (${mat.nome})`);
         return;
       }
 
@@ -130,7 +155,7 @@ export const Saida: React.FC = () => {
     setMensagemErro('');
 
     try {
-      const materiaisCodigos = carrinho.map((m) => m.codigo_interno);
+      const materiaisCodigos = carrinho.map((m) => m.codigo_barras);
       const res = await api.post('/emprestimos/saida', {
         colaboradorId: colaborador.id,
         materiaisCodigos
@@ -224,7 +249,7 @@ export const Saida: React.FC = () => {
     try {
       await api.post('/kits', {
         nome: nomeKit,
-        materiais: carrinhoKit.map(m => m.codigo_interno)
+        materiais: carrinhoKit.map(m => m.codigo_barras)
       });
       soundFX.playSuccess();
       setNomeKit('');
@@ -335,6 +360,24 @@ export const Saida: React.FC = () => {
               subtitle="Aproxime o cartão NFC do colaborador para iniciar a saída de materiais"
             />
 
+        {/* MODAL CADASTRO RÁPIDO */}
+        <ColaboradorModal
+          isOpen={showColaboradorModal}
+          colaboradorInicial={{ nfc_id: unknownNfcId, status: 'ATIVO' }}
+          onClose={() => {
+            setShowColaboradorModal(false);
+            setUnknownNfcId('');
+            setShowNfcModal(true);
+          }}
+          onSave={(colab) => {
+            setShowColaboradorModal(false);
+            setUnknownNfcId('');
+            soundFX.playSuccess();
+            setColaborador(colab);
+            setStep('SCANNING_ITEMS');
+          }}
+        />
+
             {step === 'SUCCESS' && resumoSucesso ? (
               <div className="flex-1 bg-white border border-emerald-300 rounded-2xl p-8 sm:p-12 flex flex-col items-center justify-center text-center shadow-lg">
                 <CheckCircle2 className="w-20 h-20 text-emerald-600 mb-4 animate-bounce" />
@@ -351,10 +394,8 @@ export const Saida: React.FC = () => {
                   </div>
                   {resumoSucesso.materiais?.map((item: any) => (
                     <div key={item.id} className="flex justify-between py-1.5 border-b border-slate-200 font-semibold">
-                      <span className="text-[#331274] font-mono font-extrabold">{item.codigo_interno}</span>
+                      <span className="text-[#331274] font-mono font-extrabold">{item.codigo_barras}</span>
                       <span className="text-slate-700">{item.nome}</span>
-                    </div>
-                  ))}
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-4">
@@ -461,7 +502,7 @@ export const Saida: React.FC = () => {
                         ) : (
                           carrinho.map((item, index) => (
                             <tr key={`${item.id}-${index}`} className="hover:bg-slate-50">
-                              <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.codigo_interno}</td>
+                              <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.codigo_barras}</td>
                               <td className="font-bold text-slate-900 py-3.5 px-4">{item.nome}</td>
                               <td className="text-center py-3.5 px-4">
                                 <button onClick={() => handleRemoverDoCarrinho(index)} className="bg-red-50 text-red-600 p-2 rounded-lg border border-red-200">
@@ -532,7 +573,7 @@ export const Saida: React.FC = () => {
                     {carrinhoKit.map((item, index) => (
                       <div key={item.id} className="bg-white border border-slate-200 p-3 rounded-lg flex items-center justify-between">
                         <div>
-                          <span className="font-mono font-extrabold text-[#331274] mr-2">{item.codigo_interno}</span>
+                          <span className="font-mono font-extrabold text-[#331274] mr-2">{item.codigo_barras}</span>
                           <span className="text-sm font-semibold">{item.nome}</span>
                         </div>
                         <button onClick={() => handleRemoverDoCarrinhoKit(index)} className="text-red-500 hover:text-red-700">
@@ -543,6 +584,7 @@ export const Saida: React.FC = () => {
                   </div>
                 )}
               </div>
+
 
               <button
                 onClick={handleSalvarKit}
@@ -582,7 +624,7 @@ export const Saida: React.FC = () => {
                       <div className="flex flex-col gap-1">
                         {kit.materiais?.map(m => (
                           <div key={m.id} className="text-xs text-slate-700 bg-slate-100 px-2 py-1 rounded">
-                            <span className="font-mono font-bold text-[#331274]">{m.codigo_interno}</span> - {m.nome}
+                            <span className="font-mono font-bold text-[#331274]">{m.codigo_barras}</span> - {m.nome}
                           </div>
                         ))}
                       </div>

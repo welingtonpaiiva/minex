@@ -115,7 +115,7 @@ async function runMigrations() {
             { nome: 'Detector Mutigás MX4', codigo: 'DET-002', cat: catDeteccao?.id || 3, status: 'MANUTENCAO', patrimonio: 'PAT-40002', obs: 'Sensor de H2S necessita calibração' }
         ];
         for (const m of materiaisSeed) {
-            await (0, db_1.query)('INSERT INTO materiais (nome, codigo_interno, codigo_barras, categoria_id, patrimonio, status, observacao) VALUES (?, ?, ?, ?, ?, ?, ?)', [m.nome, m.codigo, m.codigo, m.cat, m.patrimonio, m.status, m.obs || '']);
+            await (0, db_1.query)('INSERT INTO materiais (nome, codigo_barras, categoria_id, patrimonio, status, observacao) VALUES (?, ?, ?, ?, ?, ?)', [m.nome, m.codigo, m.cat, m.patrimonio, m.status, m.obs || '']);
         }
         console.log('[SEED] Materiais individuais criados com sucesso!');
     }

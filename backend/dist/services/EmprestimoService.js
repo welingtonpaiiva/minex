@@ -9,13 +9,13 @@ class EmprestimoService {
     static async buscarEmprestimosDoColaborador(colaboradorId) {
         return await (0, db_1.query)(`
       SELECT e.id as emprestimo_id, e.data_hora_saida,
-             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio,
+             m.id as material_id, m.nome as material_nome, m.codigo_barras, m.patrimonio,
              c.nome as categoria_nome
       FROM emprestimos e
       JOIN materiais m ON e.material_id = m.id
       LEFT JOIN categorias c ON m.categoria_id = c.id
       WHERE e.colaborador_id = ?
-      ORDER BY m.codigo_interno ASC
+      ORDER BY m.nome ASC
     `, [colaboradorId]);
     }
     /**
@@ -25,7 +25,7 @@ class EmprestimoService {
         let sql = `
       SELECT e.id as emprestimo_id, e.data_hora_saida,
              col.id as colaborador_id, col.nome as colaborador_nome, col.matricula as colaborador_matricula, col.setor, col.cargo,
-             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio,
+             m.id as material_id, m.nome as material_nome, m.codigo_barras, m.patrimonio,
              u.nome as operador_saida_nome
       FROM emprestimos e
       JOIN colaboradores col ON e.colaborador_id = col.id
@@ -35,7 +35,7 @@ class EmprestimoService {
     `;
         const params = [];
         if (busca) {
-            sql += ' AND (col.nome LIKE ? OR col.matricula LIKE ? OR m.nome LIKE ? OR m.codigo_interno LIKE ?)';
+            sql += ' AND (col.nome LIKE ? OR col.matricula LIKE ? OR m.nome LIKE ? )';
             const term = `%${busca.trim()}%`;
             params.push(term, term, term, term);
         }
@@ -69,7 +69,7 @@ class EmprestimoService {
             // 3. Processar cada material
             for (const cod of materiaisCodigos) {
                 const cleanCod = cod.trim();
-                const matRows = await execQuery('SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?', [cleanCod, cleanCod]);
+                const matRows = await execQuery('SELECT * FROM materiais WHERE codigo_barras = ?', [cleanCod]);
                 const mat = matRows[0];
                 if (!mat) {
                     throw new Error(`MATERIAL NÃO CADASTRADO: ${cleanCod}`);
@@ -83,18 +83,18 @@ class EmprestimoService {
              WHERE e.material_id = ?`, [mat.id]);
                     const emp = empRows[0];
                     const resp = emp ? emp.colaborador_nome : 'Outro colaborador';
-                    throw new Error(`MATERIAL JÁ ESTÁ EM USO (${mat.codigo_interno} - ${mat.nome}) por ${resp}`);
+                    throw new Error(`MATERIAL JÁ ESTÁ EM USO (${mat.nome}) por ${resp}`);
                 }
                 if (mat.status === 'MANUTENCAO') {
-                    throw new Error(`MATERIAL EM MANUTENÇÃO (${mat.codigo_interno} - ${mat.nome}). Não pode ser entregue.`);
+                    throw new Error(`MATERIAL EM MANUTENÇÃO (${mat.nome}). Não pode ser entregue.`);
                 }
                 if (mat.status !== 'DISPONIVEL') {
-                    throw new Error(`MATERIAL FOI UTILIZADO EM OUTRA OPERAÇÃO: ${mat.codigo_interno}`);
+                    throw new Error(`MATERIAL FOI UTILIZADO EM OUTRA OPERAÇÃO: ${mat.nome}`);
                 }
                 // Trava adicional: Verificar se já existe registro em emprestimos
                 const activeLoanRows = await execQuery('SELECT id FROM emprestimos WHERE material_id = ?', [mat.id]);
                 if (activeLoanRows.length > 0) {
-                    throw new Error(`MATERIAL FOI UTILIZADO EM OUTRA OPERAÇÃO: ${mat.codigo_interno}`);
+                    throw new Error(`MATERIAL FOI UTILIZADO EM OUTRA OPERAÇÃO: ${mat.nome}`);
                 }
                 // Atualizar status do material para EM_USO
                 await execQuery("UPDATE materiais SET status = 'EM_USO', updated_at = (datetime('now', 'localtime')) WHERE id = ?", [mat.id]);
@@ -105,8 +105,8 @@ class EmprestimoService {
                 await execQuery(`INSERT INTO movimentacoes (material_id, material_codigo, material_nome, colaborador_id, colaborador_nome, colaborador_matricula, operador_id, operador_nome, tipo, observacao)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'SAIDA', 'Saída registrada no balcão')`, [
                     mat.id,
-                    mat.codigo_interno,
                     mat.nome,
+                    colaborador.nome,
                     colaborador.id,
                     colaborador.nome,
                     colaborador.matricula,
@@ -115,9 +115,13 @@ class EmprestimoService {
                 ]);
                 materiaisProcessados.push({
                     id: mat.id,
-                    codigo_interno: mat.codigo_interno,
                     nome: mat.nome
                 });
+            }
+            // Check for active access session
+            const activeAcessoRows = await execQuery("SELECT id FROM acessos_mina WHERE colaborador_id = ? AND status = 'ATIVO'", [colaborador.id]);
+            if (activeAcessoRows.length === 0) {
+                await execQuery("INSERT INTO acessos_mina (colaborador_id, data_hora_entrada, status) VALUES (?, (datetime('now', 'localtime')), 'ATIVO')", [colaborador.id]);
             }
             return {
                 sucesso: true,
@@ -158,7 +162,7 @@ class EmprestimoService {
             // 3. Processar devoluções
             for (const cod of materiaisCodigos) {
                 const cleanCod = cod.trim();
-                const matRows = await execQuery('SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?', [cleanCod, cleanCod]);
+                const matRows = await execQuery('SELECT * FROM materiais WHERE codigo_barras = ?', [cleanCod]);
                 const mat = matRows[0];
                 if (!mat) {
                     throw new Error(`MATERIAL NÃO CADASTRADO: ${cleanCod}`);
@@ -167,7 +171,7 @@ class EmprestimoService {
                 const empRows = await execQuery('SELECT * FROM emprestimos WHERE material_id = ? AND colaborador_id = ?', [mat.id, colaborador.id]);
                 const emp = empRows[0];
                 if (!emp) {
-                    throw new Error(`MATERIAL NÃO REGISTRADO PARA ESTE COLABORADOR (${mat.codigo_interno} - ${mat.nome}). Este material não consta nos empréstimos de ${colaborador.nome}.`);
+                    throw new Error(`MATERIAL NÃO REGISTRADO PARA ESTE COLABORADOR (${mat.nome}). Este material não consta nos empréstimos de ${colaborador.nome}.`);
                 }
                 // Atualizar status do material para DISPONIVEL
                 await execQuery("UPDATE materiais SET status = 'DISPONIVEL', updated_at = (datetime('now', 'localtime')) WHERE id = ?", [mat.id]);
@@ -177,8 +181,8 @@ class EmprestimoService {
                 await execQuery(`INSERT INTO movimentacoes (material_id, material_codigo, material_nome, colaborador_id, colaborador_nome, colaborador_matricula, operador_id, operador_nome, tipo, observacao)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ENTRADA', 'Devolução registrada no balcão')`, [
                     mat.id,
-                    mat.codigo_interno,
                     mat.nome,
+                    colaborador.nome,
                     colaborador.id,
                     colaborador.nome,
                     colaborador.matricula,
@@ -187,9 +191,13 @@ class EmprestimoService {
                 ]);
                 materiaisDevolvidos.push({
                     id: mat.id,
-                    codigo_interno: mat.codigo_interno,
                     nome: mat.nome
                 });
+            }
+            // Check if there are any remaining materials borrowed
+            const pendingRows = await execQuery("SELECT count(id) as count FROM emprestimos WHERE colaborador_id = ?", [colaborador.id]);
+            if (pendingRows[0].count === 0) {
+                await execQuery("UPDATE acessos_mina SET status = 'ENCERRADO', data_hora_saida = (datetime('now', 'localtime')), updated_at = (datetime('now', 'localtime')) WHERE colaborador_id = ? AND status = 'ATIVO'", [colaborador.id]);
             }
             return {
                 sucesso: true,
@@ -212,7 +220,7 @@ class EmprestimoService {
         const rows = await (0, db_1.query)(`
       SELECT e.id as emprestimo_id, e.data_hora_saida,
              col.id as colaborador_id, col.nome as colaborador_nome, col.matricula as colaborador_matricula, col.setor, col.cargo,
-             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio,
+             m.id as material_id, m.nome as material_nome, m.codigo_barras, m.patrimonio,
              c.nome as categoria_nome
       FROM emprestimos e
       JOIN colaboradores col ON e.colaborador_id = col.id

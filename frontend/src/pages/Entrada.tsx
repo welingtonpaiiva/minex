@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import { soundFX } from '../services/soundFX';
 import { Colaborador, EmprestimoAtivo, EntradaStep } from '../types';
 import { NfcReaderModal } from '../components/NfcReaderModal';
+import { ColaboradorModal } from '../components/ColaboradorModal';
 import { calcularHorasEmUso } from '../utils/dateUtils';
 
 interface ItemEntradaTemp extends EmprestimoAtivo {
@@ -25,6 +26,8 @@ export const Entrada: React.FC = () => {
   const [mensagemErro, setMensagemErro] = useState('');
   const [loading, setLoading] = useState(false);
   const [showNfcModal, setShowNfcModal] = useState(true);
+  const [showColaboradorModal, setShowColaboradorModal] = useState(false);
+  const [unknownNfcId, setUnknownNfcId] = useState('');
   const [resumoSucesso, setResumoSucesso] = useState<any>(null);
 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
@@ -39,6 +42,21 @@ export const Entrada: React.FC = () => {
   useEffect(() => {
     handleReiniciar();
   }, [activeTab]);
+
+  // Esconder botão de voltar durante o escaneamento
+  useEffect(() => {
+    const btn = document.getElementById('btn-voltar-home');
+    if (btn) {
+      if (step === 'SCANNING_RETURNS') {
+        btn.style.display = 'none';
+      } else {
+        btn.style.display = '';
+      }
+    }
+    return () => {
+      if (btn) btn.style.display = '';
+    };
+  }, [step]);
 
   // Handler de Leitura NFC
   const handleNfcRead = async (nfcId: string) => {
@@ -64,8 +82,14 @@ export const Entrada: React.FC = () => {
       setShowNfcModal(false);
       setStep('SCANNING_RETURNS');
     } catch (err: any) {
-      soundFX.playError();
-      setMensagemErro(err.response?.data?.error || 'COLABORADOR NÃO ENCONTRADO PARA ESTE CARTÃO NFC');
+      if (err.response?.status === 404) {
+        setUnknownNfcId(nfcId);
+        setShowNfcModal(false);
+        setShowColaboradorModal(true);
+      } else {
+        soundFX.playError();
+        setMensagemErro(err.response?.data?.error || 'COLABORADOR NÃO ENCONTRADO PARA ESTE CARTÃO NFC');
+      }
     }
   };
 
@@ -80,7 +104,7 @@ export const Entrada: React.FC = () => {
 
     // Verificar se o material pertence à lista de posse deste colaborador
     const index = emprestimosTemp.findIndex(
-      (item) => item.codigo_barras === codigo || item.codigo_interno === codigo
+      (item) => item.codigo_barras === codigo 
     );
 
     if (index === -1) {
@@ -129,7 +153,7 @@ export const Entrada: React.FC = () => {
     setMensagemErro('');
 
     try {
-      const materiaisCodigos = selecionados.map((e) => e.codigo_interno);
+      const materiaisCodigos = selecionados.map((e) => e.codigo_barras);
       const endpoint = activeTab === 'NORMAL' ? '/emprestimos/entrada' : '/emprestimos/extravio';
       
       const res = await api.post(endpoint, {
@@ -228,7 +252,7 @@ export const Entrada: React.FC = () => {
               <AlertTriangle className="w-6 h-6 text-red-600 shrink-0 animate-bounce" />
               <div>
                 <div className="font-extrabold uppercase text-red-950 font-['Outfit']">
-                  ⚠️ ATENÇÃO: TURNO EXCEDIDO (+8 HORAS DE POSSE)
+                  ATENÇÃO: TURNO EXCEDIDO (+8 HORAS DE POSSE)
                 </div>
                 <div className="text-xs text-red-800 font-semibold mt-0.5">
                   Este colaborador possui {itensExcedidosCount} equipamento(s) retirados há mais de 8 horas!
@@ -275,6 +299,31 @@ export const Entrada: React.FC = () => {
           subtitle="Aproxime o cartão NFC para buscar os materiais sob posse do colaborador"
         />
 
+        {/* MODAL CADASTRO RÁPIDO */}
+        <ColaboradorModal
+          isOpen={showColaboradorModal}
+          colaboradorInicial={{ nfc_id: unknownNfcId, status: 'ATIVO' }}
+          onClose={() => {
+            setShowColaboradorModal(false);
+            setUnknownNfcId('');
+            setShowNfcModal(true); // volta para a tela de leitura
+          }}
+          onSave={(colab) => {
+            setShowColaboradorModal(false);
+            setUnknownNfcId('');
+            // Colaborador recém-criado, prosseguir!
+            soundFX.playSuccess();
+            setColaborador(colab);
+            setEmprestimosTemp([]); // Ele não tem nada emprestado pois acabou de ser criado
+            setMensagemErro(`COLABORADOR CADASTRADO: ${colab.nome}. MAS NÃO POSSUI NENHUM MATERIAL SOB SUA POSSE NO MOMENTO.`);
+            // Permanece no passo IDENTIFYING ou vai pra SCANNING_RETURNS? 
+            // Se ele não tem itens, não há o que devolver. O Entrada lida com isso se estiver vazio.
+            // Para não travar no SCANNING_RETURNS sem ter como sair (já que não há itens), 
+            // nós só deixamos a msg de erro. Mas vamos para SCANNING_RETURNS para ele ver que tá vazio.
+            setStep('SCANNING_RETURNS');
+          }}
+        />
+
         {/* CONTEÚDO PRINCIPAL */}
         {step === 'SUCCESS' && resumoSucesso ? (
           <div className="flex-1 bg-white border border-emerald-300 rounded-2xl p-8 sm:p-12 flex flex-col items-center justify-center text-center shadow-lg">
@@ -292,7 +341,7 @@ export const Entrada: React.FC = () => {
               </div>
               {resumoSucesso.materiais?.map((item: any) => (
                 <div key={item.id} className="flex justify-between py-1.5 border-b border-slate-200 font-semibold">
-                  <span className={`font-mono font-extrabold ${activeTab === 'NORMAL' ? 'text-[#331274]' : 'text-red-700'}`}>{item.codigo_interno}</span>
+                  <span className={`font-mono font-extrabold ${activeTab === 'NORMAL' ? 'text-[#331274]' : 'text-red-700'}`}>{item.codigo_barras}</span>
                   <span className="text-slate-700">{item.nome}</span>
                 </div>
               ))}
@@ -396,7 +445,7 @@ export const Entrada: React.FC = () => {
                             key={item.emprestimo_id}
                             className={`transition-colors ${rowBg}`}
                           >
-                            <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.codigo_interno}</td>
+                            <td className="font-mono font-extrabold text-[#331274] py-3.5 px-4">{item.codigo_barras}</td>
                             <td className="font-bold text-slate-900 py-3.5 px-4">{item.material_nome}</td>
                             <td className="py-3.5 px-4">
                               <div className="font-mono text-xs font-semibold text-slate-700">{item.data_hora_saida}</div>

@@ -128,7 +128,7 @@ export const ColaboradorSidePanel: React.FC<ColaboradorSidePanelProps> = ({ aces
                       <li key={index} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                         <div>
                           <p className="font-bold text-slate-800 text-sm">{mat.nome}</p>
-                          <p className="text-xs text-slate-500 font-mono mt-0.5">Cod: {mat.codigo_interno}</p>
+                          <p className="text-xs text-slate-500 font-mono mt-0.5">Cod: {mat.codigo_barras}</p>
                         </div>
                         <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-md flex items-center gap-1">
                           EM USO

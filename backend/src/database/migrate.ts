@@ -132,10 +132,10 @@ export async function runMigrations() {
 
     for (const m of materiaisSeed) {
       await query(
-        'INSERT INTO materiais (nome, codigo_interno, codigo_barras, categoria_id, patrimonio, status, observacao) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [m.nome, m.codigo, m.codigo, m.cat, m.patrimonio, m.status, m.obs || '']
-      );
-    }
+          'INSERT INTO materiais (nome, codigo_barras, categoria_id, patrimonio, status, observacao) VALUES (?, ?, ?, ?, ?, ?)',
+          [m.nome, m.codigo, m.cat, m.patrimonio, m.status, m.obs || '']
+        );
+      }
     console.log('[SEED] Materiais individuais criados com sucesso!');
   }
 }

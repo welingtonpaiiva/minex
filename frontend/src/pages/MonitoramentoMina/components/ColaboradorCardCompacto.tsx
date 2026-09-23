@@ -5,9 +5,10 @@ import clsx from 'clsx';
 interface ColaboradorCardCompactoProps {
   acesso: any;
   onExibirMais: () => void;
+  isPendente8h?: boolean;
 }
 
-export const ColaboradorCardCompacto: React.FC<ColaboradorCardCompactoProps> = ({ acesso, onExibirMais }) => {
+export const ColaboradorCardCompacto: React.FC<ColaboradorCardCompactoProps> = ({ acesso, onExibirMais, isPendente8h = false }) => {
   const [tempo, setTempo] = useState('');
   const [horasEmUso, setHorasEmUso] = useState(0);
 
@@ -44,19 +45,30 @@ export const ColaboradorCardCompacto: React.FC<ColaboradorCardCompactoProps> = (
     <div
       className={clsx(
         'bg-white rounded-xl border flex flex-col overflow-hidden h-full transition-shadow hover:shadow-md',
-        excedido ? 'border-rose-200' : 'border-slate-200'
+        isPendente8h
+          ? 'border-red-500 ring-2 ring-red-500 ring-offset-1 shadow-lg shadow-red-200'
+          : excedido ? 'border-rose-200' : 'border-slate-200'
       )}
     >
       {/* Topo: status + entrada */}
       <div className={clsx(
         'flex items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest border-b flex-shrink-0',
-        excedido ? 'bg-rose-50 border-rose-100 text-rose-600' : 'bg-emerald-50 border-emerald-100 text-emerald-600'
+        isPendente8h
+          ? 'bg-red-600 border-red-700 text-white'
+          : excedido ? 'bg-rose-50 border-rose-100 text-rose-600' : 'bg-emerald-50 border-emerald-100 text-emerald-600'
       )}>
         <span className="flex items-center gap-1">
-          <span className={clsx('w-1.5 h-1.5 rounded-full', excedido ? 'bg-rose-500' : 'bg-emerald-500')} />
-          {excedido ? 'EXCEDIDO' : 'NA MINA'}
+          <span className={clsx(
+            'w-1.5 h-1.5 rounded-full',
+            isPendente8h ? 'bg-white animate-ping' : excedido ? 'bg-rose-500' : 'bg-emerald-500'
+          )} />
+          {isPendente8h ? (
+            <span className="flex items-center gap-1 animate-pulse">
+              <AlertTriangle className="w-3 h-3" /> PENDENTE +8H
+            </span>
+          ) : excedido ? 'EXCEDIDO' : 'NA MINA'}
         </span>
-        <span className="text-slate-400 font-medium normal-case">{horaEntrada}</span>
+        <span className={clsx('font-medium normal-case', isPendente8h ? 'text-red-100' : 'text-slate-400')}>{horaEntrada}</span>
       </div>
 
       {/* Corpo: foto + info */}
@@ -91,14 +103,15 @@ export const ColaboradorCardCompacto: React.FC<ColaboradorCardCompactoProps> = (
         <div className="flex items-center justify-between gap-2">
           <p className={clsx(
             'text-[10px] truncate max-w-[55%]',
-            temMateriais ? 'text-amber-600 font-semibold flex items-center gap-1' : 'text-slate-400'
+            isPendente8h ? 'text-red-600 font-black flex items-center gap-1 animate-pulse'
+              : temMateriais ? 'text-amber-600 font-semibold flex items-center gap-1' : 'text-slate-400'
           )}>
-            {temMateriais && <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />}
+            {(temMateriais || isPendente8h) && <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />}
             <span className="truncate">{materialTexto}</span>
           </p>
           <p className={clsx(
             'text-sm font-black tabular-nums flex-shrink-0',
-            excedido ? 'text-rose-500' : 'text-emerald-600'
+            isPendente8h ? 'text-red-600 animate-pulse' : excedido ? 'text-rose-500' : 'text-emerald-600'
           )}>
             {tempo}
           </p>

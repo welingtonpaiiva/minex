@@ -101,10 +101,11 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            {/* Botão de Voltar para a Home (Oculto no Dashboard de TV) */}
-            {!isDashboard && (
+            {/* Botão de Voltar para a Home (Oculto no Dashboard de TV e Monitoramento) */}
+            {!(isDashboard || isMonitoramento) && (
               <>
                 <button
+                  id="btn-voltar-home"
                   onClick={() => navigate('/')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold ${isDarkTheme ? 'text-white/80 hover:text-white' : 'text-[#331274] hover:text-[#43208C]'} transition-all cursor-pointer group shrink-0`}
                   title="Voltar ao Menu Principal"
@@ -155,7 +156,7 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
         {/* Informações do Operador & Logout */}
         {user && (
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${isDarkTheme ? 'bg-white/10 text-white' : 'bg-[#331274]/10 text-[#331274]'}`}>
+            <div className={`flex items-center justify-center font-bold ${isDarkTheme ? 'text-white' : 'text-[#331274]'}`}>
               <User className="w-4 h-4" />
             </div>
             <div className="text-right hidden sm:block">
@@ -172,7 +173,7 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
         <button
           onClick={onLogout}
           title="Sair do Sistema"
-          className={`p-2 rounded-lg transition-all flex items-center justify-center cursor-pointer ${isDarkTheme ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-red-600 hover:bg-red-50'}`}
+          className={`p-2 rounded-lg transition-all flex items-center justify-center cursor-pointer text-red-500 hover:text-red-400 hover:bg-red-500/10`}
         >
           <LogOut className="w-4 h-4" />
         </button>

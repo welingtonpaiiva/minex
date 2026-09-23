@@ -33,7 +33,6 @@ export interface Categoria {
 export interface Material {
   id: number;
   nome: string;
-  codigo_interno: string;
   codigo_barras: string;
   categoria_id?: number;
   categoria_nome?: string;
@@ -58,7 +57,6 @@ export interface EmprestimoAtivo {
   cargo?: string;
   material_id: number;
   material_nome: string;
-  codigo_interno: string;
   codigo_barras: string;
   categoria_nome?: string;
   operador_saida_nome?: string;
@@ -97,7 +95,6 @@ export interface AlertaTurnoItem {
   cargo?: string;
   material_id: number;
   material_nome: string;
-  codigo_interno: string;
   codigo_barras: string;
   categoria_nome?: string;
   minutos_em_uso: number;

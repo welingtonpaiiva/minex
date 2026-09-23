@@ -48,7 +48,7 @@ const MOCK_ATIVOS = [
   { acesso_id:'T32', nome:'KARINA MOREIRA AZEVEDO', matricula:'2154', cargo:'Técnica de Geologia', setor:'GEOLOGIA', status:'ATIVO', data_hora_entrada:h(6.5), data_hora_saida:null, foto_url:null, materiais:[] },
   { acesso_id:'T33', nome:'FABIO CUNHA RAMOS', matricula:'3265', cargo:'Eletricista', setor:'ELÉTRICA', status:'ATIVO', data_hora_entrada:h(2.8), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Multímetro Intrínseco', codigo_interno:'ELT-077' }] },
   { acesso_id:'T34', nome:'ADRIANA SALES MONTEIRO', matricula:'4376', cargo:'Supervisora de Operações', setor:'OPERAÇÃO', status:'ATIVO', data_hora_entrada:h(7.4), data_hora_saida:null, foto_url:null, materiais:[] },
-  { acesso_id:'T35', nome:'IGOR BATISTA CAVALCANTE', matricula:'5487', cargo:'Técnico de Instrumentação', setor:'INSTRUMENTAÇÃO', status:'ATIVO', data_hora_entrada:h(1.7), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Auto-Resgatador Subterrâneo', codigo_interno:'RES-035' }] },
+  { acesso_id:'T35', nome:'IGOR BATISTA CAVALCANTE', matricula:'5487', cargo:'Técnico de Instrumentação', setor:'INSTRUMENTAÇÃO', status:'ATIVO', data_hora_entrada:h(1.7), data_hora_saida:null, foto_url:null, materiais:[{ nome:'Auto-Resgatador Subterrâneo', codigo_barras:'RES-035' }] },
 ].map(item => ({ ...item, foto_url: `https://i.pravatar.cc/150?u=${item.matricula}` }));
 
 const MOCK_HISTORICO = [

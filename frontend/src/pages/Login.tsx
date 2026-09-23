@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, AlertCircle, HardHat, Layers, QrCode } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 import { soundFX } from '../services/soundFX';
 import { Usuario } from '../types';
@@ -10,6 +10,14 @@ interface LoginProps {
   onLoginSuccess: (user: Usuario, token: string) => void;
 }
 
+const SECURITY_QUOTES = [
+  { line1: "RESPONSABILIDADE SEMPRE.", line2: "SEGURANÇA SEMPRE." },
+  { line1: "CUIDAR DE SI.", line2: "É CUIDAR DE TODOS." },
+  { line1: "TODA OPERAÇÃO SEGURA.", line2: "COMEÇA COM ATENÇÃO." },
+  { line1: "NENHUMA TAREFA É MAIS IMPORTANTE.", line2: "QUE A SEGURANÇA." },
+  { line1: "PLANEJE. EXECUTE.", line2: "RETORNE EM SEGURANÇA." }
+];
+
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [matricula, setMatricula] = useState('');
   const [senha, setSenha] = useState('');
@@ -17,7 +25,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [quoteIndex, setQuoteIndex] = useState(0);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuoteIndex((prev) => (prev + 1) % SECURITY_QUOTES.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,11 +68,33 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     <div 
       className="min-h-screen w-screen flex items-center justify-center p-4 sm:p-6 bg-cover bg-center bg-no-repeat font-sans select-none relative overflow-y-auto"
       style={{
-        backgroundImage: `linear-gradient(135deg, rgba(25, 8, 55, 0.88) 0%, rgba(51, 18, 116, 0.65) 50%, rgba(0, 0, 0, 0.85) 100%), url('/20250218LD0126.jpg')`
+        backgroundImage: `linear-gradient(135deg, rgba(25, 8, 55, 0.50) 0%, rgba(51, 18, 116, 0.35) 50%, rgba(0, 0, 0, 0.60) 100%), url('/image.png')`
       }}
     >
       {/* Sombra sutil no fundo da tela */}
       <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+
+      {/* FRASE DE SEGURANÇA FLUTUANTE (CANTO SUPERIOR DIREITO) */}
+      <div className="absolute top-[40px] right-[50px] z-20 max-w-[350px] text-right pointer-events-none hidden md:block">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={quoteIndex}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="flex flex-col items-end gap-1 font-['Outfit'] tracking-wide drop-shadow-sm"
+          >
+            <span className="text-[#a78bfa]/70 text-[11px] font-medium uppercase tracking-[0.15em]">
+              {SECURITY_QUOTES[quoteIndex].line1}
+            </span>
+            <span className="text-[#e2d8fa] text-[13px] font-bold uppercase tracking-[0.1em]">
+              {SECURITY_QUOTES[quoteIndex].line2}
+            </span>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
 
       {/* CONTAINER CENTRALIZADO EXPANDIDO (FRASE + CARD + INDICADORES + RODAPÉ) */}
       <div className="relative z-10 flex flex-col items-center justify-center max-w-2xl w-full my-auto py-6 space-y-7">
@@ -96,9 +134,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           {/* CABEÇALHO DO CARD (Ícone + Casa da Lanterna + Título + Subtítulo) */}
           <div className="flex flex-col items-center text-center mb-6 relative z-10">
             
-            {/* Ícone Iluminado da Lanterna */}
-            <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mb-2 shadow-sm text-slate-800">
-              <HardHat className="w-5 h-5 text-slate-800" />
+            {/* Logo da Casa da Lanterna */}
+            <div className="flex items-center justify-center mb-4">
+              <img src="/logo.svg" alt="Logo Casa da Lanterna" className="h-16 w-auto object-contain drop-shadow-sm" />
             </div>
 
             <span className="text-sm font-semibold text-slate-900 tracking-tight font-['Outfit'] block">
@@ -270,8 +308,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </motion.div>
 
         {/* RODAPÉ COM COPYRIGHT E CRÉDITO "Dev by WP & EF" */}
-        <div className="w-full text-center text-[11px] text-white/70 pt-1">
-          <p>© {new Date().getFullYear()} Casa da Lanterna | Controle de Materiais de Mineração <span className="opacity-40 mx-1.5">|</span> <span className="font-semibold text-white/90">Dev by WP & EF</span></p>
+        <div className="w-full flex flex-col items-center justify-center text-[10px] text-white/50 pt-1 gap-1">
+          <p>© {new Date().getFullYear()} Casa da Lanterna · Controle de Materiais de Mineração</p>
+          <p className="font-semibold opacity-60">Dev by WP & EF</p>
         </div>
 
       </div>
