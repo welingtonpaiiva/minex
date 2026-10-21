@@ -13,8 +13,11 @@ class HistoricoController {
                 material_id: material_id ? parseInt(material_id) : undefined,
                 data_inicio: data_inicio,
                 data_fim: data_fim,
-                limit: limit ? parseInt(limit) : undefined
+                limit: limit ? parseInt(limit) : undefined,
+                offset: Math.max(0, (Number(req.query.page) || 1) - 1) * Math.min(500, Math.max(1, Number(limit) || 50))
             });
+            if (req.query.paginado === 'true')
+                return res.json({ items: logs, total: logs.total, page: Number(req.query.page) || 1 });
             return res.json(logs);
         }
         catch (err) {

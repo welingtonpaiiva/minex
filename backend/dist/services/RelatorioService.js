@@ -7,12 +7,13 @@ exports.RelatorioService = void 0;
 const exceljs_1 = __importDefault(require("exceljs"));
 const pdfmake_1 = __importDefault(require("pdfmake"));
 const db_1 = require("../config/db");
+const HistoricoService_1 = require("./HistoricoService");
 class RelatorioService {
     static async obterResumo() {
-        const totalMateriais = await (0, db_1.queryOne)('SELECT COUNT(*) as total FROM materiais');
-        const disponiveis = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE status = 'DISPONIVEL'");
-        const emUso = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE status = 'EM_USO'");
-        const manutencao = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE status = 'MANUTENCAO'");
+        const totalMateriais = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE tipo_controle='INDIVIDUAL'");
+        const disponiveis = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE status = 'DISPONIVEL' AND tipo_controle='INDIVIDUAL'");
+        const emUso = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE status = 'EM_USO' AND tipo_controle='INDIVIDUAL'");
+        const manutencao = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE status = 'MANUTENCAO' AND tipo_controle='INDIVIDUAL'");
         const totalColaboradores = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM colaboradores WHERE status = 'ATIVO'");
         return {
             totalMateriais: totalMateriais?.total || 0,
@@ -23,11 +24,6 @@ class RelatorioService {
         };
     }
     static async gerarExcelMovimentacoes(filtros) {
-        const movimentacoes = await (0, db_1.query)(`
-      SELECT m.data_hora, m.tipo, m.material_codigo, m.material_nome, m.colaborador_nome, m.colaborador_matricula, m.operador_nome, m.observacao
-      FROM movimentacoes m
-      ORDER BY m.data_hora DESC
-    `);
         const workbook = new exceljs_1.default.Workbook();
         const sheet = workbook.addWorksheet('Movimentações');
         sheet.columns = [
@@ -47,9 +43,14 @@ class RelatorioService {
             pattern: 'solid',
             fgColor: { argb: '0F172A' }
         };
-        movimentacoes.forEach((row) => {
-            sheet.addRow(row);
-        });
+        let offset = 0;
+        while (true) {
+            const rows = await HistoricoService_1.HistoricoService.listar({ ...filtros, limit: 500, offset });
+            rows.forEach((row) => sheet.addRow(row));
+            if (rows.length < 500)
+                break;
+            offset += rows.length;
+        }
         return (await workbook.xlsx.writeBuffer());
     }
     static async gerarPdfMateriaisEmUso() {

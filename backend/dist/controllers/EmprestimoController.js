@@ -32,7 +32,8 @@ class EmprestimoController {
                 colaboradorId: parseInt(colaboradorId),
                 materiaisCodigos,
                 operadorId,
-                operadorNome
+                operadorNome,
+                requestId: req.header('Idempotency-Key') || req.body.requestId
             });
             return res.json(result);
         }
@@ -49,7 +50,9 @@ class EmprestimoController {
                 colaboradorId: parseInt(colaboradorId),
                 materiaisCodigos,
                 operadorId,
-                operadorNome
+                operadorNome,
+                requestId: req.header('Idempotency-Key') || req.body.requestId,
+                condicao: req.body.condicao
             });
             return res.json(result);
         }

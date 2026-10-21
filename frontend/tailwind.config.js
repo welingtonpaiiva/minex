@@ -3,6 +3,10 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter Variable', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Outfit Variable', 'Outfit', 'Inter Variable', 'sans-serif'],
+      },
       colors: {
         industrial: {
           bg: '#0F172A',

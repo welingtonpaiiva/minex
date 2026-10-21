@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MaterialController = void 0;
 const MaterialService_1 = require("../services/MaterialService");
+const db_1 = require("../config/db");
+const OperationalService_1 = require("../services/OperationalService");
 class MaterialController {
     static async listar(req, res) {
         try {
@@ -44,7 +46,11 @@ class MaterialController {
     }
     static async criar(req, res) {
         try {
-            const novo = await MaterialService_1.MaterialService.criar(req.body);
+            const novo = await (0, db_1.withTransaction)(async (execute) => {
+                const result = await MaterialService_1.MaterialService.criar(req.body);
+                await (0, OperationalService_1.audit)(req.user.id, 'CRIAR', 'material', result.id, { codigo: result.codigo_interno, nome: result.nome }, execute);
+                return result;
+            });
             return res.status(201).json(novo);
         }
         catch (err) {
@@ -54,7 +60,11 @@ class MaterialController {
     static async editar(req, res) {
         try {
             const id = parseInt(req.params.id);
-            const atualizado = await MaterialService_1.MaterialService.editar(id, req.body);
+            const atualizado = await (0, db_1.withTransaction)(async (execute) => {
+                const result = await MaterialService_1.MaterialService.editar(id, req.body);
+                await (0, OperationalService_1.audit)(req.user.id, 'ATUALIZAR', 'material', id, req.body, execute);
+                return result;
+            });
             return res.json(atualizado);
         }
         catch (err) {
@@ -85,7 +95,7 @@ class MaterialController {
     static async excluir(req, res) {
         try {
             const id = parseInt(req.params.id);
-            const resultado = await MaterialService_1.MaterialService.excluir(id);
+            const resultado = await MaterialService_1.MaterialService.alterarStatus(id, 'INATIVO', req.body.observacao || 'Inativação administrativa; histórico preservado', req.user.id);
             return res.json(resultado);
         }
         catch (err) {

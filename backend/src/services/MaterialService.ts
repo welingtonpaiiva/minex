@@ -1,7 +1,8 @@
-import { query, queryOne } from '../config/db';
+import { query, queryOne, withTransaction, lockRow } from '../config/db';
+import { audit, text } from './OperationalService';
 
 export class MaterialService {
-  static async listar(filtros?: { busca?: string; categoria_id?: number; status?: string }) {
+  static async listar(filtros?: { busca?: string; categoria_id?: number; status?: string; limit?: number; offset?: number }) {
     let sql = `
       SELECT m.*, c.nome as categoria_nome,
              e.colaborador_id, col.nome as colaborador_nome, col.matricula as colaborador_matricula,
@@ -30,7 +31,8 @@ export class MaterialService {
       params.push(term, term, term);
     }
 
-    sql += ' ORDER BY m.codigo_interno ASC';
+    sql += ' ORDER BY m.codigo_interno ASC LIMIT ? OFFSET ?';
+    params.push(Math.min(100, Math.max(1, filtros?.limit || 100)), Math.max(0, filtros?.offset || 0));
     return await query(sql, params);
   }
 
@@ -70,7 +72,9 @@ export class MaterialService {
     categoria_id?: number;
     foto_url?: string;
     observacao?: string;
+    patrimonio?: string;
   }) {
+    text(dados.nome, 'Nome'); text(dados.codigo_interno, 'Código');
     if (!dados.nome || !dados.codigo_interno) {
       throw new Error('Nome e código interno são obrigatórios');
     }
@@ -89,8 +93,8 @@ export class MaterialService {
     }
 
     await query(
-      `INSERT INTO materiais (nome, codigo_interno, codigo_barras, categoria_id, foto_url, status, observacao)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO materiais (nome, codigo_interno, codigo_barras, categoria_id, foto_url, status, observacao, patrimonio)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         dados.nome.trim(),
         codInt,
@@ -98,7 +102,8 @@ export class MaterialService {
         dados.categoria_id || null,
         dados.foto_url || '',
         'DISPONIVEL',
-        dados.observacao || ''
+        text(dados.observacao || '', 'Observação', 4000, false),
+        text(dados.patrimonio || '', 'Patrimônio', 255, false)
       ]
     );
 
@@ -111,12 +116,20 @@ export class MaterialService {
     foto_url?: string;
     observacao?: string;
     status?: string;
+    patrimonio?: string;
   }) {
+    if (dados.status !== undefined) throw new Error('Altere a disponibilidade pela operação de estoque, com justificativa');
+    if (dados.nome !== undefined) text(dados.nome, 'Nome');
+    return withTransaction(async () => {
+    await query('SELECT id FROM materiais WHERE id = ?' + lockRow, [id]);
     const mat = await this.buscarPorId(id);
     if (!mat) {
       throw new Error('Material não encontrado');
     }
 
+    await query(
+      'UPDATE materiais SET patrimonio = ? WHERE id = ?', [dados.patrimonio !== undefined ? text(dados.patrimonio, 'Patrimônio', 255, false) : mat.patrimonio, id]
+    );
     await query(
       `UPDATE materiais
        SET nome = ?, categoria_id = ?, foto_url = ?, observacao = ?, status = ?, updated_at = (datetime('now', 'localtime'))
@@ -132,13 +145,18 @@ export class MaterialService {
     );
 
     return await this.buscarPorId(id);
+    });
   }
 
   static async alterarStatus(id: number, novoStatus: string, observacao?: string, operadorId?: number) {
+    if (!['DISPONIVEL', 'MANUTENCAO', 'BLOQUEADO', 'INATIVO'].includes(novoStatus)) throw new Error('Situação de estoque inválida');
+    text(observacao, 'Justificativa', 4000); if (!operadorId) throw new Error('Operador não identificado');
+    return withTransaction(async execute => {
+    await execute('SELECT id FROM materiais WHERE id = ?' + lockRow, [id]);
     const mat = await this.buscarPorId(id);
     if (!mat) throw new Error('Material não encontrado');
 
-    if (mat.status === 'EM_USO' && novoStatus === 'MANUTENCAO') {
+    if (mat.status === 'EM_USO' || await queryOne('SELECT id FROM emprestimos WHERE material_id = ?', [id])) {
       throw new Error('Não é possível colocar em manutenção um material que está atualmente em uso por um colaborador.');
     }
 
@@ -156,7 +174,9 @@ export class MaterialService {
       );
     }
 
+    await audit(operadorId, 'AJUSTE_ESTOQUE', 'material', id, { anterior: mat.status, novo: novoStatus, justificativa: observacao }, execute);
     return await this.buscarPorId(id);
+    });
   }
 
   static async listarCategorias() {
@@ -173,9 +193,6 @@ export class MaterialService {
       throw new Error('Não é possível excluir um material que está em uso no momento.');
     }
 
-    await query('DELETE FROM emprestimos WHERE material_id = ?', [id]);
-    await query('DELETE FROM materiais WHERE id = ?', [id]);
-
-    return { message: 'Material excluído com sucesso', id };
+    throw new Error('Para preservar o histórico, inative o material com justificativa no estoque.');
   }
 }

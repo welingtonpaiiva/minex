@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { MaterialService } from '../services/MaterialService';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
+import { withTransaction } from '../config/db';
+import { audit } from '../services/OperationalService';
 
 export class MaterialController {
   static async listar(req: Request, res: Response) {
@@ -41,19 +43,25 @@ export class MaterialController {
     }
   }
 
-  static async criar(req: Request, res: Response) {
+  static async criar(req: AuthenticatedRequest, res: Response) {
     try {
-      const novo = await MaterialService.criar(req.body);
+      const novo = await withTransaction(async execute => {
+        const result = await MaterialService.criar(req.body);
+        await audit(req.user!.id, 'CRIAR', 'material', result.id, { codigo: result.codigo_interno, nome: result.nome }, execute); return result;
+      });
       return res.status(201).json(novo);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
     }
   }
 
-  static async editar(req: Request, res: Response) {
+  static async editar(req: AuthenticatedRequest, res: Response) {
     try {
       const id = parseInt(req.params.id);
-      const atualizado = await MaterialService.editar(id, req.body);
+      const atualizado = await withTransaction(async execute => {
+        const result = await MaterialService.editar(id, req.body);
+        await audit(req.user!.id, 'ATUALIZAR', 'material', id, req.body, execute); return result;
+      });
       return res.json(atualizado);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
@@ -81,10 +89,10 @@ export class MaterialController {
     }
   }
 
-  static async excluir(req: Request, res: Response) {
+  static async excluir(req: AuthenticatedRequest, res: Response) {
     try {
       const id = parseInt(req.params.id);
-      const resultado = await MaterialService.excluir(id);
+      const resultado = await MaterialService.alterarStatus(id, 'INATIVO', req.body.observacao || 'Inativação administrativa; histórico preservado', req.user!.id);
       return res.json(resultado);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });

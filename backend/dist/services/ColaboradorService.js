@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ColaboradorService = void 0;
 const db_1 = require("../config/db");
 class ColaboradorService {
-    static async listar(busca, status) {
+    static async listar(busca, status, limit = 100, offset = 0) {
         let sql = 'SELECT * FROM colaboradores WHERE 1=1';
         const params = [];
         if (status) {
@@ -15,7 +15,8 @@ class ColaboradorService {
             const term = `%${busca.trim()}%`;
             params.push(term, term, term, term);
         }
-        sql += ' ORDER BY nome ASC';
+        sql += ' ORDER BY nome ASC LIMIT ? OFFSET ?';
+        params.push(Math.min(100, Math.max(1, limit || 100)), Math.max(0, offset || 0));
         return await (0, db_1.query)(sql, params);
     }
     static async buscarPorId(id) {

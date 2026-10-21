@@ -54,7 +54,7 @@ const NOMES_SIMULADOS = [
   'GUSTAVO MENEZES REIS'
 ];
 
-const EQUIPAMENTOS_SIMULADOS = [
+const DESTINOS_SIMULADOS = [
   'Lanterna de Capacete LED Subterrânea #104',
   'Lanterna de Capacete LED Subterrânea #108',
   'Auto-Resgatador Subterrâneo M-20 #045',
@@ -84,9 +84,9 @@ const GERAR_ALERTAS_TESTE = (): ResumoAlertasTurno => {
     
     let nivel_alerta: NivelAlertaTurno = 'NORMAL';
     let mensagem_alerta = 'Dentro do turno padrão';
-    if (minutos >= 450) { // >= 7h30min = CRÍTICO
+    if (minutos > 480) { // >= 8 horas = CRÍTICO
       nivel_alerta = 'CRITICO';
-      mensagem_alerta = 'Excedeu 7h30 na mina - Crítico';
+      mensagem_alerta = 'Excedeu 8h na mina - Crítico';
       criticoCount++;
     } else {
       normalCount++;
@@ -104,7 +104,7 @@ const GERAR_ALERTAS_TESTE = (): ResumoAlertasTurno => {
       cargo: index % 2 === 0 ? 'Operador de Subterrâneo' : 'Técnico de Manutenção Mina',
       setor: 'SUBTERRÂNEO',
       material_id: 500 + index,
-      material_nome: EQUIPAMENTOS_SIMULADOS[index % EQUIPAMENTOS_SIMULADOS.length],
+      material_nome: DESTINOS_SIMULADOS[index % DESTINOS_SIMULADOS.length],
       codigo_interno: `LAT-${String(101 + index).padStart(3, '0')}`,
       codigo_barras: `LAT-${String(101 + index).padStart(3, '0')}`,
       categoria_nome: 'Lanternas',
@@ -194,13 +194,27 @@ export const DashboardAlertas: React.FC = () => {
   const carregarAlertas = useCallback(async () => {
     if (isTestMode) return;
     try {
-      setLoading((prev) => (data === null ? true : prev));
-      const res = await api.get('/emprestimos/alertas-turno');
-      const resumo: ResumoAlertasTurno = res.data;
+      setLoading(true);
+      const res = await api.get('/operacao/acessos');
+      // Adapt the access records to the existing TV presentation. Material loans
+      // do not determine whether a collaborator is currently inside the mine.
+      const resumo: ResumoAlertasTurno = {
+        totalEmUso: res.data.dentro_mina, normalCount: 0, atencaoCount: 0, criticoCount: 0,
+        alertas: res.data.colaboradores.map((entry: any) => ({
+          emprestimo_id: entry.id, data_hora_saida: entry.entrada,
+          colaborador_id: entry.colaborador_id, colaborador_nome: entry.nome,
+          colaborador_matricula: entry.matricula, setor: entry.setor,
+          material_id: 0, material_nome: entry.destino || 'Destino não informado',
+          codigo_interno: String(entry.id), minutos_em_uso: entry.minutos,
+          horas_em_uso: entry.minutos / 60, tempo_formatado: entry.tempo,
+          nivel_alerta: entry.excedido ? 'CRITICO' : 'NORMAL',
+          mensagem_alerta: entry.excedido ? 'Permanência acima de 8 horas' : 'Dentro do turno'
+        }))
+      };
 
-      // Normalizar para 2 estados únicos (NORMAL vs CRITICO >= 7h30)
+      // Normalizar para 2 estados únicos (NORMAL vs CRITICO >= 8h)
       const alertasNormalizados = (resumo.alertas || []).map((item) => {
-        const isCritico = (item.minutos_em_uso || 0) >= 450 || item.nivel_alerta === 'CRITICO' || item.nivel_alerta === 'ATENCAO';
+        const isCritico = item.nivel_alerta === 'CRITICO';
         return {
           ...item,
           nivel_alerta: (isCritico ? 'CRITICO' : 'NORMAL') as NivelAlertaTurno
@@ -230,7 +244,7 @@ export const DashboardAlertas: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [data, isTestMode]);
+  }, [isTestMode]);
 
   useEffect(() => {
     if (isTestMode) {
@@ -318,7 +332,7 @@ export const DashboardAlertas: React.FC = () => {
   const listaExibidaTela = [...expiradosFixos, ...normaisPaginados].slice(0, itemsPerPage);
 
   const countCriticos = todosAlertasOrdenados.filter(
-    (item) => item.nivel_alerta === 'CRITICO' || (item.minutos_em_uso || 0) >= 450
+    (item) => item.nivel_alerta === 'CRITICO'
   ).length;
 
   // Função para calcular o tempo decorrido com SEGUNDOS ao vivo
@@ -404,7 +418,7 @@ export const DashboardAlertas: React.FC = () => {
 
           <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider font-['Outfit']">DENTRO DO TURNO (&lt;7h30)</span>
+              <span className="text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider font-['Outfit']">DENTRO DO TURNO (&le;8h)</span>
               <div className="text-2xl font-extrabold font-['Outfit'] text-emerald-700 mt-0.5">
                 {(data?.totalEmUso || 0) - (data?.criticoCount || 0)}
               </div>
@@ -416,7 +430,7 @@ export const DashboardAlertas: React.FC = () => {
 
           <div className="bg-white p-3 rounded-xl border-2 border-red-500 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-extrabold text-red-700 uppercase tracking-wider font-['Outfit']">TURNO EXCEDIDO (&gt;7h30)</span>
+              <span className="text-[11px] font-extrabold text-red-700 uppercase tracking-wider font-['Outfit']">TURNO EXCEDIDO (&gt;8h)</span>
               <div className="text-2xl font-extrabold font-['Outfit'] text-red-600 mt-0.5">{data?.criticoCount || 0}</div>
             </div>
             <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-bold">
@@ -479,7 +493,7 @@ export const DashboardAlertas: React.FC = () => {
                       </div>
 
                       <div className="pt-1 border-t border-slate-200/80 flex items-center justify-between">
-                        <span className="text-[8px] text-slate-400 font-bold uppercase font-['Outfit']">TEMPO DE POSSE</span>
+                        <span className="text-[8px] text-slate-400 font-bold uppercase font-['Outfit']">TEMPO NA MINA</span>
                         <span className={`font-mono font-black text-xs tracking-wider ${isCritico ? 'text-red-600' : 'text-slate-900'}`}>
                           {tempoComSegundos}
                         </span>
@@ -560,10 +574,10 @@ export const DashboardAlertas: React.FC = () => {
             </div>
             <div>
               <p className="text-xs sm:text-sm font-extrabold uppercase font-['Outfit'] text-red-950">
-                ATENÇÃO: {countCriticos} COLABORADOR(ES) EXCEDERAM O TEMPO PADRÃO DE TURNO (&gt; 7h30MIN)
+                ATENÇÃO: {countCriticos} COLABORADOR(ES) EXCEDERAM O TEMPO PADRÃO DE TURNO (&gt; 8 HORAS)
               </p>
               <p className="text-xs font-semibold text-red-900/90 mt-0.5">
-                Oriente a baixa imediata de turno e devolução de equipamentos no guichê da Casa da Lanterna.
+                Confira a permanência e siga os procedimentos de acompanhamento da operação.
               </p>
             </div>
           </div>
@@ -595,7 +609,7 @@ export const DashboardAlertas: React.FC = () => {
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
             <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider font-['Outfit']">
-              DENTRO DO TURNO (&lt;7h30)
+              DENTRO DO TURNO (&le;8h)
             </span>
             <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
               <ShieldCheck className="w-5 h-5" />
@@ -609,11 +623,11 @@ export const DashboardAlertas: React.FC = () => {
           </div>
         </div>
 
-        {/* CARD 3: CRÍTICO (>7h30) */}
+        {/* CARD 3: CRÍTICO (>8h) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
             <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider font-['Outfit']">
-              CRÍTICO / TURNO EXCEDIDO (&gt;7h30)
+              CRÍTICO / TURNO EXCEDIDO (&gt;8h)
             </span>
             <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-bold">
               <ShieldAlert className="w-5 h-5" />
@@ -623,7 +637,7 @@ export const DashboardAlertas: React.FC = () => {
             <span className="text-3xl font-extrabold text-red-700 tracking-tight font-['Outfit']">
               {data?.criticoCount || 0}
             </span>
-            <p className="text-xs font-semibold text-slate-500 mt-1">Excederam 7h30 na mina</p>
+            <p className="text-xs font-semibold text-slate-500 mt-1">Excederam 8h na mina</p>
           </div>
         </div>
 
@@ -653,7 +667,7 @@ export const DashboardAlertas: React.FC = () => {
                 : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
             }`}
           >
-            NORMAIS (&lt;7h30)
+            NORMAIS (&le;8h)
           </button>
 
           <button
@@ -664,7 +678,7 @@ export const DashboardAlertas: React.FC = () => {
                 : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
             }`}
           >
-            CRÍTICOS 7h30+ ({data?.criticoCount || 0})
+            CRÍTICOS &gt;8h ({data?.criticoCount || 0})
           </button>
         </div>
 
@@ -772,7 +786,7 @@ export const DashboardAlertas: React.FC = () => {
                 <tr className="bg-slate-100 border-b border-slate-200 text-xs font-extrabold text-slate-800 uppercase tracking-wider font-['Outfit']">
                   <th className="py-3.5 px-4">ALERTA / STATUS</th>
                   <th className="py-3.5 px-4">COLABORADOR NA MINA</th>
-                  <th className="py-3.5 px-4">EQUIPAMENTO EM POSSE</th>
+                  <th className="py-3.5 px-4">DESTINO / OPERAÇÃO</th>
                   <th className="py-3.5 px-4">ENTRADA NA MINA</th>
                   <th className="py-3.5 px-4">TEMPO EM TEMPO REAL (SEGUNDOS)</th>
                   <th className="py-3.5 px-4 text-center">AÇÃO</th>
@@ -804,7 +818,7 @@ export const DashboardAlertas: React.FC = () => {
                           {isCritico ? (
                             <span className="bg-red-600 text-white font-extrabold px-3 py-1 text-xs rounded-md shadow-sm uppercase font-mono inline-flex items-center gap-1.5">
                               <ShieldAlert className="w-3.5 h-3.5" />
-                              CRÍTICO (&gt;7h30)
+                              CRÍTICO (&gt;8h)
                             </span>
                           ) : (
                             <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-2.5 py-1 text-xs rounded-md uppercase font-mono inline-flex items-center gap-1">
@@ -824,11 +838,11 @@ export const DashboardAlertas: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* EQUIPAMENTO */}
+                        {/* DESTINO */}
                         <td className="py-3.5 px-4">
                           <div className="font-bold text-slate-900">{item.material_nome}</div>
                           <div className="text-xs text-[#331274] font-mono font-extrabold">
-                            CÓD: {item.codigo_interno}
+                            ACESSO: {item.codigo_interno}
                           </div>
                         </td>
 
@@ -905,7 +919,7 @@ export const DashboardAlertas: React.FC = () => {
                       <span className="font-mono font-bold text-[#331274] text-[10px]">{item.colaborador_matricula}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500 text-[10px]">Equipamento:</span>
+                      <span className="text-slate-500 text-[10px]">Destino:</span>
                       <span className="font-bold text-slate-900 truncate text-[10px] max-w-[140px]">{item.material_nome}</span>
                     </div>
                   </div>

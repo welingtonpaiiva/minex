@@ -1,1 +1,10 @@
 node_modules/
+.env
+backend/.env
+backend/.runtime/
+backend/uploads/
+backups/
+*.db-wal
+*.db-shm
+*.log
+test-results/

@@ -1,7 +1,7 @@
 import { query, queryOne } from '../config/db';
 
 export class ColaboradorService {
-  static async listar(busca?: string, status?: string) {
+  static async listar(busca?: string, status?: string, limit = 100, offset = 0) {
     let sql = 'SELECT * FROM colaboradores WHERE 1=1';
     const params: any[] = [];
 
@@ -16,7 +16,8 @@ export class ColaboradorService {
       params.push(term, term, term, term);
     }
 
-    sql += ' ORDER BY nome ASC';
+    sql += ' ORDER BY nome ASC LIMIT ? OFFSET ?';
+    params.push(Math.min(100, Math.max(1, limit || 100)), Math.max(0, offset || 0));
     return await query(sql, params);
   }
 

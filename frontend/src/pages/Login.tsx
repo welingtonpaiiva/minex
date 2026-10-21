@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, AlertCircle, HardHat, Layers, QrCode } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -13,20 +13,22 @@ interface LoginProps {
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [matricula, setMatricula] = useState('');
   const [senha, setSenha] = useState('');
-  const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const pending = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (pending.current) return;
     if (!matricula || !senha) {
       setError('Informe a matrícula e a senha');
       soundFX.playError();
       return;
     }
 
+    pending.current = true;
     setLoading(true);
     setError('');
 
@@ -39,14 +41,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       soundFX.playError();
       setError(err.response?.data?.error || 'Erro ao realizar login. Verifique seus dados.');
     } finally {
+      pending.current = false;
       setLoading(false);
     }
   };
 
-  const handleQuickLogin = (mat: string, pass: string) => {
-    setMatricula(mat);
-    setSenha(pass);
-  };
 
   return (
     <div 
@@ -139,6 +138,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   type="text"
                   value={matricula}
                   onChange={(e) => setMatricula(e.target.value)}
+                  aria-label="Matrícula" autoComplete="username" required maxLength={255}
                   placeholder="USUÁRIO / MATRÍCULA"
                   autoFocus
                   className="w-full py-3.5 pl-10 pr-4 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all shadow-sm"
@@ -156,11 +156,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   type={showPassword ? 'text' : 'password'}
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
+                  aria-label="Senha" autoComplete="current-password" required maxLength={200}
                   placeholder="SENHA ••••••••"
                   className="w-full py-3.5 pl-10 pr-10 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#331274] focus:ring-2 focus:ring-[#331274]/15 transition-all shadow-sm"
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
                 >
@@ -169,29 +171,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               </div>
             </div>
 
-            {/* OPÇÕES */}
-            <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center space-x-2 cursor-pointer select-none text-slate-600">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="rounded border-slate-300 text-[#331274] focus:ring-[#331274] accent-[#331274]"
-                />
-                <span className="text-slate-600">Lembrar acesso</span>
-              </label>
-              <a
-                href="#forgot"
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Contate o Administrador de TI para redefinir sua senha.');
-                }}
-                className="font-medium text-slate-700 hover:text-[#331274] hover:underline transition-colors"
-              >
-                Esqueci minha senha
-              </a>
-            </div>
-
+            <p className="text-xs text-center text-slate-500">Precisa de acesso? Procure o administrador da Casa da Lanterna.</p>
             {/* BOTÃO ENTRAR */}
             <motion.button
               type="submit"
@@ -201,31 +181,10 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               className="w-full py-3.5 bg-[#331274] hover:bg-[#43208C] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#331274]/25 transition-all cursor-pointer disabled:opacity-60 tracking-wide mt-2 flex items-center justify-center gap-2"
             >
               <HardHat className="w-4 h-4" />
-              <span>{loading ? 'Entrando...' : 'Entrar'}</span>
+              <span>{loading ? 'Entrando...' : 'Entrar no sistema'}</span>
             </motion.button>
           </form>
 
-          {/* ACESSO DE HOMOLOGAÇÃO */}
-          <div className="mt-5 pt-3 border-t border-slate-100 text-center relative z-10">
-            <div className="text-[11px] text-slate-400 font-normal">
-              Acesso de teste:{' '}
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('999999', '123456')}
-                className="text-slate-600 font-semibold hover:text-[#331274] hover:underline cursor-pointer ml-1"
-              >
-                Admin (999999)
-              </button>
-              <span className="mx-1.5 text-slate-300">•</span>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('1001', '123456')}
-                className="text-slate-600 font-semibold hover:text-[#331274] hover:underline cursor-pointer"
-              >
-                Operador (1001)
-              </button>
-            </div>
-          </div>
         </motion.div>
 
         {/* INDICADORES INSTITUCIONAIS EXPANDIDOS E ESPAÇADOS ABAIXO DO CARD */}

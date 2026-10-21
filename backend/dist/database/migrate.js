@@ -3,131 +3,80 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.mysqlDDL = mysqlDDL;
 exports.runMigrations = runMigrations;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const db_1 = require("../config/db");
+function source(name) {
+    for (const folder of [__dirname, path_1.default.resolve(__dirname, '../../src/database')]) {
+        const file = path_1.default.join(folder, name);
+        if (fs_1.default.existsSync(file))
+            return fs_1.default.readFileSync(file, 'utf8');
+    }
+    throw new Error('Migration ausente: ' + name);
+}
+function mysqlDDL(statement) {
+    let sql = statement.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/g, 'INTEGER PRIMARY KEY AUTO_INCREMENT')
+        .replace(/\bTEXT\b/g, 'VARCHAR(255)')
+        .replace(/\(datetime\('now',\s*'localtime'\)\)/g, 'CURRENT_TIMESTAMP(3)')
+        .replace(/(\b(?:created_at|updated_at|data_hora|data_hora_saida)\s+)VARCHAR\(255\)/g, '$1DATETIME(3)')
+        .replace(/\b(resposta_json|detalhes|dados_json|sql_original) VARCHAR\(255\)/g, '$1 MEDIUMTEXT')
+        .replace(/\b(descricao|observacao|justificativa) VARCHAR\(255\)/g, '$1 VARCHAR(4000)')
+        .replace(/CREATE INDEX IF NOT EXISTS/g, 'CREATE INDEX');
+    const foreignKeys = [];
+    sql = sql.replace(/(\w+) ([^,\n]+?) REFERENCES (\w+)\((\w+)\)/g, (_, column, type, table, key) => {
+        foreignKeys.push('FOREIGN KEY (' + column + ') REFERENCES ' + table + '(' + key + ')');
+        return column + ' ' + type;
+    });
+    if (/^CREATE TABLE/.test(sql)) {
+        if (foreignKeys.length)
+            sql = sql.replace(/\)\s*$/, ', ' + foreignKeys.join(', ') + ')');
+        sql += ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin';
+    }
+    return sql;
+}
 async function runMigrations() {
-    console.log('[MIGRATE] Iniciando criação das tabelas...');
-    let schemaPath = path_1.default.join(__dirname, 'schema.sql');
-    if (!fs_1.default.existsSync(schemaPath)) {
-        schemaPath = path_1.default.resolve(__dirname, '../../src/database/schema.sql');
-    }
-    if (!fs_1.default.existsSync(schemaPath)) {
-        schemaPath = path_1.default.resolve(__dirname, '../src/database/schema.sql');
-    }
-    const sqlContent = fs_1.default.readFileSync(schemaPath, 'utf-8');
-    // Dividir o script por instruções individuais
-    const statements = sqlContent
-        .split(';')
-        .map((stmt) => stmt.trim())
-        .filter((stmt) => stmt.length > 0);
-    // Verificar se existem tabelas com schema legado e dropar para recriar com a estrutura correta
-    try {
-        const userCols = await (0, db_1.query)("PRAGMA table_info(usuarios)");
-        const hasSenhaHash = Array.isArray(userCols) && userCols.some((col) => col.name === 'senha_hash');
-        if (userCols.length > 0 && !hasSenhaHash) {
-            console.log('[MIGRATE] Tabela usuarios legada detectada. Atualizando estrutura...');
-            await (0, db_1.query)("DROP TABLE IF EXISTS emprestimos");
-            await (0, db_1.query)("DROP TABLE IF EXISTS movimentacoes");
-            await (0, db_1.query)("DROP TABLE IF EXISTS materiais");
-            await (0, db_1.query)("DROP TABLE IF EXISTS categorias");
-            await (0, db_1.query)("DROP TABLE IF EXISTS colaboradores");
-            await (0, db_1.query)("DROP TABLE IF EXISTS usuarios");
-        }
-        const colabCols = await (0, db_1.query)("PRAGMA table_info(colaboradores)");
-        const hasNfc = Array.isArray(colabCols) && colabCols.some((col) => col.name === 'nfc_id');
-        if (colabCols.length > 0 && !hasNfc) {
-            console.log('[MIGRATE] Tabela colaboradores legada detectada. Atualizando estrutura...');
-            await (0, db_1.query)("DROP TABLE IF EXISTS emprestimos");
-            await (0, db_1.query)("DROP TABLE IF EXISTS movimentacoes");
-            await (0, db_1.query)("DROP TABLE IF EXISTS colaboradores");
-        }
-    }
-    catch (e) {
-        // Ignorar erro se tabela não existir
-    }
-    for (const stmt of statements) {
-        try {
-            await (0, db_1.query)(stmt);
-        }
-        catch (err) {
-            // Ignorar erros secundários de índice existente
-            if (!err.message?.includes('already exists')) {
-                console.error('[MIGRATE] Erro ao executar SQL:', err.message);
+    await (0, db_1.query)('SELECT 1');
+    await (0, db_1.query)('CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at VARCHAR(32) NOT NULL)');
+    for (const [version, file] of [[1, 'schema.sql'], [2, '002_operations.sql'], [3, '003_quantities_photos.sql'], [4, '004_legacy.sql']]) {
+        if (await (0, db_1.queryOne)('SELECT version FROM schema_migrations WHERE version = ?', [version]))
+            continue;
+        const statements = source(file).replace(/--[^\n]*/g, '').split(';').map(s => s.trim()).filter(Boolean);
+        for (const statement of statements) {
+            try {
+                await (0, db_1.query)(db_1.databaseClient === 'mysql' ? mysqlDDL(statement) : statement);
+            }
+            catch (error) {
+                if (!(db_1.databaseClient === 'mysql' && /^CREATE INDEX/.test(statement) && error.code === 'ER_DUP_KEYNAME'))
+                    throw error;
             }
         }
+        await (0, db_1.query)('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)', [version, new Date().toISOString()]);
     }
-    console.log('[MIGRATE] Tabelas criadas com sucesso!');
-    // Seed do usuário Admin Padrão
-    const adminExist = await (0, db_1.queryOne)('SELECT * FROM usuarios WHERE matricula = ?', ['999999']);
-    if (!adminExist) {
-        const hash = await bcryptjs_1.default.hash('123456', 10);
-        await (0, db_1.query)('INSERT INTO usuarios (nome, matricula, senha_hash, nivel_acesso, status) VALUES (?, ?, ?, ?, ?)', ['ADMINISTRADOR CASA DA LANTERNA', '999999', hash, 'ADMINISTRADOR', 'ATIVO']);
-        console.log('[SEED] Usuário Admin padrão criado: Matrícula 999999 / Senha 123456');
+    await (0, db_1.query)('SELECT senha_hash FROM usuarios LIMIT 1');
+    await (0, db_1.query)('SELECT nfc_id FROM colaboradores LIMIT 1');
+    const columns = db_1.databaseClient === 'mysql'
+        ? await (0, db_1.query)("SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'emprestimos'")
+        : await (0, db_1.query)('PRAGMA table_info(emprestimos)');
+    for (const [name, type] of [['prazo_devolucao', 'VARCHAR(32)'], ['destino', "VARCHAR(255) NOT NULL DEFAULT ''"]]) {
+        if (!columns.some(c => c.name === name))
+            await (0, db_1.query)('ALTER TABLE emprestimos ADD COLUMN ' + name + ' ' + type);
     }
-    // Seed de Operador Padrão
-    const operadorExist = await (0, db_1.queryOne)('SELECT * FROM usuarios WHERE matricula = ?', ['1001']);
-    if (!operadorExist) {
-        const hash = await bcryptjs_1.default.hash('123456', 10);
-        await (0, db_1.query)('INSERT INTO usuarios (nome, matricula, senha_hash, nivel_acesso, status) VALUES (?, ?, ?, ?, ?)', ['OPERADOR DE BALCÃO', '1001', hash, 'OPERADOR', 'ATIVO']);
-        console.log('[SEED] Usuário Operador criado: Matrícula 1001 / Senha 123456');
+    const materialColumns = db_1.databaseClient === 'mysql'
+        ? await (0, db_1.query)("SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='materiais'")
+        : await (0, db_1.query)('PRAGMA table_info(materiais)');
+    for (const [name, type] of [['tipo_controle', "VARCHAR(20) NOT NULL DEFAULT 'INDIVIDUAL'"], ['saldo_disponivel', 'INTEGER NOT NULL DEFAULT 0'], ['saldo_conferencia', 'INTEGER NOT NULL DEFAULT 0'], ['saldo_manutencao', 'INTEGER NOT NULL DEFAULT 0']]) {
+        if (!materialColumns.some(c => c.name === name))
+            await (0, db_1.query)('ALTER TABLE materiais ADD COLUMN ' + name + ' ' + type);
     }
-    // Seed de Categorias Padrão
-    const categoriasPadrao = ['Iluminação', 'Comunicação', 'Detecção de Gás', 'Segurança', 'Operação LHD', 'Ferramentas'];
-    for (const cat of categoriasPadrao) {
-        const catExist = await (0, db_1.queryOne)('SELECT * FROM categorias WHERE nome = ?', [cat]);
-        if (!catExist) {
-            await (0, db_1.query)('INSERT INTO categorias (nome, descricao) VALUES (?, ?)', [cat, `Categoria ${cat}`]);
-        }
+    if (!(await (0, db_1.queryOne)('SELECT id FROM usuarios LIMIT 1')) && process.env.INITIAL_ADMIN_PASSWORD) {
+        if (process.env.INITIAL_ADMIN_PASSWORD.length < 12)
+            throw new Error('INITIAL_ADMIN_PASSWORD precisa ter pelo menos 12 caracteres');
+        await (0, db_1.query)('INSERT INTO usuarios (nome, matricula, senha_hash, nivel_acesso, status) VALUES (?, ?, ?, ?, ?)', ['Administrador', process.env.INITIAL_ADMIN_MATRICULA || 'admin', await bcryptjs_1.default.hash(process.env.INITIAL_ADMIN_PASSWORD, 12), 'ADMINISTRADOR', 'ATIVO']);
     }
-    // Seed de Colaboradores Iniciais (se vazio)
-    const colabCount = await (0, db_1.queryOne)('SELECT COUNT(*) as count FROM colaboradores');
-    if (colabCount && (colabCount.count === 0 || colabCount.count === undefined)) {
-        const colaboradoresSeed = [
-            { nome: 'ENZO DE OLIVEIRA FIRMO', matricula: '99300922', setor: 'OPERAÇÃO', cargo: 'Operador de LHD', nfc: '00270584711361' },
-            { nome: 'JOÃO DA SILVA', matricula: '001245', setor: 'MINA SUBTERRÂNEA', cargo: 'Técnico de Mineração', nfc: '00270584711362' },
-            { nome: 'CARLOS SILVA', matricula: '001246', setor: 'MANUTENÇÃO', cargo: 'Eletricista Industrial', nfc: '00270584711363' },
-            { nome: 'MARIA APARECIDA', matricula: '001247', setor: 'SEGURANÇA', cargo: 'Técnica de Segurança', nfc: '00270584711364' }
-        ];
-        for (const c of colaboradoresSeed) {
-            await (0, db_1.query)('INSERT INTO colaboradores (nome, matricula, setor, cargo, nfc_id, status) VALUES (?, ?, ?, ?, ?, ?)', [c.nome, c.matricula, c.setor, c.cargo, c.nfc, 'ATIVO']);
-        }
-        console.log('[SEED] Colaboradores iniciais criados com sucesso!');
-    }
-    // Seed de Materiais Iniciais (se vazio)
-    const matCount = await (0, db_1.queryOne)('SELECT COUNT(*) as count FROM materiais');
-    if (matCount && (matCount.count === 0 || matCount.count === undefined)) {
-        const catIluminacao = await (0, db_1.queryOne)('SELECT id FROM categorias WHERE nome = ?', ['Iluminação']);
-        const catComunicao = await (0, db_1.queryOne)('SELECT id FROM categorias WHERE nome = ?', ['Comunicação']);
-        const catOperacao = await (0, db_1.queryOne)('SELECT id FROM categorias WHERE nome = ?', ['Operação LHD']);
-        const catDeteccao = await (0, db_1.queryOne)('SELECT id FROM categorias WHERE nome = ?', ['Detecção de Gás']);
-        const materiaisSeed = [
-            { nome: 'Lanterna de Capacete LED', codigo: 'LAT-001', cat: catIluminacao?.id || 1, status: 'DISPONIVEL', patrimonio: 'PAT-10001' },
-            { nome: 'Lanterna de Capacete LED', codigo: 'LAT-002', cat: catIluminacao?.id || 1, status: 'DISPONIVEL', patrimonio: 'PAT-10002' },
-            { nome: 'Lanterna de Capacete LED', codigo: 'LAT-003', cat: catIluminacao?.id || 1, status: 'DISPONIVEL', patrimonio: 'PAT-10003' },
-            { nome: 'Rádio HT Digital Subterrâneo', codigo: 'RAD-001', cat: catComunicao?.id || 2, status: 'DISPONIVEL', patrimonio: 'PAT-20001' },
-            { nome: 'Rádio HT Digital Subterrâneo', codigo: 'RAD-002', cat: catComunicao?.id || 2, status: 'DISPONIVEL', patrimonio: 'PAT-20002' },
-            { nome: 'Controle Remoto LHD Caterpillar', codigo: 'LHD-001', cat: catOperacao?.id || 5, status: 'DISPONIVEL', patrimonio: 'PAT-30001' },
-            { nome: 'Controle Remoto LHD Caterpillar', codigo: 'LHD-002', cat: catOperacao?.id || 5, status: 'DISPONIVEL', patrimonio: 'PAT-30002' },
-            { nome: 'Detector Mutigás MX4', codigo: 'DET-001', cat: catDeteccao?.id || 3, status: 'DISPONIVEL', patrimonio: 'PAT-40001' },
-            { nome: 'Detector Mutigás MX4', codigo: 'DET-002', cat: catDeteccao?.id || 3, status: 'MANUTENCAO', patrimonio: 'PAT-40002', obs: 'Sensor de H2S necessita calibração' }
-        ];
-        for (const m of materiaisSeed) {
-            await (0, db_1.query)('INSERT INTO materiais (nome, codigo_interno, codigo_barras, categoria_id, patrimonio, status, observacao) VALUES (?, ?, ?, ?, ?, ?, ?)', [m.nome, m.codigo, m.codigo, m.cat, m.patrimonio, m.status, m.obs || '']);
-        }
-        console.log('[SEED] Materiais individuais criados com sucesso!');
-    }
+    console.log('[MIGRATE] Estrutura ' + db_1.databaseClient + ' atualizada; dados existentes preservados.');
 }
-if (require.main === module) {
-    runMigrations()
-        .then(() => {
-        console.log('[MIGRATE] Migração executada.');
-        process.exit(0);
-    })
-        .catch((err) => {
-        console.error('[MIGRATE] Erro fatal na migração:', err);
-        process.exit(1);
-    });
-}
+if (require.main === module)
+    runMigrations().then(db_1.closeDatabase).catch(error => { console.error(error); process.exitCode = 1; });

@@ -10,10 +10,16 @@ import materialRoutes from './routes/materialRoutes';
 import emprestimoRoutes from './routes/emprestimoRoutes';
 import historicoRoutes from './routes/historicoRoutes';
 import relatorioRoutes from './routes/relatorioRoutes';
+import operationalRoutes from './routes/operationalRoutes';
+import photoRoutes from './routes/photoRoutes';
+import stockRoutes from './routes/stockRoutes';
+import quantityRoutes from './routes/quantityRoutes';
+import { queryOne, databaseClient } from './config/db';
+import { backupMysql } from './database/backup';
 
 dotenv.config();
 
-const app = express();
+export const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middlewares
@@ -34,6 +40,11 @@ app.use('/api/materiais', materialRoutes);
 app.use('/api/emprestimos', emprestimoRoutes);
 app.use('/api/historico', historicoRoutes);
 app.use('/api/relatorios', relatorioRoutes);
+app.use('/api/operacao', operationalRoutes);
+app.use('/api/estoque', stockRoutes);
+app.use('/api/quantidades', quantityRoutes);
+app.use('/api/fotos', photoRoutes);
+app.use('/api', (_req, res) => res.status(404).json({ error: 'Recurso não encontrado' }));
 
 // Servir frontend compilado em produção se existir
 const frontendDist = path.resolve(__dirname, '../../frontend/dist');
@@ -51,13 +62,26 @@ app.get('*', (req: Request, res: Response) => {
 // Tratador global de erros
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error('[ERRO SERVIDOR]', err);
-  res.status(500).json({ error: err.message || 'Erro interno no servidor' });
+  const unavailable = ['ECONNREFUSED', 'ETIMEDOUT', 'PROTOCOL_CONNECTION_LOST', 'SQLITE_BUSY', 'ER_CON_COUNT_ERROR'].includes(err.code);
+  const duplicate = err.code === 'ER_DUP_ENTRY' || err.code === 'SQLITE_CONSTRAINT';
+  res.status(unavailable ? 503 : duplicate ? 409 : 400).json({ error: unavailable ? 'Banco indisponível. Aguarde e tente novamente.' : duplicate ? 'O registro já existe ou está vinculado a outra operação.' : err.message || 'Erro ao processar a operação' });
 });
 
 // Inicialização
 async function startServer() {
   try {
-    await runMigrations();
+    if (process.env.RUN_MIGRATIONS === '0') {
+      const migration = await queryOne('SELECT MAX(version) AS version FROM schema_migrations');
+      if (Number(migration?.version) < 4) throw new Error('Execute as migrations antes de iniciar a aplicação');
+    } else await runMigrations();
+    if (databaseClient === 'mysql' && Number(process.env.BACKUP_INTERVAL_HOURS) > 0) {
+      let running = false;
+      const timer = setInterval(async () => {
+        if (running) return; running = true;
+        try { await backupMysql(); } catch (error: any) { console.error('[BACKUP] Falha:', error.message); } finally { running = false; }
+      }, Number(process.env.BACKUP_INTERVAL_HOURS) * 3600000);
+      timer.unref();
+    }
     app.listen(PORT, () => {
       console.log(`=======================================================`);
       console.log(` CASA DA LANTERNA - SERVIDOR INDUSTRIAL ATIVO        `);
@@ -71,4 +95,4 @@ async function startServer() {
   }
 }
 
-startServer();
+if (require.main === module) startServer();

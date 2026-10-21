@@ -10,6 +10,12 @@ interface TopBarProps {
 
 // Mapeamento de rotas para títulos e subtítulos de cada página
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
+  '/acessos': {title:'ACESSO À MINA', subtitle:'Entrada, saída e permanência de colaboradores'},
+  '/conformidade': {title:'TREINAMENTOS E CONFORMIDADE', subtitle:'Requisitos de acesso e validade de treinamentos'},
+  '/extravios': {title:'EXTRAVIOS E PENDÊNCIAS', subtitle:'Ocorrências e acompanhamento de devoluções'},
+  '/quantidades': {title:'MATERIAIS POR QUANTIDADE', subtitle:'Saldos e movimentações de materiais'},
+  '/administracao': {title:'ADMINISTRAÇÃO', subtitle:'Contas, permissões e auditoria'},
+  '/legado': {title:'DADOS ANTERIORES', subtitle:'Consulta aos registros preservados'},
   '/saida': {
     title: 'SAÍDA DE MATERIAL',
     subtitle: 'Retirada automatizada de materiais e lanternas subterrâneas'
@@ -49,11 +55,11 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      setTime(now.toLocaleTimeString('pt-BR'));
+      setTime(now.toLocaleTimeString('pt-BR', {timeZone:'America/Sao_Paulo'}));
       
-      const dayName = now.toLocaleDateString('pt-BR', { weekday: 'short' });
+      const dayName = now.toLocaleDateString('pt-BR', { weekday: 'short', timeZone:'America/Sao_Paulo' });
       const dayFormatted = dayName.charAt(0).toUpperCase() + dayName.slice(1).replace('.', '');
-      const dateFormatted = now.toLocaleDateString('pt-BR');
+      const dateFormatted = now.toLocaleDateString('pt-BR', {timeZone:'America/Sao_Paulo'});
       
       setDate(`${dayFormatted}, ${dateFormatted}`);
     };
@@ -67,7 +73,7 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
   const pageInfo = PAGE_TITLES[location.pathname];
 
   return (
-    <header className={`${isHome ? 'bg-[#190837]/95 border-b border-white/10 text-white' : 'bg-white border-b border-slate-200 text-slate-800'} px-6 py-3 flex items-center justify-between shadow-sm select-none shrink-0 z-30 transition-colors`}>
+    <header className={`${isHome ? 'bg-[#190837]/95 border-b border-white/10 text-white' : 'bg-white border-b border-slate-200 text-slate-800'} operator-topbar px-6 py-3 flex items-center justify-between shadow-sm select-none shrink-0 z-30 transition-colors`}>
       
       {/* Esquerda: Logo + Título Dinâmico da Aplicação ou Página */}
       <div className="flex items-center gap-4">
@@ -98,7 +104,7 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
                 <button
                   onClick={() => navigate('/')}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[#331274] hover:bg-[#43208C] rounded-lg shadow-sm transition-all cursor-pointer group shrink-0"
-                  title="Voltar ao Menu Principal"
+                  title="Voltar ao Menu Principal" aria-label="Voltar ao menu principal"
                 >
                   <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
                   <span className="hidden sm:inline">VOLTAR</span>
@@ -162,7 +168,7 @@ export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
 
         <button
           onClick={onLogout}
-          title="Sair do Sistema"
+          title="Sair do Sistema" aria-label="Sair do sistema"
           className={`p-2 rounded-lg transition-all flex items-center justify-center cursor-pointer ${isHome ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-red-600 hover:bg-red-50'}`}
         >
           <LogOut className="w-4 h-4" />

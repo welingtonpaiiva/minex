@@ -1,18 +1,10 @@
 {
-  "name": "CMOC Painel Infraestrutura Subterrânea",
-  "short_name": "CMOC Brasil",
-  "description": "Sistema de controle operacional CMOC para infraestrutura subterrânea",
+  "name": "Casa da Lanterna",
+  "short_name": "Lanterna",
+  "description": "Controle de acesso e materiais da operação subterrânea",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0B1120",
-  "theme_color": "#23005B",
-  "orientation": "any",
-  "icons": [
-    {
-      "src": "/logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
+  "background_color": "#f5f6f9",
+  "theme_color": "#171c2f",
+  "icons": [{"src":"/logo.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
 }

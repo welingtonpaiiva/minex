@@ -1,4 +1,4 @@
-export type NivelAcesso = 'ADMINISTRADOR' | 'OPERADOR' | 'CONSULTA';
+export type NivelAcesso = 'ADMINISTRADOR' | 'SUPERVISOR' | 'OPERADOR' | 'OPERADOR_ESTOQUE' | 'CADASTRO' | 'CONSULTA';
 
 export interface Usuario {
   id: number;
@@ -22,7 +22,7 @@ export interface Colaborador {
   updated_at?: string;
 }
 
-export type StatusMaterial = 'DISPONIVEL' | 'EM_USO' | 'MANUTENCAO';
+export type StatusMaterial = 'DISPONIVEL' | 'EM_USO' | 'MANUTENCAO' | 'AGUARDANDO_CONFERENCIA' | 'BLOQUEADO' | 'INATIVO';
 
 export interface Categoria {
   id: number;

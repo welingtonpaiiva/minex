@@ -2,16 +2,19 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { queryOne, query } from '../config/db';
 import { JWT_SECRET, JWT_EXPIRES_IN } from '../config/auth';
+import { text, roles } from './OperationalService';
 
 export class AuthService {
   static async login(matricula: string, senha: string) {
+    text(matricula, 'Matrícula');
+    text(senha, 'Senha', 200);
     if (!matricula || !senha) {
       throw new Error('Matrícula e senha são obrigatórias');
     }
 
     const user = await queryOne('SELECT * FROM usuarios WHERE matricula = ?', [matricula.trim()]);
     if (!user) {
-      throw new Error('Usuário não encontrado');
+      throw new Error('Matrícula ou senha inválida');
     }
 
     if (user.status !== 'ATIVO') {
@@ -20,7 +23,7 @@ export class AuthService {
 
     const isValid = await bcrypt.compare(senha, user.senha_hash);
     if (!isValid) {
-      throw new Error('Senha incorreta');
+      throw new Error('Matrícula ou senha inválida');
     }
 
     const token = jwt.sign(
@@ -50,6 +53,9 @@ export class AuthService {
   }
 
   static async criarUsuario(dados: { nome: string; matricula: string; senha: string; nivel_acesso: string }) {
+    text(dados.nome, 'Nome'); text(dados.matricula, 'Matrícula'); text(dados.senha, 'Senha', 200);
+    if (dados.senha.length < 12) throw new Error('Use uma senha de pelo menos 12 caracteres');
+    if (!roles.includes(dados.nivel_acesso)) throw new Error('Perfil inválido');
     const exist = await queryOne('SELECT id FROM usuarios WHERE matricula = ?', [dados.matricula.trim()]);
     if (exist) {
       throw new Error('Já existe um usuário com esta matrícula');

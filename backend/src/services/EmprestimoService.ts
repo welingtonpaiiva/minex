@@ -1,4 +1,28 @@
-import { withTransaction, queryOne, query } from '../config/db';
+import { withTransaction, queryOne, query, lockRow } from '../config/db';
+import { audit, id, text } from './OperationalService';
+import { now, instant } from '../utils/time';
+import { createHash } from 'crypto';
+
+async function operation(data: any, type: string, work: (execute: typeof query) => Promise<any>) {
+  id(data.colaboradorId); id(data.operadorId);
+  if (!Array.isArray(data.materiaisCodigos) || !data.materiaisCodigos.length || data.materiaisCodigos.length > 100) throw new Error('Informe de 1 a 100 materiais');
+  data.materiaisCodigos = data.materiaisCodigos.map((code: unknown) => text(code, 'Código do material'));
+  if (new Set(data.materiaisCodigos).size !== data.materiaisCodigos.length) throw new Error('Há códigos repetidos na operação');
+  const key = text(data.requestId, 'Identificador da operação', 100);
+  const signature = createHash('sha256').update(JSON.stringify({ tipo: type, colaborador: data.colaboradorId, codigos: [...data.materiaisCodigos].sort(), condicao: data.condicao || 'APTO' })).digest('hex');
+  return withTransaction(async execute => {
+    // Serializes duplicate submissions for one operator across connections/processes.
+    await execute('SELECT id FROM usuarios WHERE id = ?' + lockRow, [data.operadorId]);
+    const previous = await queryOne('SELECT * FROM requisicoes WHERE usuario_id = ? AND chave = ?', [data.operadorId, key]);
+    if (previous) {
+      if (previous.assinatura !== signature) throw new Error('Identificador já utilizado em outra operação');
+      return JSON.parse(previous.resposta_json);
+    }
+    const result = await work(execute);
+    await execute('INSERT INTO requisicoes (usuario_id, chave, assinatura, resposta_json, created_at) VALUES (?, ?, ?, ?, ?)', [data.operadorId, key, signature, JSON.stringify(result), now()]);
+    return result;
+  });
+}
 
 export class EmprestimoService {
   /**
@@ -52,6 +76,7 @@ export class EmprestimoService {
     materiaisCodigos: string[];
     operadorId: number;
     operadorNome?: string;
+    requestId: string;
   }) {
     const { colaboradorId, materiaisCodigos, operadorId } = dados;
 
@@ -61,7 +86,7 @@ export class EmprestimoService {
     }
 
     // Executar transação atômica
-    return await withTransaction(async (execQuery) => {
+    return await operation(dados, 'SAIDA', async (execQuery) => {
       // 1. Validar colaborador
       const colabRows = await execQuery('SELECT * FROM colaboradores WHERE id = ?', [colaboradorId]);
       const colaborador = colabRows[0];
@@ -80,7 +105,7 @@ export class EmprestimoService {
       for (const cod of materiaisCodigos) {
         const cleanCod = cod.trim();
         const matRows = await execQuery(
-          'SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?',
+          'SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?' + lockRow,
           [cleanCod, cleanCod]
         );
         const mat = matRows[0];
@@ -88,6 +113,7 @@ export class EmprestimoService {
         if (!mat) {
           throw new Error(`MATERIAL NÃO CADASTRADO: ${cleanCod}`);
         }
+        if (mat.tipo_controle === 'QUANTIDADE') throw new Error('Use a operação por quantidade para este material');
 
         // Validação de Concorrência & Status
         if (mat.status === 'EM_USO') {
@@ -152,6 +178,7 @@ export class EmprestimoService {
           codigo_interno: mat.codigo_interno,
           nome: mat.nome
         });
+        await audit(operadorId, 'RETIRADA', 'material', mat.id, { colaborador_id: colaborador.id, codigo: mat.codigo_interno }, execQuery);
       }
 
       return {
@@ -179,6 +206,8 @@ export class EmprestimoService {
     materiaisCodigos: string[];
     operadorId: number;
     operadorNome?: string;
+    requestId: string;
+    condicao?: string;
   }) {
     const { colaboradorId, materiaisCodigos, operadorId } = dados;
 
@@ -187,7 +216,8 @@ export class EmprestimoService {
       throw new Error('Nenhum material selecionado para devolução');
     }
 
-    return await withTransaction(async (execQuery) => {
+    if (!['APTO', 'CONFERENCIA', 'DANIFICADO'].includes(dados.condicao || 'APTO')) throw new Error('Condição de devolução inválida');
+    return await operation(dados, 'ENTRADA', async (execQuery) => {
       // 1. Validar colaborador
       const colabRows = await execQuery('SELECT * FROM colaboradores WHERE id = ?', [colaboradorId]);
       const colaborador = colabRows[0];
@@ -203,7 +233,7 @@ export class EmprestimoService {
       for (const cod of materiaisCodigos) {
         const cleanCod = cod.trim();
         const matRows = await execQuery(
-          'SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?',
+          'SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?' + lockRow,
           [cleanCod, cleanCod]
         );
         const mat = matRows[0];
@@ -214,7 +244,7 @@ export class EmprestimoService {
 
         // Verificar se existe empréstimo ativo deste material para este colaborador
         const empRows = await execQuery(
-          'SELECT * FROM emprestimos WHERE material_id = ? AND colaborador_id = ?',
+          'SELECT * FROM emprestimos WHERE material_id = ? AND colaborador_id = ?' + lockRow,
           [mat.id, colaborador.id]
         );
         const emp = empRows[0];
@@ -227,12 +257,18 @@ export class EmprestimoService {
 
         // Atualizar status do material para DISPONIVEL
         await execQuery(
-          "UPDATE materiais SET status = 'DISPONIVEL', updated_at = (datetime('now', 'localtime')) WHERE id = ?",
-          [mat.id]
+          "UPDATE materiais SET status = ?, updated_at = (datetime('now', 'localtime')) WHERE id = ?",
+          [dados.condicao === 'CONFERENCIA' ? 'AGUARDANDO_CONFERENCIA' : dados.condicao === 'DANIFICADO' ? 'MANUTENCAO' : 'DISPONIVEL', mat.id]
         );
 
         // Encerrar / remover empréstimo ativo
         await execQuery('DELETE FROM emprestimos WHERE id = ?', [emp.id]);
+        const loss = await queryOne('SELECT id FROM extravios WHERE emprestimo_origem_id = ?', [emp.id]);
+        if (loss) {
+          await execQuery("UPDATE extravios SET situacao = 'DEVOLVIDO' WHERE id = ?", [loss.id]);
+          await audit(operadorId, 'DEVOLVIDO', 'extravio', loss.id, { material_id: mat.id }, execQuery);
+        }
+        await audit(operadorId, 'DEVOLUCAO', 'material', mat.id, { colaborador_id: colaborador.id, condicao: dados.condicao || 'APTO' }, execQuery);
 
         // Criar registro permanente de histórico (ENTRADA)
         await execQuery(
@@ -296,7 +332,7 @@ export class EmprestimoService {
 
     const alertas = rows.map((row: any) => {
       // Calcular diferença em minutos
-      const dataSaida = new Date(row.data_hora_saida);
+      const dataSaida = new Date(instant(row.data_hora_saida));
       const diffMs = Math.max(0, agora.getTime() - dataSaida.getTime());
       const minutosEmUso = Math.floor(diffMs / (1000 * 60));
       const horasEmUso = Math.floor(minutosEmUso / 60);
@@ -313,15 +349,15 @@ export class EmprestimoService {
       if (isEquipamentoVital) {
         if (minutosEmUso >= 480) { // >= 8h00
           nivel_alerta = 'CRITICO';
-          mensagem_alerta = 'Detector Multigás excedeu 8h00 de turno subterrâneo!';
+          mensagem_alerta = 'Detector em posse há mais de oito horas; consulte o registro de acesso à mina';
         } else if (minutosEmUso >= 420) { // >= 7h00
           nivel_alerta = 'ATENCAO';
           mensagem_alerta = 'Detector Multigás próximo do fim de turno (7h+)';
         }
       } else {
-        if (minutosEmUso >= 510) { // >= 8h30 (8.5h)
+        if (minutosEmUso >= 480) {
           nivel_alerta = 'CRITICO';
-          mensagem_alerta = 'Material excedeu o tempo limite do turno (8h30+)!';
+          mensagem_alerta = 'Material em posse há mais de oito horas; consulte o registro de acesso à mina';
         } else if (minutosEmUso >= 450) { // >= 7h30 (7.5h)
           nivel_alerta = 'ATENCAO';
           mensagem_alerta = 'Material próximo do término de turno (7h30+)';

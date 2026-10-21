@@ -2,13 +2,14 @@ import ExcelJS from 'exceljs';
 import PdfPrinter from 'pdfmake';
 import { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { query, queryOne } from '../config/db';
+import { HistoricoService } from './HistoricoService';
 
 export class RelatorioService {
   static async obterResumo() {
-    const totalMateriais = await queryOne<{ total: number }>('SELECT COUNT(*) as total FROM materiais');
-    const disponiveis = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'DISPONIVEL'");
-    const emUso = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'EM_USO'");
-    const manutencao = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'MANUTENCAO'");
+    const totalMateriais = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE tipo_controle='INDIVIDUAL'");
+    const disponiveis = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'DISPONIVEL' AND tipo_controle='INDIVIDUAL'");
+    const emUso = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'EM_USO' AND tipo_controle='INDIVIDUAL'");
+    const manutencao = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'MANUTENCAO' AND tipo_controle='INDIVIDUAL'");
     const totalColaboradores = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM colaboradores WHERE status = 'ATIVO'");
 
     return {
@@ -21,12 +22,6 @@ export class RelatorioService {
   }
 
   static async gerarExcelMovimentacoes(filtros?: any): Promise<Buffer> {
-    const movimentacoes = await query(`
-      SELECT m.data_hora, m.tipo, m.material_codigo, m.material_nome, m.colaborador_nome, m.colaborador_matricula, m.operador_nome, m.observacao
-      FROM movimentacoes m
-      ORDER BY m.data_hora DESC
-    `);
-
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Movimentações');
 
@@ -49,9 +44,13 @@ export class RelatorioService {
       fgColor: { argb: '0F172A' }
     };
 
-    movimentacoes.forEach((row: any) => {
-      sheet.addRow(row);
-    });
+    let offset = 0;
+    while (true) {
+      const rows = await HistoricoService.listar({ ...filtros, limit: 500, offset });
+      rows.forEach((row: any) => sheet.addRow(row));
+      if (rows.length < 500) break;
+      offset += rows.length;
+    }
 
     return (await workbook.xlsx.writeBuffer()) as unknown as Buffer;
   }
