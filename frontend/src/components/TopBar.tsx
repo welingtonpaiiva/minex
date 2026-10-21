@@ -12,8 +12,10 @@ interface TopBarProps {
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/acessos': {title:'ACESSO À MINA', subtitle:'Entrada, saída e permanência de colaboradores'},
   '/conformidade': {title:'TREINAMENTOS E CONFORMIDADE', subtitle:'Requisitos de acesso e validade de treinamentos'},
-  '/extravios': {title:'EXTRAVIOS E PENDÊNCIAS', subtitle:'Ocorrências e acompanhamento de devoluções'},
-  '/quantidades': {title:'MATERIAIS POR QUANTIDADE', subtitle:'Saldos e movimentações de materiais'},
+  '/extravios': {title:'OPERAÇÕES', subtitle:'Extravios, materiais por quantidade e histórico'},
+  '/quantidades': {title:'OPERAÇÕES', subtitle:'Extravios, materiais por quantidade e histórico'},
+  '/historico': {title:'OPERAÇÕES', subtitle:'Extravios, materiais por quantidade e histórico'},
+  '/operacoes': {title:'OPERAÇÕES', subtitle:'Extravios, materiais por quantidade e histórico de movimentações'},
   '/administracao': {title:'ADMINISTRAÇÃO', subtitle:'Contas, permissões e auditoria'},
   '/legado': {title:'DADOS ANTERIORES', subtitle:'Consulta aos registros preservados'},
   '/saida': {
@@ -31,10 +33,6 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/estoque': {
     title: 'CONTROLE DE ESTOQUE E LOCALIZAÇÃO',
     subtitle: 'Saldos, inventário geral e rastreamento de materiais'
-  },
-  '/historico': {
-    title: 'HISTÓRICO PERMANENTE',
-    subtitle: 'Auditabilidade de saídas, devoluções e manutenções'
   },
   '/relatorios': {
     title: 'RELATÓRIOS E EXPORTAÇÃO',

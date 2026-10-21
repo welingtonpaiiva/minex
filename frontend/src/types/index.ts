@@ -114,4 +114,24 @@ export interface ResumoAlertasTurno {
   criticoCount: number;
   alertas: AlertaTurnoItem[];
 }
+export interface KitItem {
+  id: number;
+  nome: string;
+  codigo_interno: string;
+  codigo_barras: string;
+  status: string;
+  categoria_nome?: string;
+}
 
+export interface Kit {
+  id: number;
+  nome: string;
+  descricao?: string;
+  status: string;
+  criado_por_id?: number;
+  criado_por_nome?: string;
+  created_at: string;
+  updated_at?: string;
+  materiais: KitItem[];
+  total_itens?: number;
+}

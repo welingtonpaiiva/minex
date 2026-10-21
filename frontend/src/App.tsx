@@ -18,6 +18,7 @@ import { Acessos } from './pages/Acessos';
 import { Administracao } from './pages/Administracao';
 import { Quantidades } from './pages/Quantidades';
 import { Legado } from './pages/Legado';
+import { Operacoes } from './pages/Operacoes';
 import { MineAlert } from './components/MineAlert';
 import { canOperate } from './components/ui';
 import { Usuario } from './types';
@@ -44,8 +45,11 @@ export default function App() {
       <Route path="/historico" element={<Historico />} />
       <Route path="/relatorios" element={<Relatorios />} />
       <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/operacoes" element={<Operacoes user={user} />} />
+      <Route path="/extravios" element={<Navigate to="/operacoes" replace />} />
+      <Route path="/quantidades" element={<Navigate to="/operacoes" replace />} />
+      <Route path="/historico" element={<Navigate to="/operacoes" replace />} />
       <Route path="/conformidade" element={<Conformidade user={user} />} />
-      <Route path="/extravios" element={<Extravios user={user} />} />
       <Route path="/administracao" element={manager ? <Administracao user={user} /> : <Navigate to="/" replace />} />
       <Route path="/legado" element={manager ? <Legado /> : <Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />

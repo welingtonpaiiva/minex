@@ -19,6 +19,7 @@ const operationalRoutes_1 = __importDefault(require("./routes/operationalRoutes"
 const photoRoutes_1 = __importDefault(require("./routes/photoRoutes"));
 const stockRoutes_1 = __importDefault(require("./routes/stockRoutes"));
 const quantityRoutes_1 = __importDefault(require("./routes/quantityRoutes"));
+const kitRoutes_1 = __importDefault(require("./routes/kitRoutes"));
 const db_1 = require("./config/db");
 const backup_1 = require("./database/backup");
 dotenv_1.default.config();
@@ -44,6 +45,7 @@ exports.app.use('/api/operacao', operationalRoutes_1.default);
 exports.app.use('/api/estoque', stockRoutes_1.default);
 exports.app.use('/api/quantidades', quantityRoutes_1.default);
 exports.app.use('/api/fotos', photoRoutes_1.default);
+exports.app.use('/api/kits', kitRoutes_1.default);
 exports.app.use('/api', (_req, res) => res.status(404).json({ error: 'Recurso não encontrado' }));
 // Servir frontend compilado em produção se existir
 const frontendDist = path_1.default.resolve(__dirname, '../../frontend/dist');

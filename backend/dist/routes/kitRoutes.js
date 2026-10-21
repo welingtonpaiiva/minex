@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const KitController_1 = require("../controllers/KitController");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
+const router = (0, express_1.Router)();
+router.use(authMiddleware_1.authMiddleware);
+router.get('/', KitController_1.KitController.listarKits);
+router.post('/', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR', 'OPERADOR']), KitController_1.KitController.criarKit);
+router.delete('/:id', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR', 'OPERADOR']), KitController_1.KitController.excluirKit);
+router.post('/:id/atribuir', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR', 'OPERADOR']), KitController_1.KitController.atribuirKit);
+exports.default = router;

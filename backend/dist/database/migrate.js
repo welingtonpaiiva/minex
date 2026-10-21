@@ -40,7 +40,7 @@ function mysqlDDL(statement) {
 async function runMigrations() {
     await (0, db_1.query)('SELECT 1');
     await (0, db_1.query)('CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at VARCHAR(32) NOT NULL)');
-    for (const [version, file] of [[1, 'schema.sql'], [2, '002_operations.sql'], [3, '003_quantities_photos.sql'], [4, '004_legacy.sql'], [5, '005_photo_storage.sql']]) {
+    for (const [version, file] of [[1, 'schema.sql'], [2, '002_operations.sql'], [3, '003_quantities_photos.sql'], [4, '004_legacy.sql'], [5, '005_photo_storage.sql'], [6, '006_kits.sql']]) {
         if (await (0, db_1.queryOne)('SELECT version FROM schema_migrations WHERE version = ?', [version]))
             continue;
         const statements = source(file).replace(/--[^\n]*/g, '').split(';').map(s => s.trim()).filter(Boolean);

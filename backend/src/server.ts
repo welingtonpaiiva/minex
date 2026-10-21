@@ -14,6 +14,7 @@ import operationalRoutes from './routes/operationalRoutes';
 import photoRoutes from './routes/photoRoutes';
 import stockRoutes from './routes/stockRoutes';
 import quantityRoutes from './routes/quantityRoutes';
+import kitRoutes from './routes/kitRoutes';
 import { queryOne, databaseClient } from './config/db';
 import { backupMysql } from './database/backup';
 
@@ -44,6 +45,7 @@ app.use('/api/operacao', operationalRoutes);
 app.use('/api/estoque', stockRoutes);
 app.use('/api/quantidades', quantityRoutes);
 app.use('/api/fotos', photoRoutes);
+app.use('/api/kits', kitRoutes);
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Recurso não encontrado' }));
 
 // Servir frontend compilado em produção se existir
