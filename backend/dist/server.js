@@ -69,7 +69,7 @@ async function startServer() {
     try {
         if (process.env.RUN_MIGRATIONS === '0') {
             const migration = await (0, db_1.queryOne)('SELECT MAX(version) AS version FROM schema_migrations');
-            if (Number(migration?.version) < 4)
+            if (Number(migration?.version) < 5)
                 throw new Error('Execute as migrations antes de iniciar a aplicação');
         }
         else

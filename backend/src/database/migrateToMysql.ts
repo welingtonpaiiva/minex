@@ -5,7 +5,7 @@ import sqlite3 from 'sqlite3';
 import { mysqlPool, databaseClient, closeDatabase } from '../config/db';
 import { runMigrations } from './migrate';
 
-export const migrationTables = ['usuarios', 'colaboradores', 'categorias', 'materiais', 'emprestimos', 'movimentacoes', 'treinamentos', 'colaborador_treinamentos', 'acessos_mina', 'emprestimos_quantidade', 'extravios', 'fotos', 'requisicoes', 'auditoria', 'legado_esquemas', 'legado_registros'];
+export const migrationTables = ['usuarios', 'colaboradores', 'categorias', 'materiais', 'emprestimos', 'movimentacoes', 'treinamentos', 'colaborador_treinamentos', 'acessos_mina', 'emprestimos_quantidade', 'extravios', 'fotos', 'foto_conteudos', 'requisicoes', 'auditoria', 'legado_esquemas', 'legado_registros'];
 export function sqliteRead(db: sqlite3.Database, sql: string, params: any[] = []): Promise<any[]> {
   return new Promise((resolve, reject) => db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows)));
 }

@@ -13,6 +13,7 @@ const fs_1 = require("fs");
 const db_1 = require("../config/db");
 const migrateToMysql_1 = require("./migrateToMysql");
 const migrate_1 = require("./migrate");
+const PhotoStorage_1 = require("../services/PhotoStorage");
 const root = path_1.default.resolve(__dirname, '../../../backups');
 async function backupMysql() {
     if (db_1.databaseClient !== 'mysql')
@@ -48,7 +49,7 @@ async function backupMysql() {
         for (const photo of photos) {
             if (!/^[a-f0-9-]{36}\.jpg$/.test(photo.arquivo))
                 throw new Error('Referência de foto inválida no banco');
-            const content = await promises_1.default.readFile(path_1.default.resolve(__dirname, '../../uploads', photo.arquivo));
+            const content = await (0, PhotoStorage_1.readPhoto)(photo.arquivo, async (sql, params) => (await connection.query(sql, params))[0]);
             if (crypto_1.default.createHash('sha256').update(content).digest('hex') !== photo.sha256)
                 throw new Error('Foto com integridade inválida: ' + photo.arquivo);
             await promises_1.default.writeFile(path_1.default.join(directory, 'photos', photo.arquivo), content, { flag: 'wx' });

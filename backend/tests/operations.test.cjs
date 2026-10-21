@@ -48,7 +48,7 @@ after(async () => { if(server)await new Promise(resolve=>server.close(resolve));
 
 test('migrations preservam dados, são repetíveis e criam restrições', async () => {
   await runMigrations(); assert.equal((await queryOne('SELECT nome FROM colaboradores WHERE id=?',[collaborator])).nome,'Pessoa de teste');
-  assert.equal((await query('SELECT * FROM schema_migrations')).length,4);
+  assert.equal((await query('SELECT * FROM schema_migrations')).length,5);
   if(!mysqlMode)assert.deepEqual(await query('PRAGMA foreign_key_check'),[]);
 });
 test('conformidade nunca presume ausência de requisitos como conforme', async () => {
@@ -179,6 +179,37 @@ test('fotografia é decodificada, redimensionada e vinculada ao cadastro autenti
   const result=await request('fotos/'+collaborator,'POST',{imagem:'data:image/jpeg;base64,'+image.toString('base64')});
   assert.equal(result.status,200);assert.match(result.data.foto_url,/^\/api\/fotos\//);
   const metadata=await queryOne('SELECT * FROM fotos WHERE colaborador_id=?',[collaborator]);assert.equal(metadata.largura,640);assert.equal(metadata.altura,512);assert.ok(metadata.tamanho<512*1024);
+  const stored=await queryOne('SELECT imagem_base64 FROM foto_conteudos WHERE foto_id=?',[metadata.id]);
+  const bytes=Buffer.from(stored.imagem_base64,'base64');
+  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),metadata.sha256);
+  assert.equal(fs.existsSync(path.join(__dirname,'../uploads',metadata.arquivo)),false,'Nova foto deve sobreviver sem arquivo local');
+  const loaded=await fetch(base+result.data.foto_url,{headers:{Authorization:'Bearer '+tokens.admin}});
+  assert.equal(loaded.status,200);assert.equal(loaded.headers.get('content-type'),'image/jpeg');
+  assert.deepEqual(Buffer.from(await loaded.arrayBuffer()),bytes);
+  const again=await request('fotos/'+collaborator,'POST',{imagem:'data:image/jpeg;base64,'+image.toString('base64')});
+  assert.equal(again.status,200);assert.equal((await queryOne('SELECT COUNT(*) AS n FROM foto_conteudos WHERE foto_id=?',[metadata.id])).n,1);
   const other=(await query("INSERT INTO colaboradores (nome,matricula,status) VALUES ('Outra pessoa teste','PHOTO-OTHER','ATIVO')"))[0].id;
   assert.equal((await request('fotos/'+other,'POST',{imagem:'data:image/jpeg;base64,'+image.toString('base64')})).status,400);
+});
+
+test('fotos antigas são importadas, verificadas e continuam disponíveis sem o disco',async()=>{
+  const {readPhoto,importPhotoFiles,photoFolder}=require('../dist/services/PhotoStorage');
+  const sharp=require('sharp');const bytes=await sharp({create:{width:8,height:8,channels:3,background:'#228866'}}).jpeg().toBuffer();
+  const filename=crypto.randomUUID()+'.jpg',file=path.join(photoFolder,filename),hash=crypto.createHash('sha256').update(bytes).digest('hex');
+  await fs.promises.mkdir(photoFolder,{recursive:true});await fs.promises.writeFile(file,bytes);
+  try{
+    const row=await query('INSERT INTO fotos (colaborador_id,arquivo,sha256,tamanho,largura,altura,responsavel_id,created_at) VALUES (?,?,?,?,?,?,?,?)',[collaborator,filename,hash,bytes.length,8,8,admin,new Date().toISOString()]);
+    assert.deepEqual(await readPhoto(filename),bytes);assert.equal(await importPhotoFiles(),1);assert.equal(await importPhotoFiles(),0);
+    await fs.promises.unlink(file);assert.deepEqual(await readPhoto(filename),bytes);
+    await query('UPDATE foto_conteudos SET imagem_base64=? WHERE foto_id=?',[Buffer.from('corrompida').toString('base64'),row[0].id]);
+    await assert.rejects(readPhoto(filename),/integridade/);
+    await query('UPDATE foto_conteudos SET imagem_base64=? WHERE foto_id=?',[bytes.toString('base64'),row[0].id]);
+  }finally{await fs.promises.unlink(file).catch(()=>{});}
+});
+
+test('backup MySQL preserva fotografias armazenadas somente no banco',{skip:!mysqlMode},async()=>{
+  const {backupMysql}=require('../dist/database/backup');const folder=await backupMysql();
+  const manifest=JSON.parse(await fs.promises.readFile(path.join(folder,'manifest.json'),'utf8'));
+  assert.ok(manifest.tables.some(table=>table.table==='foto_conteudos'&&table.count>=2));
+  for(const photo of manifest.photos){const bytes=await fs.promises.readFile(path.join(folder,'photos',photo.arquivo));assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),photo.sha256);}
 });

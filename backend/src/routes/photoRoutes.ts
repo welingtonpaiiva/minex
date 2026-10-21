@@ -1,21 +1,20 @@
 import { Router, Response, NextFunction } from 'express';
-import fs from 'fs/promises';
-import path from 'path';
 import crypto from 'crypto';
 import sharp from 'sharp';
 import { authMiddleware, requireRole, AuthenticatedRequest } from '../middlewares/authMiddleware';
 import { queryOne, withTransaction } from '../config/db';
 import { id, audit, registrationRoles } from '../services/OperationalService';
-export const photoFolder = path.resolve(__dirname, '../../uploads');
+import { readPhoto } from '../services/PhotoStorage';
+export { photoFolder } from '../services/PhotoStorage';
 const router = Router();
 router.use(authMiddleware);
-router.get('/:file', (req: AuthenticatedRequest, res: Response) => {
+router.get('/:file', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   if (!/^[a-f0-9-]{36}\.jpg$/.test(req.params.file)) return res.sendStatus(404);
   res.setHeader('Cache-Control', 'private, no-store');
-  res.sendFile(path.join(photoFolder, req.params.file), err => { if (err && !res.headersSent) res.sendStatus(404); });
+  try { res.type('image/jpeg').send(await readPhoto(req.params.file)); }
+  catch (error: any) { if (error.code === 'ENOENT') res.sendStatus(404); else next(error); }
 });
 router.post('/:colaboradorId', requireRole(registrationRoles), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  let file: string | undefined;
   try {
     const ref = id(req.params.colaboradorId);
     if (!await queryOne('SELECT id FROM colaboradores WHERE id = ?', [ref])) throw new Error('Colaborador não encontrado');
@@ -30,21 +29,23 @@ router.post('/:colaboradorId', requireRole(registrationRoles), async (req: Authe
       if (previous.colaborador_id !== ref) throw new Error('Esta fotografia já pertence a outro colaborador. Confira a identificação.');
       const existing = '/api/fotos/' + previous.arquivo;
       await withTransaction(async execute => {
+        if (!(await execute('SELECT id FROM foto_conteudos WHERE foto_id=?', [previous.id])).length) {
+          await execute('INSERT INTO foto_conteudos (foto_id, imagem_base64) VALUES (?, ?)', [previous.id, buffer.toString('base64')]);
+        }
         await execute('UPDATE colaboradores SET foto_url = ? WHERE id = ?', [existing, ref]);
         await audit(req.user!.id, 'FOTOGRAFIA', 'colaborador', ref, { foto_url: existing }, execute);
       });
       return res.json({ foto_url: existing });
     }
-    await fs.mkdir(photoFolder, { recursive: true });
-    const filename = crypto.randomUUID() + '.jpg'; file = path.join(photoFolder, filename);
-    await fs.writeFile(file, buffer, { flag: 'wx' });
+    const filename = crypto.randomUUID() + '.jpg';
     const url = '/api/fotos/' + filename;
     await withTransaction(async execute => {
-      await execute('INSERT INTO fotos (colaborador_id, arquivo, sha256, tamanho, largura, altura, responsavel_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [ref, filename, hash, buffer.length, processed.info.width, processed.info.height, req.user!.id, new Date().toISOString()]);
+      const inserted = await execute('INSERT INTO fotos (colaborador_id, arquivo, sha256, tamanho, largura, altura, responsavel_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [ref, filename, hash, buffer.length, processed.info.width, processed.info.height, req.user!.id, new Date().toISOString()]);
+      await execute('INSERT INTO foto_conteudos (foto_id, imagem_base64) VALUES (?, ?)', [inserted[0].id, buffer.toString('base64')]);
       await execute('UPDATE colaboradores SET foto_url = ?, updated_at = ? WHERE id = ?', [url, new Date().toISOString(), ref]);
       await audit(req.user!.id, 'FOTOGRAFIA', 'colaborador', ref, { foto_url: url }, execute);
     });
     res.json({ foto_url: url });
-  } catch (error) { if (file) await fs.unlink(file).catch(() => {}); next(error); }
+  } catch (error) { next(error); }
 });
 export default router;

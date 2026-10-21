@@ -13,7 +13,7 @@ const crypto_1 = __importDefault(require("crypto"));
 const sqlite3_1 = __importDefault(require("sqlite3"));
 const db_1 = require("../config/db");
 const migrate_1 = require("./migrate");
-exports.migrationTables = ['usuarios', 'colaboradores', 'categorias', 'materiais', 'emprestimos', 'movimentacoes', 'treinamentos', 'colaborador_treinamentos', 'acessos_mina', 'emprestimos_quantidade', 'extravios', 'fotos', 'requisicoes', 'auditoria', 'legado_esquemas', 'legado_registros'];
+exports.migrationTables = ['usuarios', 'colaboradores', 'categorias', 'materiais', 'emprestimos', 'movimentacoes', 'treinamentos', 'colaborador_treinamentos', 'acessos_mina', 'emprestimos_quantidade', 'extravios', 'fotos', 'foto_conteudos', 'requisicoes', 'auditoria', 'legado_esquemas', 'legado_registros'];
 function sqliteRead(db, sql, params = []) {
     return new Promise((resolve, reject) => db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows)));
 }

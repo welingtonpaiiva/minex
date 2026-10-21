@@ -6,6 +6,7 @@ import { createReadStream } from 'fs';
 import { mysqlPool, databaseClient, closeDatabase } from '../config/db';
 import { migrationTables } from './migrateToMysql';
 import { runMigrations } from './migrate';
+import { readPhoto } from '../services/PhotoStorage';
 
 const root=path.resolve(__dirname,'../../../backups');
 export async function backupMysql() {
@@ -31,7 +32,7 @@ export async function backupMysql() {
     await fs.mkdir(path.join(directory,'photos'));
     for(const photo of photos){
       if(!/^[a-f0-9-]{36}\.jpg$/.test(photo.arquivo))throw new Error('Referência de foto inválida no banco');
-      const content=await fs.readFile(path.resolve(__dirname,'../../uploads',photo.arquivo));
+      const content=await readPhoto(photo.arquivo, async (sql, params) => (await connection.query(sql, params))[0] as any);
       if(crypto.createHash('sha256').update(content).digest('hex')!==photo.sha256)throw new Error('Foto com integridade inválida: '+photo.arquivo);
       await fs.writeFile(path.join(directory,'photos',photo.arquivo),content,{flag:'wx'});manifest.photos.push(photo);
     }

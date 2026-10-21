@@ -42,9 +42,13 @@ function mysqlPool() {
         pool = promise_1.default.createPool({
             host: process.env.MYSQL_HOST || '127.0.0.1', port: Number(process.env.MYSQL_PORT || 3306),
             user: process.env.MYSQL_USER, password: process.env.MYSQL_PASSWORD,
-            database: process.env.MYSQL_DATABASE, connectionLimit: Number(process.env.DB_POOL_SIZE || 10),
+            database: process.env.MYSQL_DATABASE, connectionLimit: Number(process.env.DB_POOL_SIZE || (process.env.VERCEL ? 2 : 10)),
             waitForConnections: true, queueLimit: 100, connectTimeout: 10000, timezone: 'Z', dateStrings: true,
-            charset: 'utf8mb4', multipleStatements: false
+            charset: 'utf8mb4', multipleStatements: false,
+            ssl: process.env.MYSQL_SSL === 'true' ? {
+                rejectUnauthorized: true,
+                ...(process.env.MYSQL_SSL_CA ? { ca: process.env.MYSQL_SSL_CA.replace(/\\n/g, '\n') } : {})
+            } : undefined
         });
         pool.on('connection', connection => { connection.query("SET time_zone = '+00:00'"); });
     }

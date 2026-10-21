@@ -22,7 +22,7 @@ function mysqlDDL(statement) {
         .replace(/\bTEXT\b/g, 'VARCHAR(255)')
         .replace(/\(datetime\('now',\s*'localtime'\)\)/g, 'CURRENT_TIMESTAMP(3)')
         .replace(/(\b(?:created_at|updated_at|data_hora|data_hora_saida)\s+)VARCHAR\(255\)/g, '$1DATETIME(3)')
-        .replace(/\b(resposta_json|detalhes|dados_json|sql_original) VARCHAR\(255\)/g, '$1 MEDIUMTEXT')
+        .replace(/\b(resposta_json|detalhes|dados_json|sql_original|imagem_base64) VARCHAR\(255\)/g, '$1 MEDIUMTEXT')
         .replace(/\b(descricao|observacao|justificativa) VARCHAR\(255\)/g, '$1 VARCHAR(4000)')
         .replace(/CREATE INDEX IF NOT EXISTS/g, 'CREATE INDEX');
     const foreignKeys = [];
@@ -40,7 +40,7 @@ function mysqlDDL(statement) {
 async function runMigrations() {
     await (0, db_1.query)('SELECT 1');
     await (0, db_1.query)('CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at VARCHAR(32) NOT NULL)');
-    for (const [version, file] of [[1, 'schema.sql'], [2, '002_operations.sql'], [3, '003_quantities_photos.sql'], [4, '004_legacy.sql']]) {
+    for (const [version, file] of [[1, 'schema.sql'], [2, '002_operations.sql'], [3, '003_quantities_photos.sql'], [4, '004_legacy.sql'], [5, '005_photo_storage.sql']]) {
         if (await (0, db_1.queryOne)('SELECT version FROM schema_migrations WHERE version = ?', [version]))
             continue;
         const statements = source(file).replace(/--[^\n]*/g, '').split(';').map(s => s.trim()).filter(Boolean);
