@@ -12,6 +12,7 @@ router.get('/codigo/:codigo', MaterialController_1.MaterialController.buscarPorC
 router.get('/:id', MaterialController_1.MaterialController.buscarPorId);
 router.post('/', (0, authMiddleware_1.requireRole)(OperationalService_1.registrationRoles), MaterialController_1.MaterialController.criar);
 router.put('/:id', (0, authMiddleware_1.requireRole)(OperationalService_1.registrationRoles), MaterialController_1.MaterialController.editar);
+router.patch('/:id/codigo-barras', (0, authMiddleware_1.requireRole)(OperationalService_1.barcodeRoles), MaterialController_1.MaterialController.vincularCodigoBarras);
 router.patch('/:id/status', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR', 'SUPERVISOR']), MaterialController_1.MaterialController.alterarStatus);
 router.delete('/:id', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR']), MaterialController_1.MaterialController.excluir);
 exports.default = router;

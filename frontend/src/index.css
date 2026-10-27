@@ -366,6 +366,25 @@ input,select,textarea{font-weight:400;line-height:1.5;transition:border-color .2
 
 /* Hover row estoque */
 .hover-row:hover{background:#f8f7fc}
+.material-open{font:inherit;color:#331274;text-align:left;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:#c4b5e0;text-underline-offset:3px}
+.material-open:hover{color:#6d28d9;text-decoration-color:currentColor}
+.material-open:focus-visible{outline:2px solid #7c3aed;outline-offset:4px;border-radius:2px}
+.barcode-item-summary{display:grid;gap:5px;padding:16px;background:#f3effb;border-radius:10px;margin-bottom:20px;color:#331274}
+.barcode-item-summary span{font-size:13px;font-weight:600}
+
+.stock-category-section{display:grid;gap:12px}
+.category-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.category-section-heading h2{font-size:15px;font-weight:600;color:#331274}
+.category-section-heading>span{font-size:12px;color:#64748b}
+.stock-categories{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:10px}
+.category-card{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:74px;padding:15px 18px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;color:#475569;text-align:left;cursor:pointer;transition:background .2s,border-color .2s}
+.category-card>span{font-size:13px;font-weight:500;line-height:1.5}
+.category-card>strong{font-size:23px;font-weight:600;color:#331274}
+.category-card:hover{background:#faf8ff;border-color:#c4b5e0}
+.category-card.active{background:#f3effb;border-color:#7c3aed;box-shadow:inset 0 0 0 1px #7c3aed;color:#331274}
+.category-card:focus-visible{outline:3px solid #a78bfa;outline-offset:3px}
+.operator-content .data-table .material-category-row th{background:#eee9f8;color:#331274;font-size:13px;text-transform:none;letter-spacing:0;padding:12px 20px;border-top:1px solid #ddd3ee}
+@media(max-width:600px){.stock-categories{grid-template-columns:repeat(2,minmax(0,1fr))}.category-card{padding:12px;min-height:80px;gap:8px}.category-card>span{font-size:12px}.category-card>strong{font-size:20px}}
 
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:700px){.kit-panel-main{padding:20px 16px}.kit-grid{grid-template-columns:1fr}}

@@ -1,5 +1,6 @@
 import { query, queryOne, withTransaction, lockRow } from '../config/db';
 import { audit, text } from './OperationalService';
+import { materialCategoryOrder } from '../utils/materialOrder';
 
 export class MaterialService {
   static async listar(filtros?: { busca?: string; categoria_id?: number; status?: string; limit?: number; offset?: number }) {
@@ -31,7 +32,7 @@ export class MaterialService {
       params.push(term, term, term);
     }
 
-    sql += ' ORDER BY m.codigo_interno ASC LIMIT ? OFFSET ?';
+    sql += ` ORDER BY ${materialCategoryOrder} LIMIT ? OFFSET ?`;
     params.push(Math.min(100, Math.max(1, filtros?.limit || 100)), Math.max(0, filtros?.offset || 0));
     return await query(sql, params);
   }
@@ -80,14 +81,14 @@ export class MaterialService {
     }
 
     const codInt = dados.codigo_interno.trim();
-    const codBar = (dados.codigo_barras || dados.codigo_interno).trim();
+    const codBar = text(dados.codigo_barras || '', 'Código de barras', 255, false) || codInt;
 
-    const existInt = await queryOne('SELECT id FROM materiais WHERE codigo_interno = ?', [codInt]);
+    const existInt = await queryOne('SELECT id FROM materiais WHERE codigo_interno = ? OR codigo_barras = ?', [codInt, codInt]);
     if (existInt) {
       throw new Error(`Já existe um material cadastrado com o código interno ${codInt}`);
     }
 
-    const existBar = await queryOne('SELECT id FROM materiais WHERE codigo_barras = ?', [codBar]);
+    const existBar = await queryOne('SELECT id FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?', [codBar, codBar]);
     if (existBar) {
       throw new Error(`Já existe um material cadastrado com o código de barras ${codBar}`);
     }
@@ -112,6 +113,7 @@ export class MaterialService {
 
   static async editar(id: number, dados: {
     nome?: string;
+    codigo_barras?: string;
     categoria_id?: number;
     foto_url?: string;
     observacao?: string;
@@ -127,24 +129,44 @@ export class MaterialService {
       throw new Error('Material não encontrado');
     }
 
-    await query(
-      'UPDATE materiais SET patrimonio = ? WHERE id = ?', [dados.patrimonio !== undefined ? text(dados.patrimonio, 'Patrimônio', 255, false) : mat.patrimonio, id]
-    );
+    const codigoBarras = dados.codigo_barras !== undefined
+      ? text(dados.codigo_barras, 'Código de barras', 255, false) || mat.codigo_interno
+      : mat.codigo_barras;
+    if (await queryOne('SELECT id FROM materiais WHERE id <> ? AND (codigo_barras = ? OR codigo_interno = ?)', [id, codigoBarras, codigoBarras])) {
+      throw new Error('Este código de barras já está vinculado a outro material.');
+    }
     await query(
       `UPDATE materiais
-       SET nome = ?, categoria_id = ?, foto_url = ?, observacao = ?, status = ?, updated_at = (datetime('now', 'localtime'))
+       SET nome = ?, codigo_barras = ?, categoria_id = ?, foto_url = ?, observacao = ?, patrimonio = ?, status = ?, updated_at = (datetime('now', 'localtime'))
        WHERE id = ?`,
       [
         dados.nome !== undefined ? dados.nome.trim() : mat.nome,
+        codigoBarras,
         dados.categoria_id !== undefined ? dados.categoria_id : mat.categoria_id,
         dados.foto_url !== undefined ? dados.foto_url : mat.foto_url,
         dados.observacao !== undefined ? dados.observacao : mat.observacao,
-        dados.status !== undefined ? dados.status : mat.status,
+        dados.patrimonio !== undefined ? text(dados.patrimonio, 'Patrimônio', 255, false) : mat.patrimonio,
+        mat.status,
         id
       ]
     );
 
     return await this.buscarPorId(id);
+    });
+  }
+
+  static async vincularCodigoBarras(id: number, codigo: string, operadorId: number) {
+    const codigoBarras = text(codigo, 'Código de barras', 255, false);
+    return withTransaction(async execute => {
+      const anterior = await queryOne('SELECT codigo_barras FROM materiais WHERE id = ?' + lockRow, [id]);
+      if (!anterior) throw new Error('Material não encontrado');
+      const atualizado = await this.editar(id, { codigo_barras: codigoBarras });
+      await audit(operadorId, 'VINCULAR_CODIGO_BARRAS', 'material', id, {
+        codigo_interno: atualizado.codigo_interno,
+        anterior: anterior.codigo_barras,
+        novo: atualizado.codigo_barras
+      }, execute);
+      return atualizado;
     });
   }
 

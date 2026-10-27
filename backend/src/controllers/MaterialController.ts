@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { MaterialService } from '../services/MaterialService';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import { withTransaction } from '../config/db';
-import { audit } from '../services/OperationalService';
+import { audit, id } from '../services/OperationalService';
 
 export class MaterialController {
   static async listar(req: Request, res: Response) {
@@ -62,6 +62,15 @@ export class MaterialController {
         const result = await MaterialService.editar(id, req.body);
         await audit(req.user!.id, 'ATUALIZAR', 'material', id, req.body, execute); return result;
       });
+      return res.json(atualizado);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+
+  static async vincularCodigoBarras(req: AuthenticatedRequest, res: Response) {
+    try {
+      const atualizado = await MaterialService.vincularCodigoBarras(id(req.params.id), req.body.codigo_barras, req.user!.id);
       return res.json(atualizado);
     } catch (err: any) {
       return res.status(400).json({ error: err.message });

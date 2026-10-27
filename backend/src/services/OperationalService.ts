@@ -3,6 +3,7 @@ import { now, elapsed, duration, today, instant } from '../utils/time';
 
 export const operationRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'OPERADOR', 'OPERADOR_ESTOQUE'];
 export const registrationRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO'];
+export const barcodeRoles = [...new Set([...registrationRoles, ...operationRoles])];
 export const trainingRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO'];
 export const roles = ['ADMINISTRADOR', 'SUPERVISOR', 'OPERADOR', 'OPERADOR_ESTOQUE', 'CADASTRO', 'CONSULTA'];
 export function text(value: unknown, label: string, max = 255, required = true): string {

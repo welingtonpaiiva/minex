@@ -53,3 +53,4 @@ export function dateTime(value?: string) {
 }
 export const canOperate = (role: string) => ['ADMINISTRADOR', 'SUPERVISOR', 'OPERADOR', 'OPERADOR_ESTOQUE'].includes(role);
 export const canRegister = (role: string) => ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO'].includes(role);
+export const canLinkBarcode = (role: string) => canRegister(role) || canOperate(role);

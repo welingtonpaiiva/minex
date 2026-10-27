@@ -71,6 +71,15 @@ class MaterialController {
             return res.status(400).json({ error: err.message });
         }
     }
+    static async vincularCodigoBarras(req, res) {
+        try {
+            const atualizado = await MaterialService_1.MaterialService.vincularCodigoBarras((0, OperationalService_1.id)(req.params.id), req.body.codigo_barras, req.user.id);
+            return res.json(atualizado);
+        }
+        catch (err) {
+            return res.status(400).json({ error: err.message });
+        }
+    }
     static async alterarStatus(req, res) {
         try {
             const id = parseInt(req.params.id);
