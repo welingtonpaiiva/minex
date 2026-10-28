@@ -54,3 +54,6 @@ export function dateTime(value?: string) {
 export const canOperate = (role: string) => ['ADMINISTRADOR', 'SUPERVISOR', 'OPERADOR', 'OPERADOR_ESTOQUE'].includes(role);
 export const canRegister = (role: string) => ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO'].includes(role);
 export const canLinkBarcode = (role: string) => canRegister(role) || canOperate(role);
+export const canAccessMaterialOperations = (role: string) => role !== 'ADMINISTRADOR' && canOperate(role);
+export const canAccessRegistration = (role: string) => !['OPERADOR', 'OPERADOR_ESTOQUE'].includes(role);
+export const canAccessLegacy = (role: string) => role === 'SUPERVISOR';

@@ -20,7 +20,7 @@ import { Quantidades } from './pages/Quantidades';
 import { Legado } from './pages/Legado';
 import { Operacoes } from './pages/Operacoes';
 import { MineAlert } from './components/MineAlert';
-import { canOperate } from './components/ui';
+import { canAccessMaterialOperations, canAccessRegistration, canAccessLegacy } from './components/ui';
 import { Usuario } from './types';
 import { api } from './services/api';
 
@@ -33,25 +33,25 @@ export default function App() {
   }, []);
   const login = (account: Usuario, token: string) => { localStorage.setItem('casa_da_lanterna_token', token); localStorage.setItem('casa_da_lanterna_user', JSON.stringify(account)); setUser(account); };
   if (loading) return <div className="app-loading">Carregando Casa da Lanterna…</div>;
-  const operator = user && canOperate(user.nivel_acesso), manager = user && ['ADMINISTRADOR', 'SUPERVISOR'].includes(user.nivel_acesso);
+  const operator = user && canAccessMaterialOperations(user.nivel_acesso), manager = user && ['ADMINISTRADOR', 'SUPERVISOR'].includes(user.nivel_acesso);
   return <BrowserRouter><MotionConfig reducedMotion="user"><CursorFollower />{user ? <OperatorShell user={user} logout={logout}><Routes>
       <Route path="/" element={<MainMenu user={user} />} />
       <Route path="/saida" element={operator ? <Saida /> : <Navigate to="/" replace />} />
       <Route path="/entrada" element={operator ? <Entrada /> : <Navigate to="/" replace />} />
       <Route path="/acessos" element={<Acessos user={user} />} />
-      <Route path="/cadastro" element={<Cadastro user={user} />} />
+      <Route path="/cadastro" element={canAccessRegistration(user.nivel_acesso) ? <Cadastro user={user} /> : <Navigate to="/" replace />} />
       <Route path="/estoque" element={<Estoque user={user} />} />
       <Route path="/quantidades" element={<Quantidades user={user} />} />
       <Route path="/historico" element={<Historico />} />
       <Route path="/relatorios" element={<Relatorios />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/dashboard" element={<DashboardPage user={user} />} />
       <Route path="/operacoes" element={<Operacoes user={user} />} />
       <Route path="/extravios" element={<Navigate to="/operacoes" replace />} />
       <Route path="/quantidades" element={<Navigate to="/operacoes" replace />} />
       <Route path="/historico" element={<Navigate to="/operacoes" replace />} />
       <Route path="/conformidade" element={<Conformidade user={user} />} />
       <Route path="/administracao" element={manager ? <Administracao user={user} /> : <Navigate to="/" replace />} />
-      <Route path="/legado" element={manager ? <Legado /> : <Navigate to="/" replace />} />
+      <Route path="/legado" element={canAccessLegacy(user.nivel_acesso) ? <Legado /> : <Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes></OperatorShell> : <Routes><Route path="/login" element={<Login onLoginSuccess={login} />} /><Route path="*" element={<Navigate to="/login" replace />} /></Routes>}</MotionConfig></BrowserRouter>;
 }

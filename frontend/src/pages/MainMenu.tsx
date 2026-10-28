@@ -11,7 +11,7 @@ import {
   ArrowRight, DoorOpen, LayoutList, Shield, Archive
 } from 'lucide-react';
 import { Usuario } from '../types';
-import { canOperate } from '../components/ui';
+import { canAccessMaterialOperations, canAccessRegistration, canAccessLegacy } from '../components/ui';
 import { useResource } from '../hooks/useResource';
 import { motion } from 'framer-motion';
 
@@ -24,16 +24,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
   const connection = useResource<any>('/operacao/status', {}, {});
   const manager = ['ADMINISTRADOR', 'SUPERVISOR'].includes(user.nivel_acesso);
   const modules = [
-    {to:'/cadastro', title:'Cadastros', description:'Materiais, colaboradores, fotos e cartões NFC.', icon:ClipboardList},
+    ...(canAccessRegistration(user.nivel_acesso) ? [{to:'/cadastro', title:'Cadastros', description:'Materiais, colaboradores, fotos e cartões NFC.', icon:ClipboardList}] : []),
     {to:'/estoque', title:'Estoque & consultas', description:'Inventário, disponibilidade e conferência dos materiais.', icon:Boxes},
     {to:'/dashboard', title:'Dashboard', description:'Monitoramento de presença na mina em uma nova aba.', icon:Monitor, external:true},
     {to:'/relatorios', title:'Relatórios', description:'Exportação de planilhas e relatórios PDF.', icon:FileText},
     {to:'/acessos', title:'Acesso à mina', description:'Registro de entrada, saída e permanência de pessoas.', icon:DoorOpen},
     {to:'/operacoes', title:'Operações', description:'Extravios, materiais por quantidade e histórico de movimentações.', icon:LayoutList},
     ...(manager ? [
-      {to:'/administracao', title:'Administração', description:'Contas, permissões e auditoria da operação.', icon:Shield},
-      {to:'/legado', title:'Dados anteriores', description:'Consulta aos registros preservados na migração.', icon:Archive}
-    ] : [])
+      {to:'/administracao', title:'Administração', description:'Contas, permissões e auditoria da operação.', icon:Shield}
+    ] : []),
+    ...(canAccessLegacy(user.nivel_acesso) ? [{to:'/legado', title:'Dados anteriores', description:'Consulta aos registros preservados na migração.', icon:Archive}] : [])
   ];
 
 
@@ -65,7 +65,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ user }) => {
 
         <span role="status" className="self-start rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs text-white">{connection.error ? 'Sem comunicação com o servidor' : connection.data.conectado ? 'Sistema conectado' : 'Verificando conexão'}</span>
         {/* 1. BOTÕES PRINCIPAIS GIGANTES E ERGONÔMICOS — SAÍDA E ENTRADA DE MATERIAL */}
-        {canOperate(user.nivel_acesso) && <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
+        {canAccessMaterialOperations(user.nivel_acesso) && <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
           
           {/* BOTÃO GRANDE — SAÍDA DE MATERIAL */}
           <motion.button

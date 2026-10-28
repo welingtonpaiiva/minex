@@ -126,7 +126,7 @@ const GERAR_ALERTAS_TESTE = (): ResumoAlertasTurno => {
   };
 };
 
-export const DashboardAlertas: React.FC = () => {
+export const DashboardAlertas: React.FC<{ canRecordReturn?: boolean }> = ({ canRecordReturn = false }) => {
   const navigate = useNavigate();
   const [data, setData] = useState<ResumoAlertasTurno | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -789,13 +789,13 @@ export const DashboardAlertas: React.FC = () => {
                   <th className="py-3.5 px-4">DESTINO / OPERAÇÃO</th>
                   <th className="py-3.5 px-4">ENTRADA NA MINA</th>
                   <th className="py-3.5 px-4">TEMPO EM TEMPO REAL (SEGUNDOS)</th>
-                  <th className="py-3.5 px-4 text-center">AÇÃO</th>
+                  {canRecordReturn && <th className="py-3.5 px-4 text-center">AÇÃO</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 text-xs sm:text-sm">
                 {listaExibidaTela.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 px-4 text-center bg-slate-50 text-slate-500 font-bold uppercase">
+                    <td colSpan={canRecordReturn ? 6 : 5} className="py-12 px-4 text-center bg-slate-50 text-slate-500 font-bold uppercase">
                       Nenhum colaborador encontrado para este filtro.
                     </td>
                   </tr>
@@ -859,7 +859,7 @@ export const DashboardAlertas: React.FC = () => {
                         </td>
 
                         {/* AÇÃO DE DAR BAIXA */}
-                        <td className="py-3.5 px-4 text-center">
+                        {canRecordReturn && <td className="py-3.5 px-4 text-center">
                           <button
                             onClick={() => navigate('/entrada')}
                             className="bg-[#331274] hover:bg-[#43208C] text-white px-3.5 py-1.5 rounded-lg text-xs font-extrabold uppercase shadow-sm transition-all cursor-pointer inline-flex items-center gap-1.5"
@@ -868,7 +868,7 @@ export const DashboardAlertas: React.FC = () => {
                             <span>DAR BAIXA</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </button>
-                        </td>
+                        </td>}
                       </tr>
                     );
                   })
@@ -932,13 +932,13 @@ export const DashboardAlertas: React.FC = () => {
                       </span>
                     </div>
 
-                    <button
+                    {canRecordReturn && <button
                       onClick={() => navigate('/entrada')}
                       className="bg-[#331274] hover:bg-[#43208C] text-white px-2 py-0.5 rounded text-[11px] font-bold uppercase shadow-sm transition-all cursor-pointer flex items-center gap-1"
                     >
                       <span>BAIXA</span>
                       <ArrowRight className="w-3 h-3" />
-                    </button>
+                    </button>}
                   </div>
                 </div>
               );
