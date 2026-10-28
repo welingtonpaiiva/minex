@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { api } from '../services/api';
-import { Modal, Notice, errorMessage } from './ui';
+import { MaterialIdentity, Modal, Notice, errorMessage } from './ui';
 
 export function MaterialBarcodeModal({ item, onClose, onSaved }: {
   item: { id: number; nome: string; codigo_interno: string; codigo_barras: string };
@@ -29,7 +29,7 @@ export function MaterialBarcodeModal({ item, onClose, onSaved }: {
   }
 
   return <Modal title="Vincular código de barras" onClose={() => { if (!pending.current) onClose(); }}>
-    <div className="barcode-item-summary"><strong>{item.nome}</strong><span>TAG: {item.codigo_interno}</span></div>
+    <div className="barcode-item-summary"><MaterialIdentity code={item.codigo_interno} name={item.nome} /></div>
     <Notice message={message}/>
     <form onSubmit={save}>
       <label>Código de barras

@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmprestimoController = void 0;
 const EmprestimoService_1 = require("../services/EmprestimoService");
+const db_1 = require("../config/db");
+const ReturnReadings_1 = require("../services/ReturnReadings");
 class EmprestimoController {
     static async buscarEmprestimosDoColaborador(req, res) {
         try {
@@ -46,13 +48,18 @@ class EmprestimoController {
             const { colaboradorId, materiaisCodigos } = req.body;
             const operadorId = req.user?.id || 1;
             const operadorNome = req.user?.nome || 'OPERADOR';
-            const result = await EmprestimoService_1.EmprestimoService.realizarEntrada({
-                colaboradorId: parseInt(colaboradorId),
-                materiaisCodigos,
-                operadorId,
-                operadorNome,
-                requestId: req.header('Idempotency-Key') || req.body.requestId,
-                condicao: req.body.condicao
+            const result = await (0, db_1.withTransaction)(async (execute) => {
+                await execute('SELECT id FROM usuarios WHERE id = ?' + db_1.lockRow, [operadorId]);
+                await (0, ReturnReadings_1.validateReturnNfc)(Number(colaboradorId), req.body.nfcId);
+                await (0, ReturnReadings_1.validateReturnBarcodes)(materiaisCodigos);
+                return EmprestimoService_1.EmprestimoService.realizarEntrada({
+                    colaboradorId: parseInt(colaboradorId),
+                    materiaisCodigos,
+                    operadorId,
+                    operadorNome,
+                    requestId: req.header('Idempotency-Key') || req.body.requestId,
+                    condicao: req.body.condicao
+                });
             });
             return res.json(result);
         }

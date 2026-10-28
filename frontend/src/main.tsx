@@ -4,6 +4,7 @@ import App from './App.tsx';
 import '@fontsource-variable/inter/wght.css';
 import '@fontsource-variable/outfit/wght.css';
 import './index.css';
+import './workspace.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

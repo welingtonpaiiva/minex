@@ -1,6 +1,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { AuthenticatedRequest, authMiddleware, requireRole } from '../middlewares/authMiddleware';
-import { query, queryOne, withTransaction } from '../config/db';
+import { query, queryOne, withTransaction, lockRow } from '../config/db';
+import { validateReturnNfc, validateReturnBarcode } from '../services/ReturnReadings';
 import { quantityMove } from '../services/QuantityService';
 import { audit, text, id, pagination, registrationRoles, operationRoles, updateLoss } from '../services/OperationalService';
 import { MaterialService } from '../services/MaterialService';
@@ -17,7 +18,7 @@ router.get('/emprestimos',handle(async(req,res)=>{
   const where=`WHERE e.quantidade>e.devolvida AND (c.nome LIKE ? OR c.matricula LIKE ? OR m.nome LIKE ? OR m.codigo_interno LIKE ?) AND (?='' OR c.id=?)`;
   const from=`FROM emprestimos_quantidade e JOIN materiais m ON m.id=e.material_id JOIN colaboradores c ON c.id=e.colaborador_id`;
   const params=[term,term,term,term,req.query.colaborador_id||'',req.query.colaborador_id||''];
-  const items=await query(`SELECT e.*, m.nome AS material_nome,m.codigo_interno,c.nome AS colaborador_nome,c.matricula,c.setor ${from} ${where} ORDER BY e.id DESC LIMIT ? OFFSET ?`,[...params,p.limit,p.offset]);
+  const items=await query(`SELECT e.*, m.nome AS material_nome,m.codigo_interno,m.codigo_barras,c.nome AS colaborador_nome,c.matricula,c.setor ${from} ${where} ORDER BY e.id DESC LIMIT ? OFFSET ?`,[...params,p.limit,p.offset]);
   const total=await queryOne(`SELECT COUNT(*) AS total ${from} ${where}`,params);res.json({items,total:total.total,...p});
 }));
 router.post('/',requireRole(registrationRoles),handle(async(req,res)=>{
@@ -26,7 +27,18 @@ router.post('/',requireRole(registrationRoles),handle(async(req,res)=>{
 }));
 router.post('/movimentar',requireRole(operationRoles),handle(async(req,res)=>{
   if(['AJUSTE','LIBERAR'].includes(req.body.tipo)&&!['ADMINISTRADOR','SUPERVISOR'].includes(req.user!.nivel_acesso))return res.status(403).json({error:'Ajustes e liberações exigem supervisor ou administrador'});
-  res.json(await quantityMove({...req.body,requestId:req.header('Idempotency-Key')||req.body.requestId},req.user!.id));
+  const data = {...req.body,requestId:req.header('Idempotency-Key')||req.body.requestId};
+  if (data.tipo === 'DEVOLUCAO') {
+    return res.json(await withTransaction(async execute => {
+      await execute('SELECT id FROM usuarios WHERE id = ?' + lockRow, [req.user!.id]);
+      const loan = await queryOne('SELECT colaborador_id, material_id FROM emprestimos_quantidade WHERE id = ?', [id(data.emprestimo_id)]);
+      if (!loan) throw new Error('Empréstimo não encontrado');
+      await validateReturnNfc(loan.colaborador_id, data.nfcId);
+      await validateReturnBarcode(loan.material_id, data.codigoBarras);
+      return quantityMove(data, req.user!.id);
+    }));
+  }
+  res.json(await quantityMove(data,req.user!.id));
 }));
 router.post('/extravios/:id',requireRole(operationRoles),handle(async(req,res)=>{res.json(await updateLoss(-id(req.params.id),req.body,req.user!.id));}));
 export default router;

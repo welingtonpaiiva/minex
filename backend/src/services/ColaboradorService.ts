@@ -1,4 +1,5 @@
 import { query, queryOne } from '../config/db';
+import { CollaboratorMonitoringFields, monitoringFields } from './CollaboratorMonitoringFields';
 
 export class ColaboradorService {
   static async listar(busca?: string, status?: string, limit = 100, offset = 0) {
@@ -59,7 +60,7 @@ export class ColaboradorService {
     );
   }
 
-  static async criar(dados: {
+  static async criar(dados: CollaboratorMonitoringFields & {
     nome: string;
     matricula: string;
     setor?: string;
@@ -87,9 +88,10 @@ export class ColaboradorService {
       }
     }
 
+    const profile = monitoringFields(dados);
     await query(
-      `INSERT INTO colaboradores (nome, matricula, setor, cargo, foto_url, nfc_id, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO colaboradores (nome, matricula, setor, cargo, foto_url, nfc_id, status, empresa, turma, brigadista, brigada_especialidade, brigada_validade)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         dados.nome.trim(),
         dados.matricula.trim(),
@@ -97,14 +99,14 @@ export class ColaboradorService {
         dados.cargo || '',
         dados.foto_url || '',
         dados.nfc_id ? dados.nfc_id.trim() : null,
-        'ATIVO'
+        'ATIVO', profile.empresa, profile.turma, profile.brigadista, profile.brigada_especialidade, profile.brigada_validade
       ]
     );
 
     return await queryOne('SELECT * FROM colaboradores WHERE matricula = ?', [dados.matricula.trim()]);
   }
 
-  static async editar(id: number, dados: {
+  static async editar(id: number, dados: CollaboratorMonitoringFields & {
     nome?: string;
     setor?: string;
     cargo?: string;
@@ -128,9 +130,10 @@ export class ColaboradorService {
       }
     }
 
+    const profile = monitoringFields(dados, colab);
     await query(
       `UPDATE colaboradores
-       SET nome = ?, setor = ?, cargo = ?, foto_url = ?, nfc_id = ?, status = ?, updated_at = (datetime('now', 'localtime'))
+       SET nome = ?, setor = ?, cargo = ?, foto_url = ?, nfc_id = ?, status = ?, empresa = ?, turma = ?, brigadista = ?, brigada_especialidade = ?, brigada_validade = ?, updated_at = (datetime('now', 'localtime'))
        WHERE id = ?`,
       [
         dados.nome !== undefined ? dados.nome.trim() : colab.nome,
@@ -139,6 +142,7 @@ export class ColaboradorService {
         dados.foto_url !== undefined ? dados.foto_url : colab.foto_url,
         dados.nfc_id !== undefined ? (dados.nfc_id ? dados.nfc_id.trim() : null) : colab.nfc_id,
         dados.status !== undefined ? dados.status : colab.status,
+        profile.empresa, profile.turma, profile.brigadista, profile.brigada_especialidade, profile.brigada_validade,
         id
       ]
     );

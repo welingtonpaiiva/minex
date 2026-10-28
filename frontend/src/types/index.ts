@@ -15,6 +15,11 @@ export interface Colaborador {
   matricula: string;
   setor?: string;
   cargo?: string;
+  empresa?: string;
+  turma?: string;
+  brigadista?: boolean | number;
+  brigada_especialidade?: string;
+  brigada_validade?: string | null;
   foto_url?: string;
   nfc_id?: string | null;
   status: StatusColaborador;
@@ -134,4 +139,30 @@ export interface Kit {
   updated_at?: string;
   materiais: KitItem[];
   total_itens?: number;
+}
+
+export interface PendingReturnItem {
+  emprestimo_id: number;
+  colaborador_id: number;
+  material_id: number;
+  tipo: 'INDIVIDUAL' | 'QUANTIDADE';
+  material_nome: string;
+  codigo_interno: string;
+  codigo_barras: string;
+  retirada: string;
+  quantidade: number;
+  kit_nome?: string;
+}
+
+export interface PendingReturnPerson extends Colaborador {
+  primeira_retirada: string;
+  total_itens: number;
+  total_unidades: number;
+  materiais: PendingReturnItem[];
+}
+
+export interface PendingReturns {
+  items: PendingReturnPerson[];
+  total: number;
+  resumo: { pessoas: number; itens: number; unidades: number };
 }

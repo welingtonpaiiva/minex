@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import { EmprestimoService } from '../services/EmprestimoService';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
+import { withTransaction, lockRow } from '../config/db';
+import { validateReturnNfc, validateReturnBarcodes } from '../services/ReturnReadings';
 
 export class EmprestimoController {
   static async buscarEmprestimosDoColaborador(req: AuthenticatedRequest, res: Response) {
@@ -49,13 +51,18 @@ export class EmprestimoController {
       const operadorId = req.user?.id || 1;
       const operadorNome = req.user?.nome || 'OPERADOR';
 
-      const result = await EmprestimoService.realizarEntrada({
-        colaboradorId: parseInt(colaboradorId),
-        materiaisCodigos,
-        operadorId,
-        operadorNome,
-        requestId: req.header('Idempotency-Key') || req.body.requestId,
-        condicao: req.body.condicao
+      const result = await withTransaction(async execute => {
+        await execute('SELECT id FROM usuarios WHERE id = ?' + lockRow, [operadorId]);
+        await validateReturnNfc(Number(colaboradorId), req.body.nfcId);
+        await validateReturnBarcodes(materiaisCodigos);
+        return EmprestimoService.realizarEntrada({
+          colaboradorId: parseInt(colaboradorId),
+          materiaisCodigos,
+          operadorId,
+          operadorNome,
+          requestId: req.header('Idempotency-Key') || req.body.requestId,
+          condicao: req.body.condicao
+        });
       });
 
       return res.json(result);

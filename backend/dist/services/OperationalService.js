@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.roles = exports.trainingRoles = exports.barcodeRoles = exports.registrationRoles = exports.operationRoles = void 0;
+exports.reportRoles = exports.roles = exports.trainingRoles = exports.barcodeRoles = exports.registrationRoles = exports.operationRoles = void 0;
 exports.text = text;
 exports.id = id;
 exports.pagination = pagination;
@@ -19,6 +19,7 @@ exports.registrationRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO'];
 exports.barcodeRoles = [...new Set([...exports.registrationRoles, ...exports.operationRoles])];
 exports.trainingRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO'];
 exports.roles = ['ADMINISTRADOR', 'SUPERVISOR', 'OPERADOR', 'OPERADOR_ESTOQUE', 'CADASTRO', 'CONSULTA'];
+exports.reportRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO', 'CONSULTA'];
 function text(value, label, max = 255, required = true) {
     if (typeof value !== 'string' || value.trim().length > max || (required && !value.trim()))
         throw new Error(`${label} inválido`);

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const authMiddleware_1 = require("../middlewares/authMiddleware");
 const db_1 = require("../config/db");
+const ReturnReadings_1 = require("../services/ReturnReadings");
 const QuantityService_1 = require("../services/QuantityService");
 const OperationalService_1 = require("../services/OperationalService");
 const MaterialService_1 = require("../services/MaterialService");
@@ -21,7 +22,7 @@ router.get('/emprestimos', handle(async (req, res) => {
     const where = `WHERE e.quantidade>e.devolvida AND (c.nome LIKE ? OR c.matricula LIKE ? OR m.nome LIKE ? OR m.codigo_interno LIKE ?) AND (?='' OR c.id=?)`;
     const from = `FROM emprestimos_quantidade e JOIN materiais m ON m.id=e.material_id JOIN colaboradores c ON c.id=e.colaborador_id`;
     const params = [term, term, term, term, req.query.colaborador_id || '', req.query.colaborador_id || ''];
-    const items = await (0, db_1.query)(`SELECT e.*, m.nome AS material_nome,m.codigo_interno,c.nome AS colaborador_nome,c.matricula,c.setor ${from} ${where} ORDER BY e.id DESC LIMIT ? OFFSET ?`, [...params, p.limit, p.offset]);
+    const items = await (0, db_1.query)(`SELECT e.*, m.nome AS material_nome,m.codigo_interno,m.codigo_barras,c.nome AS colaborador_nome,c.matricula,c.setor ${from} ${where} ORDER BY e.id DESC LIMIT ? OFFSET ?`, [...params, p.limit, p.offset]);
     const total = await (0, db_1.queryOne)(`SELECT COUNT(*) AS total ${from} ${where}`, params);
     res.json({ items, total: total.total, ...p });
 }));
@@ -35,7 +36,19 @@ router.post('/', (0, authMiddleware_1.requireRole)(OperationalService_1.registra
 router.post('/movimentar', (0, authMiddleware_1.requireRole)(OperationalService_1.operationRoles), handle(async (req, res) => {
     if (['AJUSTE', 'LIBERAR'].includes(req.body.tipo) && !['ADMINISTRADOR', 'SUPERVISOR'].includes(req.user.nivel_acesso))
         return res.status(403).json({ error: 'Ajustes e liberações exigem supervisor ou administrador' });
-    res.json(await (0, QuantityService_1.quantityMove)({ ...req.body, requestId: req.header('Idempotency-Key') || req.body.requestId }, req.user.id));
+    const data = { ...req.body, requestId: req.header('Idempotency-Key') || req.body.requestId };
+    if (data.tipo === 'DEVOLUCAO') {
+        return res.json(await (0, db_1.withTransaction)(async (execute) => {
+            await execute('SELECT id FROM usuarios WHERE id = ?' + db_1.lockRow, [req.user.id]);
+            const loan = await (0, db_1.queryOne)('SELECT colaborador_id, material_id FROM emprestimos_quantidade WHERE id = ?', [(0, OperationalService_1.id)(data.emprestimo_id)]);
+            if (!loan)
+                throw new Error('Empréstimo não encontrado');
+            await (0, ReturnReadings_1.validateReturnNfc)(loan.colaborador_id, data.nfcId);
+            await (0, ReturnReadings_1.validateReturnBarcode)(loan.material_id, data.codigoBarras);
+            return (0, QuantityService_1.quantityMove)(data, req.user.id);
+        }));
+    }
+    res.json(await (0, QuantityService_1.quantityMove)(data, req.user.id));
 }));
 router.post('/extravios/:id', (0, authMiddleware_1.requireRole)(OperationalService_1.operationRoles), handle(async (req, res) => { res.json(await (0, OperationalService_1.updateLoss)(-(0, OperationalService_1.id)(req.params.id), req.body, req.user.id)); }));
 exports.default = router;

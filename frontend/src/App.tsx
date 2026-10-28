@@ -20,7 +20,7 @@ import { Quantidades } from './pages/Quantidades';
 import { Legado } from './pages/Legado';
 import { Operacoes } from './pages/Operacoes';
 import { MineAlert } from './components/MineAlert';
-import { canAccessMaterialOperations, canAccessRegistration, canAccessLegacy } from './components/ui';
+import { canAccessMaterialOperations, canAccessRegistration, canAccessLegacy, canAccessReports } from './components/ui';
 import { Usuario } from './types';
 import { api } from './services/api';
 
@@ -34,7 +34,7 @@ export default function App() {
   const login = (account: Usuario, token: string) => { localStorage.setItem('casa_da_lanterna_token', token); localStorage.setItem('casa_da_lanterna_user', JSON.stringify(account)); setUser(account); };
   if (loading) return <div className="app-loading">Carregando Casa da Lanterna…</div>;
   const operator = user && canAccessMaterialOperations(user.nivel_acesso), manager = user && ['ADMINISTRADOR', 'SUPERVISOR'].includes(user.nivel_acesso);
-  return <BrowserRouter><MotionConfig reducedMotion="user"><CursorFollower />{user ? <OperatorShell user={user} logout={logout}><Routes>
+  return <BrowserRouter><MotionConfig reducedMotion="user">{user ? <OperatorShell user={user} logout={logout}><Routes>
       <Route path="/" element={<MainMenu user={user} />} />
       <Route path="/saida" element={operator ? <Saida /> : <Navigate to="/" replace />} />
       <Route path="/entrada" element={operator ? <Entrada /> : <Navigate to="/" replace />} />
@@ -43,7 +43,7 @@ export default function App() {
       <Route path="/estoque" element={<Estoque user={user} />} />
       <Route path="/quantidades" element={<Quantidades user={user} />} />
       <Route path="/historico" element={<Historico />} />
-      <Route path="/relatorios" element={<Relatorios />} />
+      <Route path="/relatorios" element={canAccessReports(user.nivel_acesso) ? <Relatorios /> : <Navigate to="/" replace />} />
       <Route path="/dashboard" element={<DashboardPage user={user} />} />
       <Route path="/operacoes" element={<Operacoes user={user} />} />
       <Route path="/extravios" element={<Navigate to="/operacoes" replace />} />
@@ -58,7 +58,9 @@ export default function App() {
 
 function OperatorShell({user, logout, children}: {user: Usuario; logout: () => void; children: React.ReactNode}) {
   const location = useLocation();
+  if (location.pathname === '/dashboard') return <main className="monitoring-standalone">{children}</main>;
   return <div className={'operator-shell ' + (location.pathname === '/' ? 'operator-home' : '')}>
+    <CursorFollower />
     <TopBar user={user} onLogout={logout} />
     <MineAlert />
     <motion.main key={location.pathname} className="operator-content" initial={{opacity:0}} animate={{opacity:1}} transition={{duration:.2,ease:'easeOut'}}>{children}</motion.main>

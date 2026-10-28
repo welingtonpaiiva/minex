@@ -7,7 +7,9 @@ exports.importCollaborators = importCollaborators;
 const path_1 = __importDefault(require("path"));
 const exceljs_1 = __importDefault(require("exceljs"));
 const db_1 = require("../config/db");
+const migrate_1 = require("./migrate");
 async function importCollaborators() {
+    await (0, migrate_1.runMigrations)();
     console.log('[IMPORT] Iniciando importação de colaboradores a partir do Excel...');
     const excelPath = path_1.default.resolve(__dirname, '../../../ATUALIZAÇÃO DAS TURMAS.xlsx');
     const wb = new exceljs_1.default.Workbook();
@@ -70,14 +72,14 @@ async function importCollaborators() {
         if (existing) {
             // Atualizar cadastro existente
             await (0, db_1.query)(`UPDATE colaboradores 
-         SET nome = ?, setor = ?, cargo = ?, nfc_id = ?, status = 'ATIVO', updated_at = (datetime('now', 'localtime'))
-         WHERE id = ?`, [item.nome, item.sheetName, item.cargo, item.nfcId || null, existing.id]);
+         SET nome = ?, setor = ?, cargo = ?, nfc_id = ?, empresa = ?, turma = ?, status = 'ATIVO', updated_at = (datetime('now', 'localtime'))
+         WHERE id = ?`, [item.nome, item.sheetName, item.cargo, item.nfcId || null, item.empresa, item.sheetName.replace(/^TURMA\s+/i, ''), existing.id]);
             updatedCount++;
         }
         else {
             // Inserir novo cadastro
-            await (0, db_1.query)(`INSERT INTO colaboradores (nome, matricula, setor, cargo, nfc_id, status)
-         VALUES (?, ?, ?, ?, ?, 'ATIVO')`, [item.nome, matriculaFinal, item.sheetName, item.cargo, item.nfcId || null]);
+            await (0, db_1.query)(`INSERT INTO colaboradores (nome, matricula, setor, cargo, nfc_id, empresa, turma, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'ATIVO')`, [item.nome, matriculaFinal, item.sheetName, item.cargo, item.nfcId || null, item.empresa, item.sheetName.replace(/^TURMA\s+/i, '')]);
             insertedCount++;
         }
     }

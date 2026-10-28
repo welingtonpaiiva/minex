@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
-import { databaseClient, query, queryOne, closeDatabase } from '../config/db';
+import { databaseClient, query, queryOne, closeDatabase, withTransaction } from '../config/db';
 
 function source(name: string) {
   for (const folder of [__dirname, path.resolve(__dirname, '../../src/database')]) {
@@ -45,11 +45,46 @@ export async function runMigrations() {
   }
   await query('SELECT senha_hash FROM usuarios LIMIT 1');
   await query('SELECT nfc_id FROM colaboradores LIMIT 1');
+  const collaboratorColumns: any[] = databaseClient === 'mysql'
+    ? await query("SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'colaboradores'")
+    : await query('PRAGMA table_info(colaboradores)');
+  for (const [name, type] of [
+    ['empresa', "VARCHAR(255) NOT NULL DEFAULT ''"], ['turma', "VARCHAR(32) NOT NULL DEFAULT ''"],
+    ['brigadista', 'INTEGER NOT NULL DEFAULT 0'], ['brigada_especialidade', "VARCHAR(255) NOT NULL DEFAULT ''"],
+    ['brigada_validade', 'VARCHAR(10)']
+  ]) {
+    if (!collaboratorColumns.some(c => c.name === name)) await query('ALTER TABLE colaboradores ADD COLUMN ' + name + ' ' + type);
+  }
   const columns: any[] = databaseClient === 'mysql'
     ? await query("SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'emprestimos'")
     : await query('PRAGMA table_info(emprestimos)');
-  for (const [name, type] of [['prazo_devolucao', 'VARCHAR(32)'], ['destino', "VARCHAR(255) NOT NULL DEFAULT ''"]]) {
+  for (const [name, type] of [['prazo_devolucao', 'VARCHAR(32)'], ['destino', "VARCHAR(255) NOT NULL DEFAULT ''"], ['kit_nome', 'VARCHAR(255)']]) {
     if (!columns.some(c => c.name === name)) await query('ALTER TABLE emprestimos ADD COLUMN ' + name + ' ' + type);
+  }
+  if (!columns.some(c => c.name === 'kit_nome')) {
+    // Kits entregues antes desta restrição já foram removidos de kits.
+    // Recuperar o vínculo pela última retirada de cada empréstimo ainda ativo.
+    await withTransaction(async execute => {
+      const loans = await execute(`SELECT e.id, e.colaborador_id, r.id AS retirada_id, r.detalhes
+        FROM emprestimos e JOIN auditoria r ON r.id = (
+          SELECT MAX(a.id) FROM auditoria a
+          WHERE a.acao = 'RETIRADA' AND a.entidade = 'material' AND a.referencia_id = e.material_id
+        )`);
+      for (const loan of loans) {
+        const withdrawal = JSON.parse(loan.detalhes);
+        if (Number(withdrawal.colaborador_id) !== Number(loan.colaborador_id)) continue;
+        const assignments = await execute(`SELECT detalhes FROM auditoria
+          WHERE acao = 'ATRIBUICAO_KIT' AND entidade = 'colaborador' AND referencia_id = ? AND id > ? ORDER BY id`,
+          [loan.colaborador_id, loan.retirada_id]);
+        for (const assignment of assignments) {
+          const kit = JSON.parse(assignment.detalhes);
+          if (Array.isArray(kit.materiais) && kit.materiais.includes(withdrawal.codigo)) {
+            await execute('UPDATE emprestimos SET kit_nome = ? WHERE id = ?', [kit.kit_nome, loan.id]);
+            break;
+          }
+        }
+      }
+    });
   }
   const materialColumns: any[] = databaseClient === 'mysql'
     ? await query("SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='materiais'")

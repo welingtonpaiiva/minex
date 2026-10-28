@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ColaboradorService = void 0;
 const db_1 = require("../config/db");
+const CollaboratorMonitoringFields_1 = require("./CollaboratorMonitoringFields");
 class ColaboradorService {
     static async listar(busca, status, limit = 100, offset = 0) {
         let sql = 'SELECT * FROM colaboradores WHERE 1=1';
@@ -64,15 +65,16 @@ class ColaboradorService {
                 throw new Error('Este cartão NFC já está vinculado a outro colaborador');
             }
         }
-        await (0, db_1.query)(`INSERT INTO colaboradores (nome, matricula, setor, cargo, foto_url, nfc_id, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`, [
+        const profile = (0, CollaboratorMonitoringFields_1.monitoringFields)(dados);
+        await (0, db_1.query)(`INSERT INTO colaboradores (nome, matricula, setor, cargo, foto_url, nfc_id, status, empresa, turma, brigadista, brigada_especialidade, brigada_validade)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
             dados.nome.trim(),
             dados.matricula.trim(),
             dados.setor || '',
             dados.cargo || '',
             dados.foto_url || '',
             dados.nfc_id ? dados.nfc_id.trim() : null,
-            'ATIVO'
+            'ATIVO', profile.empresa, profile.turma, profile.brigadista, profile.brigada_especialidade, profile.brigada_validade
         ]);
         return await (0, db_1.queryOne)('SELECT * FROM colaboradores WHERE matricula = ?', [dados.matricula.trim()]);
     }
@@ -91,8 +93,9 @@ class ColaboradorService {
                 throw new Error('Este cartão NFC já está associado a outro colaborador');
             }
         }
+        const profile = (0, CollaboratorMonitoringFields_1.monitoringFields)(dados, colab);
         await (0, db_1.query)(`UPDATE colaboradores
-       SET nome = ?, setor = ?, cargo = ?, foto_url = ?, nfc_id = ?, status = ?, updated_at = (datetime('now', 'localtime'))
+       SET nome = ?, setor = ?, cargo = ?, foto_url = ?, nfc_id = ?, status = ?, empresa = ?, turma = ?, brigadista = ?, brigada_especialidade = ?, brigada_validade = ?, updated_at = (datetime('now', 'localtime'))
        WHERE id = ?`, [
             dados.nome !== undefined ? dados.nome.trim() : colab.nome,
             dados.setor !== undefined ? dados.setor : colab.setor,
@@ -100,6 +103,7 @@ class ColaboradorService {
             dados.foto_url !== undefined ? dados.foto_url : colab.foto_url,
             dados.nfc_id !== undefined ? (dados.nfc_id ? dados.nfc_id.trim() : null) : colab.nfc_id,
             dados.status !== undefined ? dados.status : colab.status,
+            profile.empresa, profile.turma, profile.brigadista, profile.brigada_especialidade, profile.brigada_validade,
             id
         ]);
         return await this.buscarPorId(id);

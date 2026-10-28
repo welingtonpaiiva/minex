@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { MaterialOperation } from './MaterialOperation';
 import { QuantityOperation } from './QuantityOperation';
 import { KitOperation } from './KitOperation';
-import { Boxes } from 'lucide-react';
+import { QuickReturn } from './QuickReturn';
+import { Boxes, UsersRound } from 'lucide-react';
 
 export function OperationSwitch({ type }: { type: 'saida' | 'entrada' }) {
-  const [mode, setMode] = useState<'INDIVIDUAL' | 'QUANTIDADE' | 'KITS'>('INDIVIDUAL');
+  const [mode, setMode] = useState<'INDIVIDUAL' | 'QUANTIDADE' | 'KITS' | 'PESSOAS'>(type === 'entrada' ? 'PESSOAS' : 'INDIVIDUAL');
 
   return (
     <>
-      <div className="tabs" style={{ padding: '22px 34px 0', display: 'flex', gap: '8px' }}>
+      <div className="tabs operation-tabs">
+        {type === 'entrada' && <button className={'tab ' + (mode === 'PESSOAS' ? 'active' : '')} onClick={() => setMode('PESSOAS')}>
+          <UsersRound size={17} />Pessoas e materiais<span className="return-tab-badge">BAIXA RÁPIDA</span>
+        </button>}
         <button
           className={'tab ' + (mode === 'INDIVIDUAL' ? 'active' : '')}
           onClick={() => setMode('INDIVIDUAL')}
@@ -41,6 +45,8 @@ export function OperationSwitch({ type }: { type: 'saida' | 'entrada' }) {
         <MaterialOperation type={type} />
       ) : mode === 'QUANTIDADE' ? (
         <QuantityOperation type={type} />
+      ) : mode === 'PESSOAS' ? (
+        <QuickReturn />
       ) : (
         <KitOperation />
       )}

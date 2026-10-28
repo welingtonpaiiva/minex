@@ -3,11 +3,26 @@ import { authMiddleware, AuthenticatedRequest, requireRole } from '../middleware
 import { query, queryOne, withTransaction, databaseClient, lockRow } from '../config/db';
 import { audit, id, text, roles, operationRoles, trainingRoles, pagination, getCompliance, saveTraining, mineAccess, mineOverview, listLosses, updateLoss } from '../services/OperationalService';
 import { today, dayBoundary } from '../utils/time';
+import { monitoringOverview } from '../services/MonitoringService';
 const router = Router();
 router.use(authMiddleware);
 const handle = (fn: (req: AuthenticatedRequest, res: Response) => Promise<unknown>) =>
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => { Promise.resolve(fn(req, res)).catch(next); };
 router.get('/status', handle(async (_req, res) => { await query('SELECT 1'); res.json({ conectado: true, banco: databaseClient, horario: new Date().toISOString() }); }));
+router.get('/monitoramento', handle(async (_req, res) => {
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.json(await monitoringOverview());
+}));
+router.get('/resumo', handle(async (_req, res) => {
+  const summary = await queryOne(`SELECT
+    (SELECT COUNT(*) FROM (SELECT colaborador_id FROM emprestimos
+      UNION SELECT colaborador_id FROM emprestimos_quantidade WHERE quantidade > devolvida) pessoas) AS pessoas_com_materiais,
+    ((SELECT COUNT(*) FROM materiais WHERE tipo_controle = 'INDIVIDUAL' AND status = 'AGUARDANDO_CONFERENCIA') +
+      (SELECT COALESCE(SUM(saldo_conferencia), 0) FROM materiais WHERE tipo_controle = 'QUANTIDADE')) AS unidades_conferencia,
+    (SELECT COUNT(*) FROM kits WHERE status = 'DISPONIVEL') AS kits_prontos`);
+  res.json({ pessoas_com_materiais: Number(summary.pessoas_com_materiais), unidades_conferencia: Number(summary.unidades_conferencia),
+    kits_prontos: Number(summary.kits_prontos), atualizado_em: new Date().toISOString() });
+}));
 router.get('/legado', requireRole(['ADMINISTRADOR','SUPERVISOR']), handle(async(req,res)=>{
   const p=pagination(req.query),table=String(req.query.tabela||'equipamentos');
   const schemas=await query('SELECT tabela, sql_original FROM legado_esquemas ORDER BY tabela');

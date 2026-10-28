@@ -18,7 +18,7 @@ import { NfcReaderModal } from './NfcReaderModal';
 import { soundFX } from '../services/soundFX';
 import { api } from '../services/api';
 import { Kit, KitItem } from '../types';
-import { Notice, Empty, Modal, errorMessage } from './ui';
+import { MaterialIdentity, Notice, Empty, Modal, errorMessage } from './ui';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /* ─── Card de kit selado (aguardando NFC) ───────────────────────────────────── */
@@ -77,8 +77,7 @@ function KitSealedCard({
                 kit.materiais.map((item: KitItem) => (
                   <div key={item.id} className="kit-card-item-row">
                     <Package size={14} />
-                    <span className="kit-item-name">{item.nome}</span>
-                    <span className="kit-item-code">{item.codigo_interno}</span>
+                    <MaterialIdentity code={item.codigo_interno} name={item.nome} />
                   </div>
                 ))
               ) : (
@@ -381,9 +380,6 @@ export function KitOperation() {
       setDeliveringKit(null);
       setSuccessData(res.data);
       await fetchKits();
-    } catch (err: any) {
-      soundFX.playError();
-      setMessage(errorMessage(err));
     } finally { setBusyAction(false); }
   }
 
@@ -480,7 +476,7 @@ export function KitOperation() {
           <div className="kit-instructions">
             <ScanLine size={16} />
             <span>
-              Clique em <strong>Dispensar via NFC</strong> no kit desejado e aproxime o crachá do colaborador para vinculá-lo automaticamente.
+              Clique em <strong>Dispensar via NFC</strong> no kit desejado e aproxime o crachá do colaborador para vinculá-lo automaticamente. Cada colaborador pode ter apenas um kit ativo; todos os itens devem ser devolvidos antes de retirar outro.
             </span>
           </div>
         )}

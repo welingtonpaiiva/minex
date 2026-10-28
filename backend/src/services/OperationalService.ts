@@ -6,6 +6,7 @@ export const registrationRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO'];
 export const barcodeRoles = [...new Set([...registrationRoles, ...operationRoles])];
 export const trainingRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO'];
 export const roles = ['ADMINISTRADOR', 'SUPERVISOR', 'OPERADOR', 'OPERADOR_ESTOQUE', 'CADASTRO', 'CONSULTA'];
+export const reportRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO', 'CONSULTA'];
 export function text(value: unknown, label: string, max = 255, required = true): string {
   if (typeof value !== 'string' || value.trim().length > max || (required && !value.trim())) throw new Error(`${label} inválido`);
   return value.trim();

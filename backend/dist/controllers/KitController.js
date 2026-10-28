@@ -113,7 +113,7 @@ class KitController {
                 return res.status(400).json({ error: 'ID do kit inválido' });
             }
             await (0, db_1.withTransaction)(async (execute) => {
-                const kit = await (0, db_1.queryOne)('SELECT * FROM kits WHERE id = ?', [kitId]);
+                const kit = await (0, db_1.queryOne)('SELECT * FROM kits WHERE id = ?' + db_1.lockRow, [kitId]);
                 if (!kit)
                     throw new Error('Kit não encontrado');
                 // Buscar materiais do kit
@@ -144,68 +144,70 @@ class KitController {
             if (!kitId || isNaN(kitId)) {
                 return res.status(400).json({ error: 'ID do kit inválido' });
             }
-            // Buscar kit
-            const kit = await (0, db_1.queryOne)('SELECT * FROM kits WHERE id = ? AND status = "DISPONIVEL"', [kitId]);
-            if (!kit) {
-                return res.status(404).json({ error: 'Kit não encontrado ou já atribuído' });
-            }
-            // Identificar colaborador
-            let colab = null;
-            if (colaboradorId) {
-                colab = await (0, db_1.queryOne)('SELECT * FROM colaboradores WHERE id = ?', [colaboradorId]);
-            }
-            else if (nfcId) {
-                colab = await (0, db_1.queryOne)('SELECT * FROM colaboradores WHERE nfc_id = ?', [String(nfcId).trim()]);
-            }
-            if (!colab) {
-                return res.status(404).json({ error: 'Colaborador não encontrado' });
-            }
-            if (colab.status !== 'ATIVO') {
-                return res.status(400).json({ error: `Colaborador inativo (${colab.nome}). Retirada bloqueada.` });
-            }
-            // Buscar materiais do kit
-            const materiais = await (0, db_1.query)(`SELECT m.id, m.codigo_interno, m.codigo_barras, m.nome
-         FROM kit_materiais km
-         JOIN materiais m ON km.material_id = m.id
-         WHERE km.kit_id = ?`, [kitId]);
-            if (!materiais.length) {
-                return res.status(400).json({ error: 'Este kit está vazio' });
-            }
-            const codigos = materiais.map(m => m.codigo_interno);
-            // Liberar materiais temporariamente para DISPONIVEL antes de chamar o EmprestimoService
-            await (0, db_1.withTransaction)(async (execute) => {
+            const resultado = await (0, db_1.withTransaction)(async (execute) => {
+                // Manter a mesma ordem de bloqueio usada pelo serviço de empréstimos.
+                await execute('SELECT id FROM usuarios WHERE id = ?' + db_1.lockRow, [operadorId]);
+                const kit = await (0, db_1.queryOne)('SELECT * FROM kits WHERE id = ? AND status = "DISPONIVEL"' + db_1.lockRow, [kitId]);
+                if (!kit)
+                    throw Object.assign(new Error('Kit não encontrado ou já atribuído'), { status: 404 });
+                let colab = null;
+                if (colaboradorId) {
+                    colab = await (0, db_1.queryOne)('SELECT * FROM colaboradores WHERE id = ?' + db_1.lockRow, [colaboradorId]);
+                }
+                else if (nfcId) {
+                    colab = await (0, db_1.queryOne)('SELECT * FROM colaboradores WHERE nfc_id = ?' + db_1.lockRow, [String(nfcId).trim()]);
+                }
+                if (!colab)
+                    throw Object.assign(new Error('Colaborador não encontrado'), { status: 404 });
+                if (colab.status !== 'ATIVO') {
+                    throw new Error(`Colaborador inativo (${colab.nome}). Retirada bloqueada.`);
+                }
+                // O bloqueio do colaborador serializa entregas feitas por operadores diferentes.
+                const kitAtivo = await (0, db_1.queryOne)('SELECT kit_nome FROM emprestimos WHERE colaborador_id = ? AND kit_nome IS NOT NULL LIMIT 1' + db_1.lockRow, [colab.id]);
+                if (kitAtivo) {
+                    throw new Error(`${colab.nome} já possui o kit "${kitAtivo.kit_nome}" com devolução pendente. Devolva todos os itens antes de retirar outro kit.`);
+                }
+                const materiais = await execute(`SELECT m.id, m.codigo_interno, m.codigo_barras, m.nome
+           FROM kit_materiais km JOIN materiais m ON km.material_id = m.id
+           WHERE km.kit_id = ?`, [kitId]);
+                if (!materiais.length)
+                    throw new Error('Este kit está vazio');
+                const codigos = materiais.map(m => m.codigo_interno);
+                // A liberação e a saída pertencem à mesma transação: falhas preservam a reserva.
                 const now = new Date().toISOString();
                 for (const m of materiais) {
                     await execute('UPDATE materiais SET status = "DISPONIVEL", updated_at = ? WHERE id = ?', [now, m.id]);
                 }
-            });
-            // Delegar a saída para o EmprestimoService (garante validação, empréstimos, movimentações e idempotência)
-            const requestId = req.header('Idempotency-Key') || `kit-${kitId}-${crypto_1.default.randomUUID()}`;
-            const resultadoSaida = await EmprestimoService_1.EmprestimoService.realizarSaida({
-                colaboradorId: colab.id,
-                materiaisCodigos: codigos,
-                operadorId,
-                operadorNome,
-                requestId
-            });
-            // Concluir e remover kit
-            await (0, db_1.withTransaction)(async (execute) => {
+                const requestId = req.header('Idempotency-Key') || `kit-${kitId}-${crypto_1.default.randomUUID()}`;
+                const resultadoSaida = await EmprestimoService_1.EmprestimoService.realizarSaida({
+                    colaboradorId: colab.id,
+                    materiaisCodigos: codigos,
+                    operadorId,
+                    operadorNome,
+                    requestId
+                });
+                // O vínculo permanece no empréstimo até a devolução de cada item.
+                for (const material of materiais) {
+                    await execute('UPDATE emprestimos SET kit_nome = ? WHERE colaborador_id = ? AND material_id = ?', [kit.nome, colab.id, material.id]);
+                }
+                // Concluir e remover kit
                 await execute('DELETE FROM kit_materiais WHERE kit_id = ?', [kitId]);
                 await execute('DELETE FROM kits WHERE id = ?', [kitId]);
                 await (0, OperationalService_1.audit)(operadorId, 'ATRIBUICAO_KIT', 'colaborador', colab.id, { kit_id: kitId, kit_nome: kit.nome, materiais: codigos }, execute);
+                return {
+                    sucesso: true,
+                    mensagem: `KIT "${kit.nome}" ENTREGUE COM SUCESSO`,
+                    kitNome: kit.nome,
+                    colaborador: resultadoSaida.colaborador,
+                    materiaisCount: resultadoSaida.materiaisCount,
+                    materiais: resultadoSaida.materiais,
+                    dataHora: resultadoSaida.dataHora
+                };
             });
-            return res.json({
-                sucesso: true,
-                mensagem: `KIT "${kit.nome}" ENTREGUE COM SUCESSO`,
-                kitNome: kit.nome,
-                colaborador: resultadoSaida.colaborador,
-                materiaisCount: resultadoSaida.materiaisCount,
-                materiais: resultadoSaida.materiais,
-                dataHora: resultadoSaida.dataHora
-            });
+            return res.json(resultado);
         }
         catch (err) {
-            return res.status(400).json({ error: err.message || 'Erro ao atribuir kit' });
+            return res.status(err.status || 400).json({ error: err.message || 'Erro ao atribuir kit' });
         }
     }
 }

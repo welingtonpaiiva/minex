@@ -5,10 +5,25 @@ const authMiddleware_1 = require("../middlewares/authMiddleware");
 const db_1 = require("../config/db");
 const OperationalService_1 = require("../services/OperationalService");
 const time_1 = require("../utils/time");
+const MonitoringService_1 = require("../services/MonitoringService");
 const router = (0, express_1.Router)();
 router.use(authMiddleware_1.authMiddleware);
 const handle = (fn) => (req, res, next) => { Promise.resolve(fn(req, res)).catch(next); };
 router.get('/status', handle(async (_req, res) => { await (0, db_1.query)('SELECT 1'); res.json({ conectado: true, banco: db_1.databaseClient, horario: new Date().toISOString() }); }));
+router.get('/monitoramento', handle(async (_req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.json(await (0, MonitoringService_1.monitoringOverview)());
+}));
+router.get('/resumo', handle(async (_req, res) => {
+    const summary = await (0, db_1.queryOne)(`SELECT
+    (SELECT COUNT(*) FROM (SELECT colaborador_id FROM emprestimos
+      UNION SELECT colaborador_id FROM emprestimos_quantidade WHERE quantidade > devolvida) pessoas) AS pessoas_com_materiais,
+    ((SELECT COUNT(*) FROM materiais WHERE tipo_controle = 'INDIVIDUAL' AND status = 'AGUARDANDO_CONFERENCIA') +
+      (SELECT COALESCE(SUM(saldo_conferencia), 0) FROM materiais WHERE tipo_controle = 'QUANTIDADE')) AS unidades_conferencia,
+    (SELECT COUNT(*) FROM kits WHERE status = 'DISPONIVEL') AS kits_prontos`);
+    res.json({ pessoas_com_materiais: Number(summary.pessoas_com_materiais), unidades_conferencia: Number(summary.unidades_conferencia),
+        kits_prontos: Number(summary.kits_prontos), atualizado_em: new Date().toISOString() });
+}));
 router.get('/legado', (0, authMiddleware_1.requireRole)(['ADMINISTRADOR', 'SUPERVISOR']), handle(async (req, res) => {
     const p = (0, OperationalService_1.pagination)(req.query), table = String(req.query.tabela || 'equipamentos');
     const schemas = await (0, db_1.query)('SELECT tabela, sql_original FROM legado_esquemas ORDER BY tabela');

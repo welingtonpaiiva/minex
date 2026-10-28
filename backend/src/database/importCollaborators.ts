@@ -1,6 +1,7 @@
 import path from 'path';
 import ExcelJS from 'exceljs';
 import { query, queryOne } from '../config/db';
+import { runMigrations } from './migrate';
 
 interface ExcelCollaborator {
   sheetName: string;
@@ -12,6 +13,7 @@ interface ExcelCollaborator {
 }
 
 export async function importCollaborators() {
+  await runMigrations();
   console.log('[IMPORT] Iniciando importação de colaboradores a partir do Excel...');
 
   const excelPath = path.resolve(__dirname, '../../../ATUALIZAÇÃO DAS TURMAS.xlsx');
@@ -89,17 +91,17 @@ export async function importCollaborators() {
       // Atualizar cadastro existente
       await query(
         `UPDATE colaboradores 
-         SET nome = ?, setor = ?, cargo = ?, nfc_id = ?, status = 'ATIVO', updated_at = (datetime('now', 'localtime'))
+         SET nome = ?, setor = ?, cargo = ?, nfc_id = ?, empresa = ?, turma = ?, status = 'ATIVO', updated_at = (datetime('now', 'localtime'))
          WHERE id = ?`,
-        [item.nome, item.sheetName, item.cargo, item.nfcId || null, existing.id]
+        [item.nome, item.sheetName, item.cargo, item.nfcId || null, item.empresa, item.sheetName.replace(/^TURMA\s+/i, ''), existing.id]
       );
       updatedCount++;
     } else {
       // Inserir novo cadastro
       await query(
-        `INSERT INTO colaboradores (nome, matricula, setor, cargo, nfc_id, status)
-         VALUES (?, ?, ?, ?, ?, 'ATIVO')`,
-        [item.nome, matriculaFinal, item.sheetName, item.cargo, item.nfcId || null]
+        `INSERT INTO colaboradores (nome, matricula, setor, cargo, nfc_id, empresa, turma, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'ATIVO')`,
+        [item.nome, matriculaFinal, item.sheetName, item.cargo, item.nfcId || null, item.empresa, item.sheetName.replace(/^TURMA\s+/i, '')]
       );
       insertedCount++;
     }

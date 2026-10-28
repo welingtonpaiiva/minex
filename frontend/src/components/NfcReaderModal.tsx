@@ -15,9 +15,10 @@ interface NfcReaderModalProps {
   subtitle?: string;
   captureOnly?: boolean;
   requireActive?: boolean;
+  nfcOnly?: boolean;
 }
 
-export function NfcReaderModal({isOpen, onClose, onNfcRead, title='APROXIME O CRACHÁ NFC', subtitle='Aproxime o cartão do leitor de balcão', captureOnly=false, requireActive=false}: NfcReaderModalProps) {
+export function NfcReaderModal({isOpen, onClose, onNfcRead, title='APROXIME O CRACHÁ NFC', subtitle='Aproxime o cartão do leitor de balcão', captureOnly=false, requireActive=false, nfcOnly=false}: NfcReaderModalProps) {
   const [state,setState] = useState<'waiting'|'reading'|'success'>('waiting');
   const [person,setPerson] = useState<Colaborador|null>(null);
   const [manual,setManual] = useState(false), [code,setCode] = useState(''), [error,setError] = useState('');
@@ -31,6 +32,9 @@ export function NfcReaderModal({isOpen, onClose, onNfcRead, title='APROXIME O CR
     try{
       const found=captureOnly ? undefined : (await api.get<Colaborador>('/colaboradores/nfc/'+encodeURIComponent(clean))).data;
       if(request!==generation.current)return;
+      if(nfcOnly && (!found?.nfc_id || (clean.replace(/^0+/, '') || '0') !== (found.nfc_id.replace(/^0+/, '') || '0'))) {
+        throw new Error('Leia o crachá NFC vinculado ao colaborador. Matrícula não substitui a leitura do crachá.');
+      }
       if(requireActive && found?.status!=='ATIVO')throw new Error('Colaborador inativo. Retirada bloqueada.');
       setPerson(found||null);setState('success');soundFX.playSuccess();
       await new Promise(resolve=>setTimeout(resolve,850));
@@ -41,7 +45,7 @@ export function NfcReaderModal({isOpen, onClose, onNfcRead, title='APROXIME O CR
       setError(e.response ? errorMessage(e) : e.message || 'Não foi possível ler o crachá. Tente novamente.');
       setState('waiting');soundFX.playError();
     }finally{if(request===generation.current)pending.current=false;}
-  },[captureOnly,requireActive]);
+  },[captureOnly,requireActive,nfcOnly]);
 
   useEffect(()=>{
     if(!isOpen)return;
@@ -76,7 +80,7 @@ export function NfcReaderModal({isOpen, onClose, onNfcRead, title='APROXIME O CR
       <div aria-live="polite"><h2>{state==='success' ? captureOnly?'CARTÃO LIDO!':'CRACHÁ IDENTIFICADO!' : state==='reading'?'IDENTIFICANDO CRACHÁ…':title}</h2><p>{state==='success'?'Leitura confirmada. Preparando o atendimento.':subtitle}</p></div>
       {person && <div className="nfc-person"><Person person={person}/></div>}
       <Notice message={error}/>
-      {state==='waiting' && <>{manual ? <form className="inline-form" onSubmit={event=>{event.preventDefault();void read(code);}}><input aria-label="Código NFC ou matrícula" autoFocus autoComplete="off" placeholder="Código NFC ou matrícula" value={code} maxLength={255} required onChange={event=>setCode(event.target.value)}/><button className="button primary">Identificar crachá</button></form> : <button type="button" className="button secondary" onClick={()=>setManual(true)}><CreditCard size={18}/>Digitar código NFC ou matrícula</button>}<p className="nfc-hint">Aproxime o crachá do leitor USB conectado ao computador.</p></>}
+      {state==='waiting' && <>{!nfcOnly && (manual ? <form className="inline-form" onSubmit={event=>{event.preventDefault();void read(code);}}><input aria-label="Código NFC ou matrícula" autoFocus autoComplete="off" placeholder="Código NFC ou matrícula" value={code} maxLength={255} required onChange={event=>setCode(event.target.value)}/><button className="button primary">Identificar crachá</button></form> : <button type="button" className="button secondary" onClick={()=>setManual(true)}><CreditCard size={18}/>Digitar código NFC ou matrícula</button>)}<p className="nfc-hint">Aproxime o crachá do leitor USB conectado ao computador.{nfcOnly && ' A leitura do crachá é obrigatória para devolver materiais.'}</p></>}
     </motion.section>
   </div>,document.body);
 }

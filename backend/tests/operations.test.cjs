@@ -48,7 +48,7 @@ after(async () => { if(server)await new Promise(resolve=>server.close(resolve));
 
 test('migrations preservam dados, são repetíveis e criam restrições', async () => {
   await runMigrations(); assert.equal((await queryOne('SELECT nome FROM colaboradores WHERE id=?',[collaborator])).nome,'Pessoa de teste');
-  assert.equal((await query('SELECT * FROM schema_migrations')).length,5);
+  assert.equal((await query('SELECT * FROM schema_migrations')).length,6);
   if(!mysqlMode)assert.deepEqual(await query('PRAGMA foreign_key_check'),[]);
 });
 test('conformidade nunca presume ausência de requisitos como conforme', async () => {
@@ -123,6 +123,24 @@ test('pendência de 24h não declara perda; ocorrências e devolução preservam
   assert.equal((await queryOne('SELECT situacao FROM extravios')).situacao,'DEVOLVIDO');
   assert.equal((await queryOne("SELECT COUNT(*) AS n FROM auditoria WHERE entidade='extravio'")).n,3);
 });
+test('relatórios bloqueiam os dois perfis de operador e mantêm acesso dos demais perfis', async () => {
+  try {
+    for (const role of ['OPERADOR', 'OPERADOR_ESTOQUE']) {
+      await query('UPDATE usuarios SET nivel_acesso=? WHERE id=?', [role, operator]);
+      for (const route of ['relatorios/resumo', 'relatorios/excel', 'relatorios/pdf/em-uso']) {
+        assert.equal((await request(route, 'GET', undefined, tokens.operator)).status, 403);
+      }
+    }
+    for (const role of ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO', 'CONSULTA']) {
+      await query('UPDATE usuarios SET nivel_acesso=? WHERE id=?', [role, admin]);
+      assert.equal((await request('relatorios/resumo')).status, 200);
+    }
+  } finally {
+    await query("UPDATE usuarios SET nivel_acesso='OPERADOR' WHERE id=?", [operator]);
+    await query("UPDATE usuarios SET nivel_acesso='ADMINISTRADOR' WHERE id=?", [admin]);
+  }
+});
+
 test('API aplica permissões, revoga conta inativa e não expõe fotos sem autenticação', async () => {
   assert.equal((await request('operacao/acessos','POST',{tipo:'ENTRADA',colaborador_id:collaborator},tokens.consultation)).status,403);
   assert.equal((await request('colaboradores','POST',{nome:'Invasão',matricula:'DENIED'},tokens.operator)).status,403);
