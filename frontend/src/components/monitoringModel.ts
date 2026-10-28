@@ -11,6 +11,9 @@ export interface MonitorPerson {
   entrada: string | null;
   horario_inconsistente: boolean;
   brigadista: boolean;
+  destino?: string;
+  brigada_especialidade?: string;
+  brigada_validade?: string | null;
 }
 export interface MonitorBrigadist {
   colaborador_id: number;

@@ -33,7 +33,7 @@
     linear-gradient(180deg, #10072408 0, #10072408 30%, #100724b5 76%, #100724 100%),
     linear-gradient(90deg, #190936e8, #1b0a3d8a 46%, #13072408 82%),
     url('/images/mina-navegacao.webp');
-  background-position: center top;
+  background-position: center clamp(-150px, -8vw, -80px);
   background-size: 100% 33.35vw, 100% 33.35vw, 100% auto;
   background-repeat: no-repeat;
 }
@@ -134,7 +134,7 @@
 @media (max-width: 1050px) {
   .home-intro { flex-direction: column; gap: 16px; padding-top: 10px; }
   .home-connection { align-self: flex-start; }
-  .home-workspace::before { background-size: 100% 500px, 100% 500px, auto 500px; background-position: center top, center top, 60% top; }
+  .home-workspace::before { background-size: 100% 500px, 100% 500px, auto 500px; background-position: center -70px, center -70px, 60% -70px; }
   .home-module-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .home-operation { align-items: flex-start; gap: 16px; padding: 24px 20px; }
   .home-operation-icon { width: 54px; height: 58px; border-radius: 16px; }
@@ -156,7 +156,7 @@
   .operator-home .operator-topbar { min-height: 65px; padding-inline: 16px; }
   .operator-home .operator-topbar img { height: 27px; max-width: 80px; }
   .home-workspace { padding: 24px 16px 18px; gap: 22px; }
-  .home-workspace::before { background-position: center top, center top, 65% top; }
+  .home-workspace::before { background-position: center -45px, center -45px, 65% -45px; }
   .home-eyebrow { font-size: 11px; letter-spacing: 1px; }
   .navigation-panel .home-intro h2 { font-size: 32px; letter-spacing: -.7px; }
   .home-operation { align-items: flex-start; min-height: 195px; gap: 15px; padding: 24px 17px; border-left-width: 6px; border-radius: 16px; }

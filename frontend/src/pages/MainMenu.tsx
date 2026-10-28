@@ -14,6 +14,7 @@ export function MainMenu({ user }: { user: Usuario }) {
   const summary = useResource<Summary | null>('/operacao/resumo', {}, null);
   const operator = canAccessMaterialOperations(user.nivel_acesso);
   const manager = ['ADMINISTRADOR', 'SUPERVISOR'].includes(user.nivel_acesso);
+  const welcomeTitle = user.nivel_acesso === 'OPERADOR' ? 'Operador de Balcão' : user.nivel_acesso === 'OPERADOR_ESTOQUE' ? 'Operador de Estoque' : user.nome;
   const modules = [
     ...(canAccessRegistration(user.nivel_acesso) ? [{ to: '/cadastro', title: 'Cadastros', description: 'Pessoas, materiais e identificação NFC.', icon: ClipboardList }] : []),
     { to: '/estoque', title: 'Estoque & consultas', description: 'Disponibilidade, categorias e conferência.', icon: Boxes },
@@ -32,7 +33,7 @@ export function MainMenu({ user }: { user: Usuario }) {
 
   return <div className="navigation-panel home-workspace">
     <header className="home-intro">
-      <div><span className="home-eyebrow">BEM-VINDO, {user.nome.split(' ')[0]}</span><h2>Painel de Operações Subterrâneas</h2><p>Controle rápido e seguro de equipamentos, materiais e kits.</p></div>
+      <div><span className="home-eyebrow">BEM-VINDO</span><h2>{welcomeTitle}</h2><p>Controle rápido e seguro de equipamentos, materiais e kits.</p></div>
       <span role="status" className={'home-connection ' + (connection.error ? 'offline' : connection.data.conectado ? 'online' : 'waiting')}><i />{connection.error ? 'Sem comunicação com o servidor' : connection.data.conectado ? 'Sistema conectado' : 'Verificando conexão'}</span>
     </header>
 

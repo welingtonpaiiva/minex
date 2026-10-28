@@ -2,12 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../services/api';
 import { MonitoringSnapshot } from '../components/monitoringModel';
 
-export function useMineMonitoring() {
+export function useMineMonitoring(enabled = true) {
   const [snapshot, setSnapshot] = useState<MonitoringSnapshot | null>(null);
   const [error, setError] = useState(''), [now, setNow] = useState(Date.now());
   const [lastUpdate, setLastUpdate] = useState<number | null>(null);
   const clock = useRef({ server: Date.now(), local: performance.now() });
   useEffect(() => {
+    if (!enabled) {
+      setNow(Date.now());
+      const tick = setInterval(() => setNow(Date.now()), 1000);
+      return () => clearInterval(tick);
+    }
     let active = true, inFlight = false, failures = 0, timer: ReturnType<typeof setTimeout> | undefined;
     const controller = new AbortController();
     const refresh = async () => {
@@ -39,7 +44,7 @@ export function useMineMonitoring() {
       window.removeEventListener('operacao-atualizada', refresh); window.removeEventListener('online', resume);
       document.removeEventListener('visibilitychange', resume);
     };
-  }, []);
+  }, [enabled]);
   return { snapshot, error, now, lastUpdate };
 }
 
@@ -71,5 +76,5 @@ export function useMonitoringPhotos(sources: string[]) {
     return () => { active = false; controller.abort(); };
   }, [key]);
   useEffect(() => () => { cache.current.forEach(url => URL.revokeObjectURL(url)); cache.current.clear(); }, []);
-  return (source: string) => source?.startsWith('data:image/') ? source : cache.current.get(source) || '';
+  return (source: string) => source?.startsWith('data:image/') || /^\/images\/demonstracao-equipe\.webp#portrait-[0-7]$/.test(source || '') ? source : cache.current.get(source) || '';
 }

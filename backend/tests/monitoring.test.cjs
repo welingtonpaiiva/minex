@@ -85,3 +85,29 @@ test('migração é repetível e não altera as fotos ou registros de acesso exi
   assert.deepEqual(await query('SELECT * FROM acessos_mina ORDER BY id'), before);
   assert.equal((await collaborators.buscarPorId(brigade.id)).brigadista, 1);
 });
+
+test('perfil usa o identificador, separa presença e histórico e exige autenticação sem gravar dados', async () => {
+  const before = await query('SELECT * FROM acessos_mina ORDER BY id');
+  const url = base + '/api/operacao/monitoramento/perfil/' + brigade.id;
+  assert.equal((await fetch(url)).status, 401);
+  const headers = { Authorization: 'Bearer ' + token };
+  const response = await fetch(url, { headers });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  const profile = await response.json();
+  assert.equal(profile.colaborador.id, brigade.id);
+  assert.equal(profile.colaborador.matricula, brigade.matricula);
+  assert.equal(profile.colaborador.brigadista, true);
+  assert.ok(profile.acesso_ativo);
+  assert.equal(profile.historico.length, 1);
+  assert.equal(profile.historico[0].em_aberto, true);
+  assert.equal(profile.historico[0].operador_entrada, 'Monitor');
+  assert.equal(profile.colaborador.nfc_id, undefined);
+  const absent = await (await fetch(base + '/api/operacao/monitoramento/perfil/' + outside.id, { headers })).json();
+  assert.equal(absent.acesso_ativo, null);
+  assert.equal(absent.historico[0].em_aberto, false);
+  assert.ok(absent.historico[0].saida);
+  assert.equal((await fetch(base + '/api/operacao/monitoramento/perfil/99999999', { headers })).status, 404);
+  assert.equal((await fetch(base + '/api/operacao/monitoramento/perfil/-1001', { headers })).status, 400);
+  assert.deepEqual(await query('SELECT * FROM acessos_mina ORDER BY id'), before);
+});

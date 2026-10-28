@@ -1,13 +1,22 @@
 # Painel de monitoramento da mina
 
-`/dashboard` é uma tela passiva autenticada: não tem navegação, simulação, filtros ou ações de escrita. O registro operacional permanece em `/acessos`.
+`/dashboard` é uma tela autenticada de consulta, com atalhos ao menu e a Acesso à Mina, demonstração e modo TV. O registro operacional permanece em `/acessos`; o dashboard não grava entradas ou saídas.
+
+## Navegação, perfis e demonstração
+
+- Dashboard e Acesso à Mina consultam `/api/operacao/monitoramento`: os registros, horários e o limite visual de seis horas são os mesmos nas duas telas. As regras de autorização para registrar entradas e saídas foram preservadas.
+- Clicar no cartão de uma pessoa ou brigadista abre o perfil, inclusive em modo TV. O perfil mostra foto, matrícula, empresa, turma, brigada, presença e os dez últimos acessos. `GET /api/operacao/monitoramento/perfil/:id` exige autenticação, não retorna o identificador NFC e não grava dados.
+- O perfil oferece um atalho à mesma pessoa em Acesso à Mina. Essa tela também permite abrir perfis e retornar ao dashboard.
+- **Dados de teste** ativa uma demonstração com 25 pessoas, quatro permanências críticas, três brigadistas presentes e fotografias fictícias. O modo é identificado permanentemente na tela. Seus identificadores são negativos e não correspondem a cadastros reais. Não há importação, inserção ou simulação de acessos no banco, nem consulta de perfis fictícios à API. **Voltar aos dados reais** retoma a consulta autenticada.
+- **Modo TV** usa a área inteira da tela e solicita tela cheia do navegador quando disponível. Os controles se ocultam após três segundos; aproximar o ponteiro do topo ou usar o teclado permite sair. `Esc` fecha o perfil ou sai do modo TV. O modo teste pode ser apresentado na TV e mantém sua identificação visível.
+- Links diretos: `/dashboard?demo=1` para demonstração, `/dashboard?tv=1` para apresentação real e `/dashboard?demo=1&tv=1` para apresentação fictícia. Todos continuam exigindo login.
 
 ## Dados e relógio
 
 - A consulta `GET /api/operacao/monitoramento` usa os registros abertos de `acessos_mina`, vinculados ao identificador do colaborador.
 - A posição é consultada a cada 10 segundos, sem consultas sobrepostas. Em falhas, há reconexão automática entre 5 e 30 segundos e sinalização de dados desatualizados.
 - O relógio e os contadores compartilham uma atualização local a cada segundo, ancorada no horário recebido do servidor. A apresentação usa `APP_TIMEZONE` (padrão: `America/Sao_Paulo`), independentemente do fuso do navegador.
-- Até `06h00m00s`, a permanência está dentro do limite visual. A partir de `06h00m01s`, o cartão fica crítico. A classificação do painel não grava dados nem modifica a autorização de entrada/saída ou os alertas legados das outras telas.
+- Até `06h00m00s`, a permanência está dentro do limite visual. A partir de `06h00m01s`, o cartão fica crítico. A classificação do dashboard e de Acesso à Mina não grava dados nem modifica a autorização de entrada/saída. O alerta de apoio legado do cabeçalho geral continua com seu limite anterior.
 - Horários ausentes, inválidos ou incompatíveis são identificados como inconsistentes e não são contabilizados como permanência normal.
 
 ## Cadastros e fotografias
@@ -28,7 +37,7 @@ O painel calcula a capacidade da tela e alterna automaticamente as páginas regu
 
 Se a quantidade de registros prioritários exceder a capacidade física da tela, o rodapé informa **capacidade visual excedida**. Nesse caso, a lista prioritária percorre automaticamente a área disponível, sem incluir essas pessoas na paginação regular e sem reduzir indefinidamente os cartões. Não é possível manter um número ilimitado de cartões simultaneamente legíveis em uma única TV. O alerta e os totais permanecem visíveis.
 
-O dashboard ocupa toda a área do navegador. Para ocultar a interface do próprio navegador, utilizar a configuração de quiosque/tela cheia do equipamento; o painel não depende de um botão de tela cheia.
+O dashboard adapta a capacidade de cartões ao espaço disponível. Em modo TV, ocupa toda a área do navegador e preserva a rotação automática; abrir um perfil pausa a troca regular de páginas até o fechamento.
 
 ## Validação
 

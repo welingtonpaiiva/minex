@@ -32,3 +32,26 @@ export async function monitoringOverview() {
     };
   });
 }
+
+export async function monitoringProfile(collaboratorId: number) {
+  return withTransaction(async execute => {
+    const [person] = await execute(`SELECT id, nome, matricula, cargo, setor, foto_url, empresa, turma, status,
+      brigadista, brigada_especialidade, brigada_validade FROM colaboradores WHERE id = ?`, [collaboratorId]);
+    if (!person) return null;
+    const history = await execute(`SELECT a.id, a.entrada, a.saida, a.destino,
+      entrada.nome AS operador_entrada, saida.nome AS operador_saida FROM acessos_mina a
+      LEFT JOIN usuarios entrada ON entrada.id = a.operador_entrada_id
+      LEFT JOIN usuarios saida ON saida.id = a.operador_saida_id
+      WHERE a.colaborador_id = ? ORDER BY a.id DESC LIMIT 10`, [collaboratorId]);
+    const asIso = (value: string | null) => {
+      if (!value) return null;
+      const timestamp = instant(value);
+      return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
+    };
+    const normalized = history.map(entry => ({ ...entry, entrada: asIso(entry.entrada), saida: asIso(entry.saida), em_aberto: !entry.saida }));
+    // Query presence independently of the limited history, including legacy records.
+    const [active] = await execute('SELECT id, entrada, destino FROM acessos_mina WHERE colaborador_id = ? AND saida IS NULL ORDER BY id DESC LIMIT 1', [collaboratorId]);
+    return { colaborador: { ...person, brigadista: Number(person.brigadista) === 1 },
+      acesso_ativo: active ? { ...active, entrada: asIso(active.entrada) } : null, historico: normalized };
+  });
+}

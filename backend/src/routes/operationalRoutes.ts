@@ -3,7 +3,7 @@ import { authMiddleware, AuthenticatedRequest, requireRole } from '../middleware
 import { query, queryOne, withTransaction, databaseClient, lockRow } from '../config/db';
 import { audit, id, text, roles, operationRoles, trainingRoles, pagination, getCompliance, saveTraining, mineAccess, mineOverview, listLosses, updateLoss } from '../services/OperationalService';
 import { today, dayBoundary } from '../utils/time';
-import { monitoringOverview } from '../services/MonitoringService';
+import { monitoringOverview, monitoringProfile } from '../services/MonitoringService';
 const router = Router();
 router.use(authMiddleware);
 const handle = (fn: (req: AuthenticatedRequest, res: Response) => Promise<unknown>) =>
@@ -12,6 +12,12 @@ router.get('/status', handle(async (_req, res) => { await query('SELECT 1'); res
 router.get('/monitoramento', handle(async (_req, res) => {
   res.setHeader('Cache-Control', 'private, no-store');
   res.json(await monitoringOverview());
+}));
+router.get('/monitoramento/perfil/:id', handle(async (req, res) => {
+  res.setHeader('Cache-Control', 'private, no-store');
+  const profile = await monitoringProfile(id(req.params.id));
+  if (!profile) { res.status(404).json({ error: 'Colaborador não encontrado' }); return; }
+  res.json(profile);
 }));
 router.get('/resumo', handle(async (_req, res) => {
   const summary = await queryOne(`SELECT

@@ -14,6 +14,15 @@ router.get('/monitoramento', handle(async (_req, res) => {
     res.setHeader('Cache-Control', 'private, no-store');
     res.json(await (0, MonitoringService_1.monitoringOverview)());
 }));
+router.get('/monitoramento/perfil/:id', handle(async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    const profile = await (0, MonitoringService_1.monitoringProfile)((0, OperationalService_1.id)(req.params.id));
+    if (!profile) {
+        res.status(404).json({ error: 'Colaborador não encontrado' });
+        return;
+    }
+    res.json(profile);
+}));
 router.get('/resumo', handle(async (_req, res) => {
     const summary = await (0, db_1.queryOne)(`SELECT
     (SELECT COUNT(*) FROM (SELECT colaborador_id FROM emprestimos
