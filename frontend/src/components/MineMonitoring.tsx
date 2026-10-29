@@ -37,6 +37,14 @@ export function MineMonitoring() {
   const [profileId, setProfileId] = useState<number | null>(null);
   const [controlsVisible, setControlsVisible] = useState(true);
   const nativeFullscreen = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (nativeFullscreen.current && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    };
+  }, []);
   function changeMode(key: string, active: boolean) {
     setParams(current => { const next = new URLSearchParams(current); if (active) next.set(key, '1'); else next.delete(key); return next; });
   }
@@ -49,7 +57,10 @@ export function MineMonitoring() {
   }
   function enterTv() {
     setProfileId(null); changeMode('tv', true);
-    void document.documentElement.requestFullscreen?.().catch(() => {});
+    void document.documentElement.requestFullscreen?.().then(() => {
+      nativeFullscreen.current = true;
+      if (!mounted.current && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    }).catch(() => {});
   }
   useEffect(() => {
     const fullscreen = () => { if (document.fullscreenElement) nativeFullscreen.current = true; else if (nativeFullscreen.current) { nativeFullscreen.current = false; changeMode('tv', false); } };
@@ -107,18 +118,17 @@ export function MineMonitoring() {
   const brigadePages = Math.max(1, Math.ceil((brigade?.presentes.length || 0) / brigadeCapacity));
   const brigadeVisible = brigade?.presentes.slice((brigadePage % brigadePages) * brigadeCapacity, ((brigadePage % brigadePages) + 1) * brigadeCapacity) || [];
   const photo = useMonitoringPhotos([...selection.visible.map(person => person.foto_url), ...brigadeVisible.map(person => person.foto_url)]);
+  useEffect(() => { if (grid.current) grid.current.scrollTop = 0; }, [selection.overflow, selection.fixedCount]);
   useEffect(() => {
     const region = grid.current;
-    if (!region) return;
-    region.scrollTop = 0;
-    if (!selection.overflow) return;
+    if (!region || !selection.overflow || profileId !== null) return;
     // A saturated display is identified explicitly; critical records never join regular pagination.
     const timer = setInterval(() => {
       region.scrollTo({ top: region.scrollTop + region.clientHeight >= region.scrollHeight - 4 ? 0 : region.scrollTop + region.clientHeight - 12,
         behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
     }, ROTATION_MS);
     return () => clearInterval(timer);
-  }, [selection.overflow, selection.fixedCount]);
+  }, [selection.overflow, selection.fixedCount, profileId]);
   const metrics = [
     { label: 'COLABORADORES NA MINA', value: people.length, icon: UsersRound, tone: 'purple' },
     { label: 'DENTRO DO LIMITE', note: '(≤ 6 HORAS)', value: normal, icon: CheckCircle2, tone: 'green' },

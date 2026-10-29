@@ -15,6 +15,7 @@
 
 - A consulta `GET /api/operacao/monitoramento` usa os registros abertos de `acessos_mina`, vinculados ao identificador do colaborador.
 - A posição é consultada a cada 10 segundos, sem consultas sobrepostas. Em falhas, há reconexão automática entre 5 e 30 segundos e sinalização de dados desatualizados.
+- Uma operação registrada em outra aba da mesma aplicação sinaliza a atualização imediatamente, inclusive para um perfil que esteja aberto. A sinalização usa apenas um marcador no armazenamento do navegador; cada aba consulta a API com sua autenticação. Se uma consulta já estiver em andamento, uma nova consulta é executada assim que ela terminar. Na ausência de armazenamento disponível, a consulta periódica continua funcionando. O modo de demonstração ignora esses avisos.
 - O relógio e os contadores compartilham uma atualização local a cada segundo, ancorada no horário recebido do servidor. A apresentação usa `APP_TIMEZONE` (padrão: `America/Sao_Paulo`), independentemente do fuso do navegador.
 - Até `06h00m00s`, a permanência está dentro do limite visual. A partir de `06h00m01s`, o cartão fica crítico. A classificação do dashboard e de Acesso à Mina não grava dados nem modifica a autorização de entrada/saída. O alerta de apoio legado do cabeçalho geral continua com seu limite anterior.
 - Horários ausentes, inválidos ou incompatíveis são identificados como inconsistentes e não são contabilizados como permanência normal.
@@ -37,8 +38,8 @@ O painel calcula a capacidade da tela e alterna automaticamente as páginas regu
 
 Se a quantidade de registros prioritários exceder a capacidade física da tela, o rodapé informa **capacidade visual excedida**. Nesse caso, a lista prioritária percorre automaticamente a área disponível, sem incluir essas pessoas na paginação regular e sem reduzir indefinidamente os cartões. Não é possível manter um número ilimitado de cartões simultaneamente legíveis em uma única TV. O alerta e os totais permanecem visíveis.
 
-O dashboard adapta a capacidade de cartões ao espaço disponível. Em modo TV, ocupa toda a área do navegador e preserva a rotação automática; abrir um perfil pausa a troca regular de páginas até o fechamento.
+O dashboard adapta a capacidade de cartões ao espaço disponível. Em modo TV, ocupa toda a área do navegador e preserva a rotação automática; abrir um perfil pausa a troca de páginas e a rolagem da lista prioritária até o fechamento. Navegar do perfil para Acesso à Mina encerra a tela cheia do navegador.
 
 ## Validação
 
-Os testes cobrem horários legados, limite exato de seis horas, ordenação/paginação, presença versus habilitação, entradas/saídas, autenticação, ausência de escritas, falhas/reconexão e apresentação em Full HD, 4K e tablet. Dados de demonstração só existem em bancos temporários isolados dos testes.
+Os testes cobrem horários legados, limite exato de seis horas, ordenação/paginação, presença versus habilitação, entradas/saídas, autenticação, ausência de escritas pelo dashboard, sincronização entre abas, atualização durante consultas em andamento, falhas/reconexão e apresentação em Full HD, 4K e tablet. A demonstração da interface existe apenas na memória do navegador. Os acessos usados nos testes automatizados pertencem a bancos temporários isolados.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../services/api';
 import { MonitoringSnapshot } from '../components/monitoringModel';
+import { subscribeOperationUpdates } from '../services/operationUpdates';
 
 export function useMineMonitoring(enabled = true) {
   const [snapshot, setSnapshot] = useState<MonitoringSnapshot | null>(null);
@@ -13,10 +14,12 @@ export function useMineMonitoring(enabled = true) {
       const tick = setInterval(() => setNow(Date.now()), 1000);
       return () => clearInterval(tick);
     }
-    let active = true, inFlight = false, failures = 0, timer: ReturnType<typeof setTimeout> | undefined;
+    let active = true, inFlight = false, pendingUpdate = false, failures = 0, timer: ReturnType<typeof setTimeout> | undefined;
     const controller = new AbortController();
     const refresh = async () => {
-      if (!active || inFlight) return;
+      if (!active) return;
+      if (inFlight) { pendingUpdate = true; return; }
+      pendingUpdate = false;
       clearTimeout(timer); inFlight = true;
       const started = performance.now();
       try {
@@ -31,17 +34,18 @@ export function useMineMonitoring(enabled = true) {
         if (active) { failures++; setError('Conexão interrompida. Os dados exibidos podem estar desatualizados.'); }
       } finally {
         inFlight = false;
-        if (active) timer = setTimeout(refresh, Math.min(30000, failures ? 5000 * failures : 10000));
+        if (active) timer = setTimeout(refresh, pendingUpdate ? 0 : Math.min(30000, failures ? 5000 * failures : 10000));
       }
     };
     const resume = () => { if (!document.hidden) void refresh(); };
     const tick = setInterval(() => setNow(clock.current.server + performance.now() - clock.current.local), 1000);
     void refresh();
-    window.addEventListener('operacao-atualizada', refresh); window.addEventListener('online', resume);
+    const unsubscribe = subscribeOperationUpdates(() => { void refresh(); });
+    window.addEventListener('online', resume);
     document.addEventListener('visibilitychange', resume);
     return () => {
       active = false; controller.abort(); clearTimeout(timer); clearInterval(tick);
-      window.removeEventListener('operacao-atualizada', refresh); window.removeEventListener('online', resume);
+      unsubscribe(); window.removeEventListener('online', resume);
       document.removeEventListener('visibilitychange', resume);
     };
   }, [enabled]);

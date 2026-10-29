@@ -19,7 +19,7 @@ const artifacts = path.resolve(__dirname, '../../test-results');
 
 (async () => {
   await runMigrations();
-  const user = { nome: 'Monitor de teste', matricula: 'MONITOR-TV', nivel_acesso: 'CONSULTA' };
+  const user = { nome: 'Monitor de teste', matricula: 'MONITOR-TV', nivel_acesso: 'OPERADOR' };
   user.id = (await query('INSERT INTO usuarios (nome, matricula, senha_hash, nivel_acesso) VALUES (?, ?, ?, ?)',
     [user.nome, user.matricula, 'unused', user.nivel_acesso]))[0].id;
   const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET), people = [];
@@ -91,6 +91,13 @@ const artifacts = path.resolve(__dirname, '../../test-results');
   await page.waitForTimeout(12500);
   assert.equal(await page.locator('.mine-grid-region').evaluate(node => node.scrollTop > 0), true, 'A lista prioritária saturada deve percorrer a tela automaticamente');
   await expect(page.locator('.mine-access-card.is-critical')).toHaveCount(25);
+  await page.locator('.mine-access-card.is-critical .mine-open-profile').first().click();
+  const priorityProfile = page.getByRole('dialog', { name: 'Perfil do colaborador', exact: true });
+  await expect(priorityProfile.locator('.mine-profile')).toBeVisible();
+  const pausedPosition = await page.locator('.mine-grid-region').evaluate(node => node.scrollTop);
+  await page.waitForTimeout(12500);
+  assert.equal(await page.locator('.mine-grid-region').evaluate(node => node.scrollTop), pausedPosition, 'A lista prioritária deve parar enquanto um perfil estiver aberto');
+  await priorityProfile.getByRole('button', { name: 'Fechar', exact: true }).click();
   for (const entry of originalEntries) await query('UPDATE acessos_mina SET entrada=? WHERE id=?', [entry.entrada, entry.id]);
   await query('UPDATE acessos_mina SET saida=?, ativo_colaborador_id=NULL WHERE colaborador_id=?', [new Date().toISOString(), people[0].id]);
   await page.evaluate(() => window.dispatchEvent(new Event('operacao-atualizada')));
@@ -128,6 +135,8 @@ const artifacts = path.resolve(__dirname, '../../test-results');
     assert.equal(index === 1 ? pixel[0] > pixel[2] : pixel[2] > pixel[0], true);
   }
   const realRecords = await query('SELECT * FROM acessos_mina ORDER BY id');
+  await page.getByRole('button', { name: 'Modo TV', exact: true }).click();
+  await expect(page.locator('.mine-monitor')).toHaveAttribute('data-view-mode', 'tv');
   await page.locator(`[data-person-id="${people[1].id}"] .mine-open-profile`).click();
   const profile = page.getByRole('dialog', { name: 'Perfil do colaborador', exact: true });
   await expect(profile.getByText(people[1].matricula, { exact: true })).toBeVisible();
@@ -135,6 +144,7 @@ const artifacts = path.resolve(__dirname, '../../test-results');
   await page.screenshot({ path: path.join(artifacts, 'mine-monitoring-profile.png') });
   await profile.getByRole('button', { name: 'Ver em Acesso à Mina', exact: true }).click();
   await expect(page).toHaveURL(new RegExp('/acessos\\?colaborador=' + people[1].id));
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement === null)).toBe(true);
   await expect(profile.getByText(people[1].matricula, { exact: true })).toBeVisible();
   await profile.getByRole('button', { name: 'Fechar', exact: true }).click();
   await expect(page.getByText('Permanência acima de 6h', { exact: true })).toBeVisible();
@@ -191,8 +201,45 @@ const artifacts = path.resolve(__dirname, '../../test-results');
   assert.equal(saved.brigadista, 1); assert.equal(saved.empresa, 'Empresa validada no cadastro'); assert.equal(saved.turma, 'D');
   assert.equal(saved.brigada_validade, '2099-12-31');
   await adminContext.close();
+
+  // A registered exit in another tab must update the dashboard and its open profile.
+  // Hold an older response to also verify updates aren't lost during an active request.
+  const desk = await context.newPage();
+  desk.on('pageerror', error => errors.push(error.message));
+  await desk.goto(base + '/acessos');
+  const departing = desk.getByRole('row').filter({ hasText: people[2].matricula });
+  await expect(departing.getByRole('button', { name: 'Registrar saída', exact: true })).toBeVisible();
+  await page.locator(`[data-person-id="${people[2].id}"] .mine-open-profile`).click();
+  await expect(profile.getByText('NA MINA', { exact: true })).toBeVisible();
+  const demoTab = await context.newPage(), demoRequests = [];
+  demoTab.on('request', request => { if (request.url().includes('/api/operacao/monitoramento')) demoRequests.push(request.url()); });
+  await demoTab.goto(base + '/dashboard?demo=1');
+  await expect(demoTab.locator('.mine-monitor')).toHaveAttribute('data-monitor-state', 'demo');
+  let releaseResponse, capturedResponse, held = false;
+  const hold = new Promise(resolve => { releaseResponse = resolve; });
+  const captured = new Promise(resolve => { capturedResponse = resolve; });
+  await page.route('**/api/operacao/monitoramento', async route => {
+    if (held) { await route.continue(); return; }
+    held = true;
+    const response = await route.fetch();
+    capturedResponse(); await hold; await route.fulfill({ response });
+  });
+  try {
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    await Promise.race([captured, page.waitForTimeout(5000).then(() => { throw new Error('A consulta de monitoramento não iniciou'); })]);
+    await departing.getByRole('button', { name: 'Registrar saída', exact: true }).click();
+    await expect(profile.getByText('FORA DA MINA', { exact: true })).toBeVisible({ timeout: 3000 });
+    releaseResponse();
+    await expect(page.getByRole('article', { name: 'COLABORADORES NA MINA', exact: true }).locator('strong')).toHaveText('23', { timeout: 3000 });
+    await expect(demoTab.getByRole('article', { name: 'COLABORADORES NA MINA', exact: true }).locator('strong')).toHaveText('25');
+    assert.deepEqual(demoRequests, [], 'A demonstração não consulta os dados reais ao receber atualizações de outra aba');
+  } finally {
+    releaseResponse(); await page.unroute('**/api/operacao/monitoramento'); await desk.close(); await demoTab.close();
+  }
+  await profile.getByRole('button', { name: 'Fechar', exact: true }).click();
+  assert.deepEqual(requests.filter(request => request.method !== 'GET'), [], 'A gravação pertence à tela de acesso; o dashboard permanece de consulta');
   assert.deepEqual(errors, []);
-  console.log('PASS: dados reais, perfis, integração com acesso, demonstração isolada com fotos, modo TV, brigada, limite, rotação, fuso, Full HD, 4K, tablet e reconexão.');
+  console.log('PASS: dados reais, perfis, sincronização entre abas sem perder atualizações, demonstração isolada, saída da tela cheia, pausa da rolagem, brigada, limite, Full HD, 4K, tablet e reconexão.');
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(async () => {
   if (browser) await browser.close(); if (server) await new Promise(resolve => server.close(resolve)); await closeDatabase();
 });
