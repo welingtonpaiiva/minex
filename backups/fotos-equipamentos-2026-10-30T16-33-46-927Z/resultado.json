@@ -1,0 +1,96 @@
+{
+  "banco": "C:\\Users\\v-welingtonpaiva\\Downloads\\MineX\\minex\\minex\\minex.db",
+  "backup": "C:\\Users\\v-welingtonpaiva\\Downloads\\MineX\\minex\\minex\\backups\\fotos-equipamentos-2026-10-30T16-33-46-927Z\\minex-antes-fotos.db",
+  "atualizados": 50,
+  "changes": [
+    {
+      "modelo": "Medidor de gás",
+      "foto_url": "/images/equipamentos/medidor-gas.png",
+      "atualizados": 50,
+      "codigos": [
+        "MG-001",
+        "MG-002",
+        "MG-003",
+        "MG-004",
+        "MG-005",
+        "MG-006",
+        "MG-007",
+        "MG-008",
+        "MG-009",
+        "MG-010",
+        "MG-011",
+        "MG-012",
+        "MG-013",
+        "MG-014",
+        "MG-015",
+        "MG-016",
+        "MG-017",
+        "MG-018",
+        "MG-019",
+        "MG-020",
+        "MG-021",
+        "MG-022",
+        "MG-023",
+        "MG-024",
+        "MG-025",
+        "MG-026",
+        "MG-027",
+        "MG-028",
+        "MG-029",
+        "MG-030",
+        "MG-031",
+        "MG-032",
+        "MG-033",
+        "MG-034",
+        "MG-035",
+        "MG-036",
+        "MG-037",
+        "MG-038",
+        "MG-039",
+        "MG-040",
+        "MG-041",
+        "MG-042",
+        "MG-043",
+        "MG-044",
+        "MG-045",
+        "MG-046",
+        "MG-047",
+        "MG-048",
+        "MG-049",
+        "MG-050"
+      ],
+      "sha256": "cf70169a571295c78b05b2e3d478bc9f3853ea3232ccd6347a98d7a4de25118c"
+    }
+  ],
+  "integridade": "Empréstimos, status, quantidades, colaboradores, kits e movimentações preservados.",
+  "before": {
+    "materiais": {
+      "total": 770,
+      "hash": "92d9b8e9c0244ba93a4c48c200ac0604e3f88a533b79812fe4399e15805b691c"
+    },
+    "emprestimos": {
+      "total": 26,
+      "hash": "59e8346a300aaf778b3875c87af7078f11e539168d5a2868a194a7959d8ae1c7"
+    },
+    "emprestimos_quantidade": {
+      "total": 0,
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "colaboradores": {
+      "total": 212,
+      "hash": "d8545c54117157a773393122becda819ce66c8fc4512e63ed081d07a5a2c7c44"
+    },
+    "movimentacoes": {
+      "total": 54,
+      "hash": "fdc6b6b24739f12813b1c8de7a08794361b9fb0c2f3ae5e0e733a31efd4c168b"
+    },
+    "kits": {
+      "total": 0,
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "kit_materiais": {
+      "total": 0,
+      "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  }
+}

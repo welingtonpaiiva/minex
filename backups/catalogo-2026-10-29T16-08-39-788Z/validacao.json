@@ -1,0 +1,22 @@
+{
+  "data": "2026-10-29",
+  "banco": "SQLite local",
+  "total": 770,
+  "lanternas": 300,
+  "codigos_unicos": 770,
+  "todos_patrimonio_mina_ug": true,
+  "historico_preservado": true,
+  "tabelas_operacionais_preservadas": [
+    "colaboradores",
+    "emprestimos",
+    "movimentacoes",
+    "extravios",
+    "emprestimos_quantidade",
+    "kits",
+    "kit_materiais"
+  ],
+  "integridade": "ok",
+  "paginas_etiquetas": 33,
+  "backup": "C:\\Users\\v-welingtonpaiva\\Downloads\\MineX\\minex\\minex\\backups\\catalogo-2026-10-29T16-08-39-788Z\\antes.db",
+  "etiquetas": "C:\\Users\\v-welingtonpaiva\\Downloads\\MineX\\minex\\minex\\backups\\catalogo-2026-10-29T16-08-39-788Z\\etiquetas-todos-mina-ug.pdf"
+}

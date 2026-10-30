@@ -1,0 +1,54 @@
+{
+  "verificado_em": "2026-10-27T13:01:02.448Z",
+  "tipo": "sqlite",
+  "banco": "C:\\Users\\v-welingtonpaiva\\Downloads\\MineX\\minex\\minex\\minex.db",
+  "total_materiais": 770,
+  "categorias": [
+    {
+      "categoria": "Baterias de Rádio",
+      "total": 150
+    },
+    {
+      "categoria": "Lanternas de Mineiro",
+      "total": 300
+    },
+    {
+      "categoria": "Medidores de Gás",
+      "total": 50
+    },
+    {
+      "categoria": "Mega Light",
+      "total": 100
+    },
+    {
+      "categoria": "Rádios",
+      "total": 120
+    },
+    {
+      "categoria": "Sinalizadores",
+      "total": 50
+    }
+  ],
+  "tags_unicas": 770,
+  "codigos_barras_externos": 0,
+  "integridade": "ok",
+  "backup": "C:\\Users\\v-welingtonpaiva\\Downloads\\MineX\\minex\\minex\\backups\\minex-verificado-2026-10-27T13-01-02-429Z.db",
+  "backup_bytes": 475136,
+  "backup_aberto_e_conferido": true,
+  "arquivos_ativos": [
+    {
+      "arquivo": "C:\\Users\\v-welingtonpaiva\\Downloads\\MineX\\minex\\minex\\minex.db",
+      "bytes": 192512
+    },
+    {
+      "arquivo": "C:\\Users\\v-welingtonpaiva\\Downloads\\MineX\\minex\\minex\\minex.db-wal",
+      "bytes": 1462632
+    },
+    {
+      "arquivo": "C:\\Users\\v-welingtonpaiva\\Downloads\\MineX\\minex\\minex\\minex.db-shm",
+      "bytes": 32768
+    }
+  ],
+  "total_colaboradores": 212,
+  "historico_movimentacoes": 10
+}
