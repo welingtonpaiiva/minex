@@ -12,27 +12,28 @@ const ReturnReadings_1 = require("./ReturnReadings");
 const pending = `WITH pendencias AS (
   SELECT e.id AS emprestimo_id, e.colaborador_id, e.material_id, 'INDIVIDUAL' AS tipo,
     m.nome AS material_nome, m.codigo_interno, m.codigo_barras, e.data_hora_saida AS retirada,
-    1 AS quantidade, e.kit_nome
+    1 AS quantidade, e.kit_nome, m.foto_url
   FROM emprestimos e JOIN materiais m ON m.id = e.material_id
   UNION ALL
-  SELECT e.id, e.colaborador_id, e.material_id, 'QUANTIDADE', m.nome, m.codigo_interno,
-    m.codigo_barras, e.retirada, e.quantidade - e.devolvida, NULL
+  SELECT e.id, e.colaborador_id, e.material_id, 'QUANTIDADE', m.nome, m.codigo_interno, m.codigo_barras,
+    e.retirada, e.quantidade - e.devolvida, NULL, m.foto_url
   FROM emprestimos_quantidade e JOIN materiais m ON m.id = e.material_id
   WHERE e.quantidade > e.devolvida
 )`;
 async function pendingReturns(filters) {
     const p = (0, OperationalService_1.pagination)(filters), term = '%' + String(filters.busca || '').trim().slice(0, 255) + '%';
+    const collaboratorId = filters.colaboradorId === undefined ? null : (0, OperationalService_1.id)(filters.colaboradorId);
     const people = `, pessoas AS (
     SELECT c.id, c.nome, c.matricula, c.setor, c.cargo, c.foto_url, c.status,
       MIN(p.retirada) AS primeira_retirada, COUNT(*) AS total_itens, SUM(p.quantidade) AS total_unidades
     FROM colaboradores c JOIN pendencias p ON p.colaborador_id = c.id
-    WHERE c.nome LIKE ? OR c.matricula LIKE ? OR c.setor LIKE ? OR EXISTS (
+    WHERE (? IS NULL OR c.id = ?) AND (c.nome LIKE ? OR c.matricula LIKE ? OR c.setor LIKE ? OR EXISTS (
       SELECT 1 FROM pendencias busca WHERE busca.colaborador_id = c.id
       AND (busca.material_nome LIKE ? OR busca.codigo_interno LIKE ? OR busca.codigo_barras LIKE ? OR busca.kit_nome LIKE ?)
-    )
+    ))
     GROUP BY c.id, c.nome, c.matricula, c.setor, c.cargo, c.foto_url, c.status
   )`;
-    const params = Array(7).fill(term);
+    const params = [collaboratorId, collaboratorId, ...Array(7).fill(term)];
     const totals = await (0, db_1.queryOne)(pending + people + ` SELECT COUNT(*) AS pessoas,
     COALESCE(SUM(total_itens), 0) AS itens, COALESCE(SUM(total_unidades), 0) AS unidades FROM pessoas`, params);
     const rows = await (0, db_1.query)(pending + people + ' SELECT * FROM pessoas ORDER BY primeira_retirada, nome, id LIMIT ? OFFSET ?', [...params, p.limit, p.offset]);
@@ -60,8 +61,7 @@ async function quickReturn(data, userId) {
         if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000000 || (item.tipo === 'INDIVIDUAL' && quantity !== 1)) {
             throw new Error('Quantidade de devolução inválida');
         }
-        return { tipo: item.tipo, emprestimoId: (0, OperationalService_1.id)(item.emprestimoId), quantidade: quantity,
-            codigoBarras: (0, OperationalService_1.text)(item.codigoBarras, 'Leitura do código de barras') };
+        return { tipo: item.tipo, emprestimoId: (0, OperationalService_1.id)(item.emprestimoId), quantidade: quantity };
     }).sort((a, b) => a.tipo.localeCompare(b.tipo) || a.emprestimoId - b.emprestimoId);
     if (new Set(items.map(item => item.tipo + ':' + item.emprestimoId)).size !== items.length)
         throw new Error('Há empréstimos repetidos na devolução');
@@ -86,7 +86,6 @@ async function quickReturn(data, userId) {
           JOIN materiais m ON m.id = e.material_id WHERE e.id = ? AND e.colaborador_id = ?` + db_1.lockRow, [item.emprestimoId, collaboratorId]);
                 if (!loan)
                     throw new Error('Um dos materiais já foi devolvido ou mudou de responsável. Atualize a lista e confira novamente.');
-                await (0, ReturnReadings_1.validateReturnBarcode)(loan.material_id, item.codigoBarras);
                 codes.push(loan.codigo_interno);
             }
             else {
@@ -94,7 +93,6 @@ async function quickReturn(data, userId) {
                 if (!loan || loan.quantidade - loan.devolvida < item.quantidade) {
                     throw new Error('A quantidade pendente mudou. Atualize a lista e confira os itens recebidos.');
                 }
-                await (0, ReturnReadings_1.validateReturnBarcode)(loan.material_id, item.codigoBarras);
             }
         }
         let step = 0;

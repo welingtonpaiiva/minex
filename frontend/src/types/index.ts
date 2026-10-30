@@ -39,7 +39,6 @@ export interface Material {
   id: number;
   nome: string;
   codigo_interno: string;
-  codigo_barras: string;
   categoria_id?: number;
   categoria_nome?: string;
   foto_url?: string;
@@ -64,7 +63,6 @@ export interface EmprestimoAtivo {
   material_id: number;
   material_nome: string;
   codigo_interno: string;
-  codigo_barras: string;
   categoria_nome?: string;
   operador_saida_nome?: string;
 }
@@ -103,7 +101,6 @@ export interface AlertaTurnoItem {
   material_id: number;
   material_nome: string;
   codigo_interno: string;
-  codigo_barras: string;
   categoria_nome?: string;
   minutos_em_uso: number;
   horas_em_uso: number;
@@ -120,10 +117,10 @@ export interface ResumoAlertasTurno {
   alertas: AlertaTurnoItem[];
 }
 export interface KitItem {
+  foto_url?: string;
   id: number;
   nome: string;
   codigo_interno: string;
-  codigo_barras: string;
   status: string;
   categoria_nome?: string;
 }
@@ -142,13 +139,13 @@ export interface Kit {
 }
 
 export interface PendingReturnItem {
+  foto_url?: string;
   emprestimo_id: number;
   colaborador_id: number;
   material_id: number;
   tipo: 'INDIVIDUAL' | 'QUANTIDADE';
   material_nome: string;
   codigo_interno: string;
-  codigo_barras: string;
   retirada: string;
   quantidade: number;
   kit_nome?: string;

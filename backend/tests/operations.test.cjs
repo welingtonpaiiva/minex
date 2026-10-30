@@ -48,7 +48,7 @@ after(async () => { if(server)await new Promise(resolve=>server.close(resolve));
 
 test('migrations preservam dados, são repetíveis e criam restrições', async () => {
   await runMigrations(); assert.equal((await queryOne('SELECT nome FROM colaboradores WHERE id=?',[collaborator])).nome,'Pessoa de teste');
-  assert.equal((await query('SELECT * FROM schema_migrations')).length,6);
+  assert.equal((await query('SELECT * FROM schema_migrations')).length,8);
   if(!mysqlMode)assert.deepEqual(await query('PRAGMA foreign_key_check'),[]);
 });
 test('conformidade nunca presume ausência de requisitos como conforme', async () => {

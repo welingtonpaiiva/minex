@@ -6,7 +6,7 @@ A branch `feat/nfc-verde-tipografia` contém o frontend, a função da API e a c
 
 - Conta Vercel conectada ao GitHub ou à integração Vercel nesta conversa.
 - Banco MySQL online, acessível pela Vercel e com TLS válido.
-- Dados atuais importados e migrations até a versão 5 aplicadas.
+- Dados atuais importados e migrations até a versão 7 aplicadas.
 
 O arquivo `minex.db` é uma cópia SQLite dos dados. O runtime da Vercel não mantém um disco persistente compartilhado entre as funções. Esse arquivo fica fora do pacote de publicação. As novas fotos ficam no MySQL, junto dos metadados; fotos antigas podem ser importadas e verificadas por SHA-256.
 

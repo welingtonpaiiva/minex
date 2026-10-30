@@ -42,7 +42,7 @@ export function MainMenu({ user }: { user: Usuario }) {
         <span className="home-operation-icon"><ArrowUpRight size={30} /></span><div><span className="home-action-label">RETIRADA RÁPIDA</span><h3>SAÍDA DE MATERIAL</h3><p>Identifique o colaborador e entregue equipamentos, materiais ou kits.</p><span className="home-action-link">Iniciar retirada<ArrowRight size={17} /></span></div><span className="home-operation-arrow" aria-hidden="true"><ArrowRight /></span>
       </motion.button>
       <motion.button className="home-operation return" whileHover={{ y: -2 }} whileTap={{ scale: .99 }} onClick={() => navigate('/entrada')}>
-        <span className="home-operation-icon"><ArrowDownLeft size={30} /></span><div><span className="home-action-label">DEVOLUÇÃO RÁPIDA</span><h3>ENTRADA DE MATERIAL</h3><p>Receba os materiais com conferência do crachá NFC e dos códigos de barras.</p><span className="home-action-link">Ver pessoas e devoluções<ArrowRight size={17} /></span></div><span className="home-operation-arrow" aria-hidden="true"><ArrowRight /></span>
+        <span className="home-operation-icon"><ArrowDownLeft size={30} /></span><div><span className="home-action-label">DEVOLUÇÃO RÁPIDA</span><h3>ENTRADA DE MATERIAL</h3><p>Receba os materiais identificando o colaborador pelo NFC e selecionando os itens devolvidos.</p><span className="home-action-link">Ver pessoas e devoluções<ArrowRight size={17} /></span></div><span className="home-operation-arrow" aria-hidden="true"><ArrowRight /></span>
       </motion.button>
     </section>}
 

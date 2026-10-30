@@ -3,10 +3,16 @@ import { MaterialOperation } from './MaterialOperation';
 import { QuantityOperation } from './QuantityOperation';
 import { KitOperation } from './KitOperation';
 import { QuickReturn } from './QuickReturn';
-import { Boxes, UsersRound } from 'lucide-react';
+import { CodeReturn } from './CodeReturn';
+import { Boxes, UsersRound, Search } from 'lucide-react';
+import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 
 export function OperationSwitch({ type }: { type: 'saida' | 'entrada' }) {
-  const [mode, setMode] = useState<'INDIVIDUAL' | 'QUANTIDADE' | 'KITS' | 'PESSOAS'>(type === 'entrada' ? 'PESSOAS' : 'INDIVIDUAL');
+  const [mode, setMode] = useState<'INDIVIDUAL' | 'QUANTIDADE' | 'KITS' | 'PESSOAS' | 'CODIGO'>(type === 'entrada' ? 'PESSOAS' : 'INDIVIDUAL');
+  const [incomingScan, setIncomingScan] = useState<{ code: string; sequence: number }>();
+  useBarcodeScanner({ enabled: type === 'entrada' && mode === 'PESSOAS', onRead: code => {
+    setIncomingScan(previous => ({ code, sequence: (previous?.sequence || 0) + 1 })); setMode('CODIGO');
+  } });
 
   return (
     <>
@@ -14,6 +20,7 @@ export function OperationSwitch({ type }: { type: 'saida' | 'entrada' }) {
         {type === 'entrada' && <button className={'tab ' + (mode === 'PESSOAS' ? 'active' : '')} onClick={() => setMode('PESSOAS')}>
           <UsersRound size={17} />Pessoas e materiais<span className="return-tab-badge">BAIXA RÁPIDA</span>
         </button>}
+        {type === 'entrada' && <button className={'tab ' + (mode === 'CODIGO' ? 'active' : '')} onClick={() => { setIncomingScan(undefined); setMode('CODIGO'); }}><Search size={17}/>Devolver por código</button>}
         <button
           className={'tab ' + (mode === 'INDIVIDUAL' ? 'active' : '')}
           onClick={() => setMode('INDIVIDUAL')}
@@ -45,6 +52,8 @@ export function OperationSwitch({ type }: { type: 'saida' | 'entrada' }) {
         <MaterialOperation type={type} />
       ) : mode === 'QUANTIDADE' ? (
         <QuantityOperation type={type} />
+      ) : mode === 'CODIGO' ? (
+        <CodeReturn incomingScan={incomingScan}/>
       ) : mode === 'PESSOAS' ? (
         <QuickReturn />
       ) : (

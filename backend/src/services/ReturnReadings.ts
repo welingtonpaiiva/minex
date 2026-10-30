@@ -11,20 +11,3 @@ export async function validateReturnNfc(collaboratorId: number, reading: unknown
   }
   return code;
 }
-
-export async function validateReturnBarcode(materialId: number, reading: unknown) {
-  const code = text(reading, 'Leitura do código de barras');
-  const material = await queryOne('SELECT codigo_barras FROM materiais WHERE id = ?' + lockRow, [id(materialId)]);
-  if (!material?.codigo_barras || material.codigo_barras !== code) throw new Error('Leia o código de barras do material que está sendo devolvido.');
-  return code;
-}
-
-export async function validateReturnBarcodes(readings: unknown) {
-  if (!Array.isArray(readings) || !readings.length || readings.length > 100) throw new Error('Leia os códigos de barras dos materiais recebidos.');
-  for (const reading of readings) {
-    const code = text(reading, 'Leitura do código de barras');
-    if (!await queryOne('SELECT id FROM materiais WHERE codigo_barras = ?' + lockRow, [code])) {
-      throw new Error('Código de barras não cadastrado. O código interno não substitui a leitura da etiqueta.');
-    }
-  }
-}

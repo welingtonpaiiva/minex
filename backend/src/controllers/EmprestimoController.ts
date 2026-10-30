@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { EmprestimoService } from '../services/EmprestimoService';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import { withTransaction, lockRow } from '../config/db';
-import { validateReturnNfc, validateReturnBarcodes } from '../services/ReturnReadings';
+import { validateReturnNfc } from '../services/ReturnReadings';
 
 export class EmprestimoController {
   static async buscarEmprestimosDoColaborador(req: AuthenticatedRequest, res: Response) {
@@ -54,7 +54,6 @@ export class EmprestimoController {
       const result = await withTransaction(async execute => {
         await execute('SELECT id FROM usuarios WHERE id = ?' + lockRow, [operadorId]);
         await validateReturnNfc(Number(colaboradorId), req.body.nfcId);
-        await validateReturnBarcodes(materiaisCodigos);
         return EmprestimoService.realizarEntrada({
           colaboradorId: parseInt(colaboradorId),
           materiaisCodigos,

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AlertCircle, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Circle, RefreshCw, UserRound, X } from 'lucide-react';
 import { api } from '../services/api';
+import { MaterialPhoto } from './MaterialPhoto';
 
 export const labels: Record<string, string> = {
   CONFORME: 'Conforme', PENDENTE: 'Pendente', NAO_CONFORME: 'Não conforme', EM_ANALISE: 'Em análise',
@@ -32,8 +33,8 @@ export function Avatar({ src, name, large = false }: { src?: string; name: strin
 export function Person({ person }: { person: any }) {
   return <div className="person"><Avatar name={person.nome} src={person.foto_url} /><div><strong>{person.nome}</strong><span className="person-meta"><b>{person.matricula}</b><span aria-hidden="true">·</span><span>{person.setor || 'Setor não informado'}</span></span>{person.conformidade && <Badge value={person.conformidade} />}</div></div>;
 }
-export function MaterialIdentity({ code, name, barcode }: { code: string; name: string; barcode?: string }) {
-  return <span className="material-identity"><strong className="material-tag">{code || 'Sem TAG'}</strong><span className="material-name">{name}</span>{barcode && barcode !== code && <small>Código de barras: {barcode}</small>}</span>;
+export function MaterialIdentity({ code, name, barcode, photo }: { code: string; name: string; barcode?: string; photo?: string }) {
+  return <span className="material-with-photo"><MaterialPhoto src={photo} name={name}/><span className="material-identity"><strong className="material-tag">{code || 'Sem TAG'}</strong><span className="material-name">{name}</span>{barcode&&<small>Código de barras: {barcode}</small>}</span></span>;
 }
 export function Page({ title, description, action, children }: { title: string; description: string; action?: React.ReactNode; children: React.ReactNode }) {
   return <div className="page"><div className="page-heading"><div><h1>{title}</h1><p>{description}</p></div>{action}</div>{children}</div>;
@@ -46,7 +47,7 @@ export function Empty({ children = 'Nenhum registro encontrado.' }: { children?:
 export function Pager({ page, total, limit = 30, onChange }: { page: number; total: number; limit?: number; onChange: (page: number) => void }) {
   return <div className="pager"><span>{total} registro{total !== 1 ? 's' : ''} · Página {page} de {Math.max(1, Math.ceil(total / limit))}</span><div><button className="button secondary" disabled={page <= 1} onClick={() => onChange(page - 1)}><ChevronLeft size={18} />Anterior</button><button className="button secondary" disabled={page * limit >= total} onClick={() => onChange(page + 1)}>Próxima<ChevronRight size={18} /></button></div></div>;
 }
-export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+export function Modal({ title, onClose, children, className = '', backdropClassName = '' }: { title: string; onClose: () => void; children: React.ReactNode; className?: string; backdropClassName?: string }) {
   useEffect(() => { const close = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }; window.addEventListener('keydown', close); return () => window.removeEventListener('keydown', close); }, [onClose]);
   const footerClasses = ['form-actions', 'return-confirm-footer'];
   const isFooter = (node: React.ReactNode) => React.isValidElement<{ className?: string }>(node) &&
@@ -62,7 +63,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
     return React.cloneElement(node, { className: `${node.props.className || ''} modal-form` },
       <div className="modal-form-content">{fields.filter(field => !isFooter(field))}</div>, ...actions);
   });
-  return <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}><section className="modal" role="dialog" aria-modal="true" aria-label={title}><header><h2>{title}</h2><button className="button icon secondary" type="button" aria-label="Fechar" onClick={onClose}><X size={20} /></button></header><div className={'modal-body' + (hasForm ? ' has-form' : '')}>{content}</div>{footer.length > 0 && <footer className="modal-footer">{footer}</footer>}</section></div>;
+  return <div className={'modal-backdrop ' + backdropClassName} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}><section className={'modal ' + className} role="dialog" aria-modal="true" aria-label={title}><header><h2>{title}</h2><button className="button icon secondary" type="button" aria-label="Fechar" onClick={onClose}><X size={20} /></button></header><div className={'modal-body' + (hasForm ? ' has-form' : '')}>{content}</div>{footer.length > 0 && <footer className="modal-footer">{footer}</footer>}</section></div>;
 }
 export function Reload({ onClick, loading }: { onClick: () => void; loading?: boolean }) { return <button className="button secondary" onClick={onClick} disabled={loading}><RefreshCw size={18} className={loading ? 'spin' : ''} />Atualizar</button>; }
 export const errorMessage = (error: any) => error.response?.data?.error || 'Não foi possível comunicar com o servidor. Tente novamente.';
@@ -74,7 +75,6 @@ export function dateTime(value?: string) {
 }
 export const canOperate = (role: string) => ['ADMINISTRADOR', 'SUPERVISOR', 'OPERADOR', 'OPERADOR_ESTOQUE'].includes(role);
 export const canRegister = (role: string) => ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO'].includes(role);
-export const canLinkBarcode = (role: string) => canRegister(role) || canOperate(role);
 export const canAccessMaterialOperations = (role: string) => role !== 'ADMINISTRADOR' && canOperate(role);
 export const canAccessRegistration = (role: string) => !['OPERADOR', 'OPERADOR_ESTOQUE'].includes(role);
 export const canAccessLegacy = (role: string) => role === 'SUPERVISOR';

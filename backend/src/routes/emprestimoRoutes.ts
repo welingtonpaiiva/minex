@@ -3,10 +3,19 @@ import { EmprestimoController } from '../controllers/EmprestimoController';
 import { AuthenticatedRequest, authMiddleware, requireRole } from '../middlewares/authMiddleware';
 import { operationRoles } from '../services/OperationalService';
 import { pendingReturns, quickReturn } from '../services/ReturnService';
+import { codeReturnPreview, returnByCode } from '../services/CodeReturnService';
 
 const router = Router();
 
 router.use(authMiddleware);
+
+router.get('/entrada-por-codigo/:codigo', requireRole(operationRoles), async (req, res, next) => {
+  try { res.json(await codeReturnPreview(req.params.codigo)); } catch (error) { next(error); }
+});
+router.post('/entrada-por-codigo', requireRole(operationRoles), async (req: AuthenticatedRequest, res, next) => {
+  try { res.json(await returnByCode({ ...req.body, requestId: req.header('Idempotency-Key') || req.body.requestId }, req.user!.id)); }
+  catch (error) { next(error); }
+});
 
 router.get('/pendencias', async (req, res, next) => {
   try { res.json(await pendingReturns(req.query)); } catch (error) { next(error); }

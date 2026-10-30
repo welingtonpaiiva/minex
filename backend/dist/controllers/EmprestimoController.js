@@ -51,7 +51,6 @@ class EmprestimoController {
             const result = await (0, db_1.withTransaction)(async (execute) => {
                 await execute('SELECT id FROM usuarios WHERE id = ?' + db_1.lockRow, [operadorId]);
                 await (0, ReturnReadings_1.validateReturnNfc)(Number(colaboradorId), req.body.nfcId);
-                await (0, ReturnReadings_1.validateReturnBarcodes)(materiaisCodigos);
                 return EmprestimoService_1.EmprestimoService.realizarEntrada({
                     colaboradorId: parseInt(colaboradorId),
                     materiaisCodigos,

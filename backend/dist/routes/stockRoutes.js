@@ -12,8 +12,8 @@ router.get('/', async (req, res, next) => {
         const p = (0, OperationalService_1.pagination)(req.query), params = [];
         let where = "WHERE m.tipo_controle = 'INDIVIDUAL'";
         if (req.query.busca) {
-            where += ' AND (m.nome LIKE ? OR m.codigo_interno LIKE ? OR m.codigo_barras LIKE ? OR col.nome LIKE ? OR col.matricula LIKE ?)';
-            params.push(...Array(5).fill('%' + String(req.query.busca).slice(0, 255) + '%'));
+            where += ' AND (m.nome LIKE ? OR m.codigo_interno LIKE ? OR m.codigo_barras LIKE ? OR m.patrimonio LIKE ? OR col.nome LIKE ? OR col.matricula LIKE ?)';
+            params.push(...Array(6).fill('%' + String(req.query.busca).slice(0, 255) + '%'));
         }
         if (req.query.categoria_id === 'sem-categoria')
             where += ' AND m.categoria_id IS NULL';

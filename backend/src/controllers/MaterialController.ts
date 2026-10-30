@@ -68,15 +68,6 @@ export class MaterialController {
     }
   }
 
-  static async vincularCodigoBarras(req: AuthenticatedRequest, res: Response) {
-    try {
-      const atualizado = await MaterialService.vincularCodigoBarras(id(req.params.id), req.body.codigo_barras, req.user!.id);
-      return res.json(atualizado);
-    } catch (err: any) {
-      return res.status(400).json({ error: err.message });
-    }
-  }
-
   static async alterarStatus(req: AuthenticatedRequest, res: Response) {
     try {
       const id = parseInt(req.params.id);

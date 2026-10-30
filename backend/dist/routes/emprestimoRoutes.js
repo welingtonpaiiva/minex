@@ -5,8 +5,25 @@ const EmprestimoController_1 = require("../controllers/EmprestimoController");
 const authMiddleware_1 = require("../middlewares/authMiddleware");
 const OperationalService_1 = require("../services/OperationalService");
 const ReturnService_1 = require("../services/ReturnService");
+const CodeReturnService_1 = require("../services/CodeReturnService");
 const router = (0, express_1.Router)();
 router.use(authMiddleware_1.authMiddleware);
+router.get('/entrada-por-codigo/:codigo', (0, authMiddleware_1.requireRole)(OperationalService_1.operationRoles), async (req, res, next) => {
+    try {
+        res.json(await (0, CodeReturnService_1.codeReturnPreview)(req.params.codigo));
+    }
+    catch (error) {
+        next(error);
+    }
+});
+router.post('/entrada-por-codigo', (0, authMiddleware_1.requireRole)(OperationalService_1.operationRoles), async (req, res, next) => {
+    try {
+        res.json(await (0, CodeReturnService_1.returnByCode)({ ...req.body, requestId: req.header('Idempotency-Key') || req.body.requestId }, req.user.id));
+    }
+    catch (error) {
+        next(error);
+    }
+});
 router.get('/pendencias', async (req, res, next) => {
     try {
         res.json(await (0, ReturnService_1.pendingReturns)(req.query));

@@ -106,7 +106,6 @@ const GERAR_ALERTAS_TESTE = (): ResumoAlertasTurno => {
       material_id: 500 + index,
       material_nome: DESTINOS_SIMULADOS[index % DESTINOS_SIMULADOS.length],
       codigo_interno: `LAT-${String(101 + index).padStart(3, '0')}`,
-      codigo_barras: `LAT-${String(101 + index).padStart(3, '0')}`,
       categoria_nome: 'Lanternas',
       data_hora_saida: dataSaida.toISOString().replace('T', ' ').slice(0, 19),
       minutos_em_uso: minutos,

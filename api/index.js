@@ -27,7 +27,7 @@ function createHandler({ env = process.env, initialize = initializeApp } = {}) {
 async function initializeApp() {
   const { queryOne } = require('../backend/dist/config/db');
   const schema = await queryOne('SELECT MAX(version) AS version FROM schema_migrations');
-  if (Number(schema?.version || 0) < 5) throw new Error('Migrations pendentes');
+  if (Number(schema?.version || 0) < 7) throw new Error('Migrations pendentes');
   // Importing the app never starts a listener, migration or backup interval.
   return require('../backend/dist/server').app;
 }

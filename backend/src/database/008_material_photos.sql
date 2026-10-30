@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS material_fotos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  arquivo TEXT NOT NULL UNIQUE,
+  sha256 TEXT NOT NULL UNIQUE,
+  imagem_base64 TEXT NOT NULL,
+  tamanho INTEGER NOT NULL,
+  largura INTEGER NOT NULL,
+  altura INTEGER NOT NULL,
+  responsavel_id INTEGER NOT NULL REFERENCES usuarios(id),
+  created_at TEXT NOT NULL
+);

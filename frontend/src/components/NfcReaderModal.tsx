@@ -1,7 +1,8 @@
-﻿import { useCallback, useEffect, useRef, useState } from 'react';
+﻿import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Wifi, CreditCard, X, CheckCircle2, LoaderCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useScanInputRecovery } from '../hooks/useScanInputRecovery';
 import { soundFX } from '../services/soundFX';
 import { api } from '../services/api';
 import { Colaborador } from '../types';
@@ -23,6 +24,8 @@ export function NfcReaderModal({isOpen, onClose, onNfcRead, title='APROXIME O CR
   const [person,setPerson] = useState<Colaborador|null>(null);
   const [manual,setManual] = useState(false), [code,setCode] = useState(''), [error,setError] = useState('');
   const dialog=useRef<HTMLElement>(null), pending=useRef(false), generation=useRef(0);
+  const manualInput=useRef<HTMLInputElement>(null);
+  const recoverCode=useScanInputRecovery(manualInput,()=>setCode(''),state!=='waiting');
   const callbacks=useRef({onClose,onNfcRead});
   callbacks.current={onClose,onNfcRead};
   const read=useCallback(async(value:string)=>{
@@ -43,15 +46,17 @@ export function NfcReaderModal({isOpen, onClose, onNfcRead, title='APROXIME O CR
     }catch(e:any){
       if(request!==generation.current)return;
       setError(e.response ? errorMessage(e) : e.message || 'Não foi possível ler o crachá. Tente novamente.');
-      setState('waiting');soundFX.playError();
+      setState('waiting');setPerson(null);recoverCode();soundFX.playError();
     }finally{if(request===generation.current)pending.current=false;}
   },[captureOnly,requireActive,nfcOnly]);
 
-  useEffect(()=>{
+  useLayoutEffect(()=>{
     if(!isOpen)return;
     generation.current++;pending.current=false;setState('waiting');setError('');setManual(false);setCode('');setPerson(null);
     const previous=document.activeElement as HTMLElement|null;
     dialog.current?.focus();
+    const currentGeneration=generation.current;
+    queueMicrotask(()=>{if(currentGeneration===generation.current)dialog.current?.focus();});
     let buffer='',last=0;
     const keys=(event:KeyboardEvent)=>{
       if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();callbacks.current.onClose();return;}
@@ -63,7 +68,7 @@ export function NfcReaderModal({isOpen, onClose, onNfcRead, title='APROXIME O CR
         else if(!event.shiftKey && (document.activeElement===lastControl || document.activeElement===dialog.current)){event.preventDefault();first.focus();}
         return;
       }
-      if((event.target as HTMLElement).matches('input,textarea') || event.ctrlKey || event.metaKey || event.altKey)return;
+      if(((event.target as HTMLElement).matches('input,textarea') && dialog.current?.contains(event.target as Node)) || event.ctrlKey || event.metaKey || event.altKey)return;
       if(event.key==='Enter' && buffer){event.preventDefault();event.stopImmediatePropagation();void read(buffer);buffer='';return;}
       if(event.key.length===1){event.preventDefault();const now=Date.now();if(now-last>400)buffer='';last=now;buffer=(buffer+event.key).slice(-255);}
     };
@@ -80,7 +85,7 @@ export function NfcReaderModal({isOpen, onClose, onNfcRead, title='APROXIME O CR
       <div aria-live="polite"><h2>{state==='success' ? captureOnly?'CARTÃO LIDO!':'CRACHÁ IDENTIFICADO!' : state==='reading'?'IDENTIFICANDO CRACHÁ…':title}</h2><p>{state==='success'?'Leitura confirmada. Preparando o atendimento.':subtitle}</p></div>
       {person && <div className="nfc-person"><Person person={person}/></div>}
       <Notice message={error}/>
-      {state==='waiting' && <>{!nfcOnly && (manual ? <form className="inline-form" onSubmit={event=>{event.preventDefault();void read(code);}}><input aria-label="Código NFC ou matrícula" autoFocus autoComplete="off" placeholder="Código NFC ou matrícula" value={code} maxLength={255} required onChange={event=>setCode(event.target.value)}/><button className="button primary">Identificar crachá</button></form> : <button type="button" className="button secondary" onClick={()=>setManual(true)}><CreditCard size={18}/>Digitar código NFC ou matrícula</button>)}<p className="nfc-hint">Aproxime o crachá do leitor USB conectado ao computador.{nfcOnly && ' A leitura do crachá é obrigatória para devolver materiais.'}</p></>}
+      {state==='waiting' && <>{manual ? <form className="inline-form" onSubmit={event=>{event.preventDefault();void read(code);}}><input ref={manualInput} aria-label={nfcOnly?'Código NFC':'Código NFC ou matrícula'} autoFocus autoComplete="off" spellCheck={false} placeholder={nfcOnly?'Digite o código do crachá NFC':'Código NFC ou matrícula'} value={code} maxLength={255} required onChange={event=>setCode(event.target.value)}/><button className="button primary">Identificar crachá</button></form> : <button type="button" className="button secondary" onClick={()=>setManual(true)}><CreditCard size={18}/>{nfcOnly?'Digitar código NFC':'Digitar código NFC ou matrícula'}</button>}<p className="nfc-hint">Aproxime o crachá do leitor USB conectado ao computador ou digite seu código.{nfcOnly && ' Informe o NFC vinculado ao colaborador; a matrícula não substitui o código NFC.'}</p></>}
     </motion.section>
   </div>,document.body);
 }

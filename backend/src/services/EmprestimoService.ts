@@ -31,7 +31,7 @@ export class EmprestimoService {
   static async buscarEmprestimosDoColaborador(colaboradorId: number) {
     return await query(`
       SELECT e.id as emprestimo_id, e.data_hora_saida,
-             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio,
+             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio, m.foto_url,
              c.nome as categoria_nome
       FROM emprestimos e
       JOIN materiais m ON e.material_id = m.id
@@ -48,7 +48,7 @@ export class EmprestimoService {
     let sql = `
       SELECT e.id as emprestimo_id, e.data_hora_saida,
              col.id as colaborador_id, col.nome as colaborador_nome, col.matricula as colaborador_matricula, col.setor, col.cargo,
-             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio,
+             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio, m.foto_url,
              u.nome as operador_saida_nome
       FROM emprestimos e
       JOIN colaboradores col ON e.colaborador_id = col.id
@@ -105,8 +105,8 @@ export class EmprestimoService {
       for (const cod of materiaisCodigos) {
         const cleanCod = cod.trim();
         const matRows = await execQuery(
-          'SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?' + lockRow,
-          [cleanCod, cleanCod]
+          'SELECT * FROM materiais WHERE codigo_interno = ?' + lockRow,
+          [cleanCod]
         );
         const mat = matRows[0];
 
@@ -233,8 +233,8 @@ export class EmprestimoService {
       for (const cod of materiaisCodigos) {
         const cleanCod = cod.trim();
         const matRows = await execQuery(
-          'SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?' + lockRow,
-          [cleanCod, cleanCod]
+          'SELECT * FROM materiais WHERE codigo_interno = ?' + lockRow,
+          [cleanCod]
         );
         const mat = matRows[0];
 
@@ -315,7 +315,7 @@ export class EmprestimoService {
     const rows = await query(`
       SELECT e.id as emprestimo_id, e.data_hora_saida,
              col.id as colaborador_id, col.nome as colaborador_nome, col.matricula as colaborador_matricula, col.setor, col.cargo,
-             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio,
+             m.id as material_id, m.nome as material_nome, m.codigo_interno, m.codigo_barras, m.patrimonio, m.foto_url,
              c.nome as categoria_nome
       FROM emprestimos e
       JOIN colaboradores col ON e.colaborador_id = col.id

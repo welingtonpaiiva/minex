@@ -17,7 +17,7 @@ class KitController {
             const status = req.query.status || 'DISPONIVEL';
             const kits = await (0, db_1.query)('SELECT k.*, u.nome as criado_por_nome FROM kits k LEFT JOIN usuarios u ON k.criado_por_id = u.id WHERE k.status = ? ORDER BY k.created_at DESC', [status]);
             for (const kit of kits) {
-                const materiais = await (0, db_1.query)(`SELECT m.id, m.nome, m.codigo_interno, m.codigo_barras, m.status, c.nome as categoria_nome
+                const materiais = await (0, db_1.query)(`SELECT m.id, m.nome, m.codigo_interno, m.codigo_barras, m.foto_url, m.status, c.nome as categoria_nome
            FROM kit_materiais km
            JOIN materiais m ON km.material_id = m.id
            LEFT JOIN categorias c ON m.categoria_id = c.id
@@ -57,7 +57,7 @@ class KitController {
                 const materiaisValidados = [];
                 for (const cod of materiaisCodigos) {
                     const cleanCod = String(cod).trim();
-                    const mat = await (0, db_1.queryOne)('SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?', [cleanCod, cleanCod]);
+                    const mat = await (0, db_1.queryOne)('SELECT * FROM materiais WHERE codigo_interno = ?', [cleanCod]);
                     if (!mat) {
                         throw new Error(`Material não encontrado: ${cleanCod}`);
                     }

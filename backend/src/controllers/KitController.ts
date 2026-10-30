@@ -19,7 +19,7 @@ export class KitController {
 
       for (const kit of kits) {
         const materiais = await query(
-          `SELECT m.id, m.nome, m.codigo_interno, m.codigo_barras, m.status, c.nome as categoria_nome
+          `SELECT m.id, m.nome, m.codigo_interno, m.codigo_barras, m.foto_url, m.status, c.nome as categoria_nome
            FROM kit_materiais km
            JOIN materiais m ON km.material_id = m.id
            LEFT JOIN categorias c ON m.categoria_id = c.id
@@ -72,8 +72,8 @@ export class KitController {
         for (const cod of materiaisCodigos) {
           const cleanCod = String(cod).trim();
           const mat = await queryOne(
-            'SELECT * FROM materiais WHERE codigo_barras = ? OR codigo_interno = ?',
-            [cleanCod, cleanCod]
+            'SELECT * FROM materiais WHERE codigo_interno = ?',
+            [cleanCod]
           );
 
           if (!mat) {

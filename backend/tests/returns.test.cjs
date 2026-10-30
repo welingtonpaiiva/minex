@@ -45,7 +45,7 @@ async function fixture() {
   await quantityMove({ tipo: 'RETIRADA', material_id: bulk.id, colaborador_id: person, quantidade: 8, requestId: key() }, operator.id);
   const pending = (await pendingReturns({ busca: prefix })).items[0];
   const payload = { colaboradorId: person, condicao: 'APTO', nfcId: 'NFC-' + prefix, requestId: key(), itens: pending.materiais.map(item =>
-    ({ tipo: item.tipo, emprestimoId: item.emprestimo_id, quantidade: item.quantidade, codigoBarras: item.codigo_barras })) };
+    ({ tipo: item.tipo, emprestimoId: item.emprestimo_id, quantidade: item.quantidade })) };
   return { person, prefix, individual, bulk, pending, payload };
 }
 const snapshot = async () => Promise.all(['emprestimos', 'movimentacoes', 'auditoria', 'requisicoes'].map(async table =>
@@ -80,7 +80,7 @@ test('baixa parcial mantém pessoa e saldo pendente; baixa completa encerra a li
   assert.equal(remaining.total_unidades, 6); assert.equal(remaining.total_itens, 2);
   assert.equal((await materials.buscarPorId(f.bulk.id)).saldo_disponivel, 15);
   const complete = { ...f.payload, requestId: key(), itens: remaining.materiais.map(item =>
-    ({ tipo: item.tipo, emprestimoId: item.emprestimo_id, quantidade: item.quantidade, codigoBarras: item.codigo_barras })) };
+    ({ tipo: item.tipo, emprestimoId: item.emprestimo_id, quantidade: item.quantidade })) };
   await quickReturn(complete, operator.id);
   assert.equal((await pendingReturns({ busca: f.prefix })).total, 0);
   assert.equal((await materials.buscarPorId(f.bulk.id)).saldo_disponivel, 20);
@@ -145,50 +145,49 @@ async function post(route, data) {
   return { status: response.status, data: await response.json() };
 }
 
-test('API tradicional exige NFC correto e código de barras real, preservando repetição idempotente', async () => {
-  const f = await fixture();
-  const data = { colaboradorId: f.person, materiaisCodigos: [f.individual[0].codigo_barras], requestId: key(), nfcId: f.payload.nfcId };
-  const before = await snapshot();
-  for (const invalid of [{ ...data, nfcId: undefined }, { ...data, nfcId: f.prefix },
-    { ...data, nfcId: 'NFC-OUTRO' }, { ...data, materiaisCodigos: [f.individual[0].codigo_interno] },
-    { ...data, materiaisCodigos: [] }]) {
-    assert.equal((await post('emprestimos/entrada', invalid)).status, 400);
-    assert.deepEqual(await snapshot(), before);
+test('devolução tradicional usa TAG e NFC, sem leitura de etiqueta', async () => {
+  const f=await fixture(), data={colaboradorId:f.person,materiaisCodigos:[f.individual[0].codigo_interno],requestId:key(),nfcId:f.payload.nfcId};
+  const before=await snapshot();
+  for(const invalid of [{...data,nfcId:undefined},{...data,nfcId:f.prefix},{...data,nfcId:'NFC-OUTRO'},{...data,materiaisCodigos:[]}]) {
+    assert.equal((await post('emprestimos/entrada',invalid)).status,400);assert.deepEqual(await snapshot(),before);
   }
-  const valid = await post('emprestimos/entrada', data);
-  assert.equal(valid.status, 200);
-  assert.equal((await materials.buscarPorId(f.individual[0].id)).status, 'DISPONIVEL');
-  const after = await snapshot();
-  assert.deepEqual(await post('emprestimos/entrada', data), valid);
-  assert.deepEqual(await snapshot(), after);
+  const valid=await post('emprestimos/entrada',data);assert.equal(valid.status,200);
+  assert.equal((await materials.buscarPorId(f.individual[0].id)).status,'DISPONIVEL');
+  const after=await snapshot();assert.deepEqual(await post('emprestimos/entrada',data),valid);assert.deepEqual(await snapshot(),after);
 });
 
-test('API por quantidade exige crachá e etiqueta do material antes de devolver', async () => {
-  const f = await fixture(), loan = f.payload.itens.find(item => item.tipo === 'QUANTIDADE');
-  const data = { tipo: 'DEVOLUCAO', emprestimo_id: loan.emprestimoId, quantidade: 2, condicao: 'APTO',
-    requestId: key(), nfcId: f.payload.nfcId, codigoBarras: f.bulk.codigo_barras };
-  const before = await snapshot();
-  for (const invalid of [{ ...data, nfcId: undefined }, { ...data, codigoBarras: undefined },
-    { ...data, nfcId: f.prefix }, { ...data, codigoBarras: f.bulk.codigo_interno },
-    { ...data, codigoBarras: f.individual[0].codigo_barras }]) {
-    assert.equal((await post('quantidades/movimentar', invalid)).status, 400);
-    assert.deepEqual(await snapshot(), before);
-    assert.equal((await materials.buscarPorId(f.bulk.id)).saldo_disponivel, 12);
+test('devolução por quantidade usa NFC e quantidade recebida, sem etiqueta', async () => {
+  const f=await fixture(),loan=f.payload.itens.find(item=>item.tipo==='QUANTIDADE');
+  const data={tipo:'DEVOLUCAO',emprestimo_id:loan.emprestimoId,quantidade:2,condicao:'APTO',requestId:key(),nfcId:f.payload.nfcId};
+  const before=await snapshot();
+  for(const invalid of [{...data,nfcId:undefined},{...data,nfcId:f.prefix},{...data,nfcId:'NFC-OUTRO'},{...data,quantidade:9}]) {
+    assert.equal((await post('quantidades/movimentar',invalid)).status,400);assert.deepEqual(await snapshot(),before);
   }
-  const valid = await post('quantidades/movimentar', data);
-  assert.equal(valid.status, 200);
-  assert.deepEqual(await post('quantidades/movimentar', data), valid);
-  assert.equal((await materials.buscarPorId(f.bulk.id)).saldo_disponivel, 14);
+  const valid=await post('quantidades/movimentar',data);assert.equal(valid.status,200);
+  assert.deepEqual(await post('quantidades/movimentar',data),valid);assert.equal((await materials.buscarPorId(f.bulk.id)).saldo_disponivel,14);
 });
 
-test('baixa rápida exige leitura de cada código e NFC antes de qualquer alteração', async () => {
-  const f = await fixture(), before = await snapshot();
-  for (const data of [{ ...f.payload, nfcId: undefined }, { ...f.payload, nfcId: f.prefix },
-    { ...f.payload, itens: f.payload.itens.map((item, index) => index ? item : { ...item, codigoBarras: undefined }) },
-    { ...f.payload, itens: f.payload.itens.map(item => ({ ...item, codigoBarras: 'ETIQUETA-ERRADA' })) }]) {
-    assert.equal((await post('emprestimos/entrada-rapida', data)).status, 400);
-    assert.deepEqual(await snapshot(), before);
+test('baixa rápida valida NFC e devolve os itens selecionados sem códigos de barras', async () => {
+  const f=await fixture(),before=await snapshot();
+  for(const data of [{...f.payload,nfcId:undefined},{...f.payload,nfcId:f.prefix}]) {
+    assert.equal((await post('emprestimos/entrada-rapida',data)).status,400);assert.deepEqual(await snapshot(),before);
   }
-  assert.equal((await post('emprestimos/entrada-rapida', f.payload)).status, 200);
-  assert.equal((await pendingReturns({ busca: f.prefix })).total, 0);
+  assert.equal((await post('emprestimos/entrada-rapida',f.payload)).status,200);
+  assert.equal((await pendingReturns({busca:f.prefix})).total,0);
+});
+
+test('rastreio por colaborador encontra todas as pendências fora da primeira página e não mistura pessoas', async () => {
+  const first = await fixture(), last = await fixture();
+  const result = await pendingReturns({ colaboradorId: last.person, limit: 1 });
+  assert.equal(result.total, 1);
+  assert.equal(result.items[0].id, last.person);
+  assert.equal(result.items[0].materiais.length, 3);
+  assert.deepEqual(result.resumo, { pessoas: 1, itens: 3, unidades: 10 });
+  assert.equal((await pendingReturns({ colaboradorId: last.person, busca: first.prefix })).total, 0);
+  await assert.rejects(pendingReturns({ colaboradorId: 'inválido' }), /inválido/);
+  const response = await fetch(base + '/api/emprestimos/pendencias?colaboradorId=' + last.person + '&limit=1', {
+    headers: { Authorization: 'Bearer ' + operator.token }
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).items[0].id, last.person);
 });

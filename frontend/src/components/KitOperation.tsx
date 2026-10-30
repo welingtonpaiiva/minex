@@ -15,6 +15,8 @@ import {
   Cpu,
 } from 'lucide-react';
 import { NfcReaderModal } from './NfcReaderModal';
+import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
+import { useScanInputRecovery } from '../hooks/useScanInputRecovery';
 import { soundFX } from '../services/soundFX';
 import { api } from '../services/api';
 import { Kit, KitItem } from '../types';
@@ -77,7 +79,7 @@ function KitSealedCard({
                 kit.materiais.map((item: KitItem) => (
                   <div key={item.id} className="kit-card-item-row">
                     <Package size={14} />
-                    <MaterialIdentity code={item.codigo_interno} name={item.nome} />
+                    <MaterialIdentity code={item.codigo_interno} name={item.nome}  photo={item.foto_url}/>
                   </div>
                 ))
               ) : (
@@ -120,7 +122,7 @@ function BuildKitModal({
 }) {
   const [nomeKit, setNomeKit] = useState('');
   const [descricaoKit, setDescricaoKit] = useState('');
-  const [barcodeInput, setBarcodeInput] = useState('');
+  const [tagInput, setTagInput] = useState('');
   const [carrinhoKit, setCarrinhoKit] = useState<any[]>([]);
   const [searchingMaterial, setSearchingMaterial] = useState(false);
   const [materialError, setMaterialError] = useState('');
@@ -132,10 +134,11 @@ function BuildKitModal({
   const [stockSearch, setStockSearch] = useState('');
   const [loadingStock, setLoadingStock] = useState(false);
 
-  const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const tagInputRef = useRef<HTMLInputElement>(null);
+  const recoverScanner = useScanInputRecovery(tagInputRef, () => setTagInput(''), busy || searchingMaterial);
 
   useEffect(() => {
-    setTimeout(() => barcodeInputRef.current?.focus(), 150);
+    setTimeout(() => tagInputRef.current?.focus(), 150);
   }, []);
 
   const fetchStock = async (q = '') => {
@@ -150,9 +153,10 @@ function BuildKitModal({
     if (browseOpen) fetchStock(stockSearch);
   }, [browseOpen, stockSearch]);
 
-  async function handleScan(e: React.FormEvent) {
-    e.preventDefault();
-    const code = barcodeInput.trim();
+  async function handleScan(e: React.FormEvent) {e.preventDefault();await lookupTag(tagInput);}
+  useBarcodeScanner({inputRef:tagInputRef,enabled:!busy&&!searchingMaterial,onRead:code=>{setTagInput(code);void lookupTag(code);}});
+  async function lookupTag(reading: string) {
+    const code = reading.trim();
     if (!code || searchingMaterial) return;
     setMaterialError('');
     setSearchingMaterial(true);
@@ -165,11 +169,12 @@ function BuildKitModal({
       if (carrinhoKit.some(m => m.id === material.id)) throw new Error(`"${material.codigo_interno}" já está na lista.`);
       soundFX.playScan();
       setCarrinhoKit(prev => [...prev, material]);
-      setBarcodeInput('');
-      barcodeInputRef.current?.focus();
+      setTagInput('');
+      tagInputRef.current?.focus();
     } catch (err: any) {
       soundFX.playError();
       setMaterialError(err.response?.data?.error || err.message || 'Erro ao buscar material');
+      recoverScanner();
     } finally { setSearchingMaterial(false); }
   }
 
@@ -188,6 +193,7 @@ function BuildKitModal({
     } catch (err: any) {
       soundFX.playError();
       setMaterialError(errorMessage(err));
+      recoverScanner();
     } finally { setBusy(false); }
   }
 
@@ -218,15 +224,15 @@ function BuildKitModal({
       {/* Scanner de código */}
       <form onSubmit={handleScan} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
         <input
-          ref={barcodeInputRef}
-          value={barcodeInput}
-          onChange={e => setBarcodeInput(e.target.value)}
-          placeholder="Bipear código de barras ou interno…"
+          ref={tagInputRef}
+          value={tagInput}
+          onChange={e => setTagInput(e.target.value)}
+          placeholder="Leia a etiqueta ou digite a TAG…"
           style={{ flex: 1 }}
         />
         <button type="submit" className="button secondary" disabled={searchingMaterial}>
           <ScanLine size={16} />
-          {searchingMaterial ? 'Buscando…' : 'Bipar'}
+          {searchingMaterial ? 'Buscando…' : 'Adicionar pela TAG'}
         </button>
         <button type="button" className="button secondary" onClick={() => setBrowseOpen(true)}>
           <Search size={16} />

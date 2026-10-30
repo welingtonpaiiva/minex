@@ -8,7 +8,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunct
   try {
     const p = pagination(req.query), params: any[] = [];
     let where = "WHERE m.tipo_controle = 'INDIVIDUAL'";
-    if (req.query.busca) { where += ' AND (m.nome LIKE ? OR m.codigo_interno LIKE ? OR m.codigo_barras LIKE ? OR col.nome LIKE ? OR col.matricula LIKE ?)'; params.push(...Array(5).fill('%' + String(req.query.busca).slice(0, 255) + '%')); }
+    if (req.query.busca) { where += ' AND (m.nome LIKE ? OR m.codigo_interno LIKE ? OR m.codigo_barras LIKE ? OR m.patrimonio LIKE ? OR col.nome LIKE ? OR col.matricula LIKE ?)'; params.push(...Array(6).fill('%' + String(req.query.busca).slice(0, 255) + '%')); }
     if (req.query.categoria_id === 'sem-categoria') where += ' AND m.categoria_id IS NULL';
     else if (req.query.categoria_id) { where += ' AND m.categoria_id = ?'; params.push(Number(req.query.categoria_id)); }
     const counterWhere = where, counterParams = [...params];

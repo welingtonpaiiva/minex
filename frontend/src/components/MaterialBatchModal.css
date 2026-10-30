@@ -1,0 +1,6 @@
+.batch-fields{border:0;padding:0;margin:0;min-width:0}
+.batch-preview{max-height:300px;overflow:auto;border:1px solid #e0d6ed;border-radius:10px;margin:14px 0}
+.batch-preview thead{position:sticky;top:0;z-index:1;background:#f6f3fa}
+.batch-confirm{display:flex;align-items:flex-start;gap:10px;margin:16px 0;font-size:14px;line-height:1.5}
+.batch-confirm input{width:18px;height:18px;flex-shrink:0;margin-top:2px}
+.material-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
