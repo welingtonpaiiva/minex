@@ -10,7 +10,7 @@ const db_1 = require("../config/db");
 const HistoricoService_1 = require("./HistoricoService");
 class RelatorioService {
     static async obterResumo() {
-        const totalMateriais = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE tipo_controle='INDIVIDUAL'");
+        const totalMateriais = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE tipo_controle='INDIVIDUAL' AND status <> 'INATIVO'");
         const disponiveis = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE status = 'DISPONIVEL' AND tipo_controle='INDIVIDUAL'");
         const emUso = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE status = 'EM_USO' AND tipo_controle='INDIVIDUAL'");
         const manutencao = await (0, db_1.queryOne)("SELECT COUNT(*) as total FROM materiais WHERE status = 'MANUTENCAO' AND tipo_controle='INDIVIDUAL'");

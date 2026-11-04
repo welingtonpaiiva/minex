@@ -20,6 +20,7 @@ import { Quantidades } from './pages/Quantidades';
 import { Legado } from './pages/Legado';
 import { Operacoes } from './pages/Operacoes';
 import { MineAlert } from './components/MineAlert';
+import { MaterialHoldingAlert } from './components/MaterialHoldingAlert';
 import { canAccessMaterialOperations, canAccessRegistration, canAccessLegacy, canAccessReports } from './components/ui';
 import { Usuario } from './types';
 import { api } from './services/api';
@@ -63,6 +64,7 @@ function OperatorShell({user, logout, children}: {user: Usuario; logout: () => v
     <CursorFollower />
     <TopBar user={user} onLogout={logout} />
     <MineAlert />
+    <MaterialHoldingAlert />
     <motion.main key={location.pathname} className="operator-content" initial={{opacity:0}} animate={{opacity:1}} transition={{duration:.2,ease:'easeOut'}}>{children}</motion.main>
   </div>;
 }

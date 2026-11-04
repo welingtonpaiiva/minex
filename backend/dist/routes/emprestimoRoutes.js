@@ -8,6 +8,15 @@ const ReturnService_1 = require("../services/ReturnService");
 const CodeReturnService_1 = require("../services/CodeReturnService");
 const router = (0, express_1.Router)();
 router.use(authMiddleware_1.authMiddleware);
+router.get('/alertas-posse', async (_req, res, next) => {
+    try {
+        res.setHeader('Cache-Control', 'private, no-store');
+        res.json(await (0, ReturnService_1.materialHoldingOverview)());
+    }
+    catch (error) {
+        next(error);
+    }
+});
 router.get('/entrada-por-codigo/:codigo', (0, authMiddleware_1.requireRole)(OperationalService_1.operationRoles), async (req, res, next) => {
     try {
         res.json(await (0, CodeReturnService_1.codeReturnPreview)(req.params.codigo));

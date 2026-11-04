@@ -51,7 +51,7 @@ export async function materialLabels(data: any): Promise<Buffer> {
     items = await query(`SELECT nome,codigo_interno,codigo_barras,patrimonio FROM materiais WHERE id IN (${ids.map(() => '?').join(',')}) ORDER BY codigo_interno`, ids);
     if (items.length !== ids.length) throw new Error('Um dos equipamentos não foi encontrado.');
   } else {
-    let where = "WHERE m.tipo_controle='INDIVIDUAL'"; const params: any[] = [];
+    let where = "WHERE m.tipo_controle='INDIVIDUAL' AND m.status <> 'INATIVO'"; const params: any[] = [];
     if (data.busca) { where += ' AND (m.nome LIKE ? OR m.codigo_interno LIKE ? OR m.codigo_barras LIKE ? OR m.patrimonio LIKE ? OR col.nome LIKE ? OR col.matricula LIKE ?)'; params.push(...Array(6).fill('%' + String(data.busca).slice(0, 255) + '%')); }
     if (data.categoria_id === 'sem-categoria') where += ' AND m.categoria_id IS NULL';
     else if (data.categoria_id) { where += ' AND m.categoria_id=?'; params.push(id(data.categoria_id)); }

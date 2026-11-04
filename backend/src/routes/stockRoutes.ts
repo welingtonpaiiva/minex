@@ -8,6 +8,8 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunct
   try {
     const p = pagination(req.query), params: any[] = [];
     let where = "WHERE m.tipo_controle = 'INDIVIDUAL'";
+    // O inventário operacional exclui inativos; a consulta explícita mantém o histórico acessível.
+    if (req.query.status !== 'INATIVO') where += " AND m.status <> 'INATIVO'";
     if (req.query.busca) { where += ' AND (m.nome LIKE ? OR m.codigo_interno LIKE ? OR m.codigo_barras LIKE ? OR m.patrimonio LIKE ? OR col.nome LIKE ? OR col.matricula LIKE ?)'; params.push(...Array(6).fill('%' + String(req.query.busca).slice(0, 255) + '%')); }
     if (req.query.categoria_id === 'sem-categoria') where += ' AND m.categoria_id IS NULL';
     else if (req.query.categoria_id) { where += ' AND m.categoria_id = ?'; params.push(Number(req.query.categoria_id)); }
@@ -21,7 +23,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunct
     const counts = await query(`SELECT m.status, COUNT(*) AS total ${from} ${counterWhere} GROUP BY m.status`, counterParams);
     const categorias = await query(`SELECT m.categoria_id AS id, COALESCE(c.nome, 'Sem categoria') AS nome, COUNT(*) AS total
       FROM materiais m LEFT JOIN categorias c ON c.id=m.categoria_id
-      WHERE m.tipo_controle='INDIVIDUAL' GROUP BY m.categoria_id, c.nome
+      WHERE m.tipo_controle='INDIVIDUAL' AND m.status <> 'INATIVO' GROUP BY m.categoria_id, c.nome
       ORDER BY CASE WHEN m.categoria_id IS NULL THEN 1 ELSE 0 END, c.nome`);
     res.json({ items, total: total.total, ...p, categorias, contadores: Object.fromEntries(counts.map(c => [c.status, c.total])) });
   } catch (error) { next(error); }

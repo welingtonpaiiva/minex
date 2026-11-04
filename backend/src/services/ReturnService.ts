@@ -3,7 +3,7 @@ import { query, queryOne, withTransaction, lockRow } from '../config/db';
 import { audit, id, pagination, text } from './OperationalService';
 import { EmprestimoService } from './EmprestimoService';
 import { quantityMove } from './QuantityService';
-import { now } from '../utils/time';
+import { now, instant } from '../utils/time';
 import { validateReturnNfc } from './ReturnReadings';
 
 const pending = `WITH pendencias AS (
@@ -17,6 +17,41 @@ const pending = `WITH pendencias AS (
   FROM emprestimos_quantidade e JOIN materiais m ON m.id = e.material_id
   WHERE e.quantidade > e.devolvida
 )`;
+
+const normalizedTime = (value: string) => {
+  const timestamp = instant(value);
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : value;
+};
+
+export async function materialHoldingOverview() {
+  const rows = await query(pending + ` SELECT p.*, c.nome, c.matricula, c.setor, c.foto_url AS colaborador_foto_url
+    FROM pendencias p JOIN colaboradores c ON c.id=p.colaborador_id ORDER BY p.colaborador_id, p.retirada, p.material_id`);
+  const serverTime = Date.now(), limit = 8 * 3600;
+  const people = new Map<number, any>();
+  for (const row of rows) {
+    let person = people.get(row.colaborador_id);
+    if (!person) {
+      person = { id: row.colaborador_id, nome: row.nome, matricula: row.matricula, setor: row.setor,
+        foto_url: row.colaborador_foto_url, primeira_retirada: null, total_itens: 0, total_unidades: 0, materiais: [] };
+      people.set(row.colaborador_id, person);
+    }
+    const timestamp = instant(row.retirada);
+    const valid = Number.isFinite(timestamp) && timestamp <= serverTime;
+    const seconds = valid ? Math.floor((serverTime - timestamp) / 1000) : null;
+    if (valid && (!person.primeira_retirada || timestamp < Date.parse(person.primeira_retirada))) person.primeira_retirada = new Date(timestamp).toISOString();
+    person.total_itens++;
+    person.total_unidades += Number(row.quantidade);
+    person.materiais.push({ material_id: row.material_id, codigo_interno: row.codigo_interno, material_nome: row.material_nome,
+      tipo: row.tipo, emprestimo_id: row.emprestimo_id, quantidade: Number(row.quantidade),
+      retirada: valid ? new Date(timestamp).toISOString() : null, segundos_em_posse: seconds, excedido: seconds !== null && seconds > limit });
+  }
+  const colaboradores = [...people.values()].map(person => {
+    const seconds = person.primeira_retirada ? Math.floor((serverTime - Date.parse(person.primeira_retirada)) / 1000) : null;
+    return { ...person, segundos_em_posse: seconds, excedido: seconds !== null && seconds > limit };
+  }).sort((a, b) => Number(b.excedido) - Number(a.excedido) || (b.segundos_em_posse ?? -1) - (a.segundos_em_posse ?? -1) || a.id - b.id);
+  return { horario_servidor: new Date(serverTime).toISOString(), limite_segundos: limit,
+    quantidade: colaboradores.filter(person => person.excedido).length, total: colaboradores.length, colaboradores };
+}
 
 export async function pendingReturns(filters: any) {
   const p = pagination(filters), term = '%' + String(filters.busca || '').trim().slice(0, 255) + '%';
@@ -39,8 +74,13 @@ export async function pendingReturns(filters: any) {
   const items = rows.length ? await query(pending + ` SELECT * FROM pendencias WHERE colaborador_id IN (${rows.map(() => '?').join(',')})
     ORDER BY retirada, material_id, emprestimo_id`, rows.map(row => row.id)) : [];
   return {
-    items: rows.map(row => ({ ...row, total_itens: Number(row.total_itens), total_unidades: Number(row.total_unidades),
-      materiais: items.filter(item => item.colaborador_id === row.id).map(item => ({ ...item, quantidade: Number(item.quantidade) })) })),
+    items: rows.map(row => {
+      const materiais = items.filter(item => item.colaborador_id === row.id).map(item => ({ ...item, retirada: normalizedTime(item.retirada), quantidade: Number(item.quantidade) }));
+      const timestamps = materiais.map(item => Date.parse(item.retirada)).filter(Number.isFinite);
+      return { ...row, primeira_retirada: timestamps.length ? new Date(Math.min(...timestamps)).toISOString() : normalizedTime(row.primeira_retirada),
+        total_itens: Number(row.total_itens), total_unidades: Number(row.total_unidades), materiais };
+    }),
+    horario_servidor: now(),
     total: Number(totals.pessoas), resumo: { pessoas: Number(totals.pessoas), itens: Number(totals.itens), unidades: Number(totals.unidades) },
     ...p
   };

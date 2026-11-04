@@ -159,6 +159,7 @@ export interface PendingReturnPerson extends Colaborador {
 }
 
 export interface PendingReturns {
+  horario_servidor?: string;
   items: PendingReturnPerson[];
   total: number;
   resumo: { pessoas: number; itens: number; unidades: number };

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDownLeft, ArrowRight, Check, CheckCheck, CheckCircle2, Clock3, Layers, Package, Search, UsersRound } from 'lucide-react';
+import { AlertTriangle, ArrowDownLeft, ArrowRight, Check, CheckCheck, CheckCircle2, Clock3, Layers, Package, Search, UsersRound } from 'lucide-react';
 import { api } from '../services/api';
 import { soundFX } from '../services/soundFX';
 import { notifyChange, useResource } from '../hooks/useResource';
@@ -11,15 +11,18 @@ import './QuickReturn.css';
 import './QuickReturnModal.css';
 import { ReturnCondition, returnConditionMessage } from './ReturnCondition';
 import { ReturnReadings, ReturnReadingsValue, hasReturnReadings } from './ReturnReadings';
+import { useElapsedClock } from '../hooks/useElapsedClock';
+import { materialHoldingTime } from '../utils/materialHoldingTime';
 
 const itemKey = (item: PendingReturnItem) => item.tipo + ':' + item.emprestimo_id;
 const count = (value: number, singular: string, plural: string) => `${value} ${value === 1 ? singular : plural}`;
 type Draft = { person: PendingReturnPerson; amounts: Record<string, number | ''>; condition: string; key: string; error: string; readings: ReturnReadingsValue };
 
-function MaterialLine({ item }: { item: PendingReturnItem }) {
-  return <div className="return-material">
+function MaterialLine({ item, now }: { item: PendingReturnItem; now: number }) {
+  const holding = materialHoldingTime(item.retirada, now);
+  return <div className={'return-material' + (holding.overdue ? ' is-overdue' : '')}>
     <span className={'return-material-icon ' + (item.kit_nome ? 'is-kit' : '')}>{item.kit_nome ? <Layers size={17} /> : <Package size={17} />}</span>
-    <div><MaterialIdentity code={item.codigo_interno} name={item.material_nome}  photo={item.foto_url}/>{item.kit_nome && <small className="material-kit-name">Kit: {item.kit_nome}</small>}</div>
+    <div><MaterialIdentity code={item.codigo_interno} name={item.material_nome}  photo={item.foto_url}/>{item.kit_nome && <small className="material-kit-name">Kit: {item.kit_nome}</small>}<small className="return-material-time">Em posse: {holding.label}{holding.overdue ? ' · acima de 8 horas' : ''}</small></div>
     <b className="return-quantity">{item.quantidade}<small> un.</small></b>
   </div>;
 }
@@ -32,6 +35,7 @@ export function QuickReturn() {
   const resource = useResource<PendingReturns>('/emprestimos/pendencias', { busca: search, page, limit: 12 },
     { items: [], total: 0, resumo: { pessoas: 0, itens: 0, unidades: 0 } }, 10000);
   const { data, loading, error, updated, reload } = resource;
+  const now = useElapsedClock(data.horario_servidor);
   useEffect(() => {
     const focus = () => { void reload(); };
     window.addEventListener('focus', focus);
@@ -107,14 +111,15 @@ export function QuickReturn() {
       <div className="return-section-heading"><div><h2>Com materiais em mãos</h2><p>As pessoas permanecem aqui até a devolução do último item.</p></div><span>{count(data.total, 'pessoa', 'pessoas')}</span></div>
       {loading && !updated && !data.items.length ? <div className="return-grid" aria-label="Carregando pendências">{[1, 2, 3].map(i => <div className="return-skeleton" key={i}><span /><span /><span /></div>)}</div>
         : !data.items.length ? <section className="return-empty"><span><CheckCircle2 size={36} /></span><h2>{error ? 'Não foi possível carregar a lista' : search ? 'Nenhuma pendência encontrada' : 'Tudo devolvido por aqui'}</h2><p>{error ? 'Atualize a lista para tentar novamente.' : search ? 'Tente outro nome, matrícula ou código de material.' : 'Quem retirar materiais aparecerá automaticamente nesta aba.'}</p>{search && <button className="button secondary" onClick={() => { setSearch(''); setPage(1); }}>Limpar busca</button>}</section>
-          : <div className="return-grid">{data.items.map(person => <article className="return-card" key={person.id} aria-label={'Materiais de ' + person.nome}>
-            <div className="return-card-person"><Person person={person} /><span className="return-open-tag">Em aberto</span></div>
+          : <div className="return-grid">{data.items.map(person => { const holding = materialHoldingTime(person.primeira_retirada, now); return <article className={'return-card' + (holding.overdue ? ' is-overdue' : '')} key={person.id} aria-label={'Materiais de ' + person.nome} data-overdue={holding.overdue}>
+            <div className="return-card-person"><Person person={person} /><span className="return-open-tag">{holding.overdue ? <><AlertTriangle size={14} />Acima de 8 horas</> : 'Em aberto'}</span></div>
             <div className="return-card-meta"><span><Clock3 size={14} />Desde {dateTime(person.primeira_retirada)}</span><strong>{count(person.total_unidades, 'unidade', 'unidades')}</strong></div>
-            <div className="return-card-materials">{person.materiais.slice(0, 3).map(item => <MaterialLine key={itemKey(item)} item={item} />)}
-              {person.materiais.length > 3 && <details className="return-more"><summary>Ver mais {count(person.materiais.length - 3, 'item', 'itens')}</summary>{person.materiais.slice(3).map(item => <MaterialLine key={itemKey(item)} item={item} />)}</details>}
+            <div className="return-holding-time"><span>Tempo com materiais</span><time aria-label={'Tempo com materiais de ' + person.nome}>{holding.label}</time><small>Desde a retirada mais antiga ainda pendente</small></div>
+            <div className="return-card-materials">{person.materiais.slice(0, 3).map(item => <MaterialLine key={itemKey(item)} item={item} now={now} />)}
+              {person.materiais.length > 3 && <details className="return-more"><summary>Ver mais {count(person.materiais.length - 3, 'item', 'itens')}</summary>{person.materiais.slice(3).map(item => <MaterialLine key={itemKey(item)} item={item} now={now} />)}</details>}
             </div>
             <div className="return-card-actions"><button className="button secondary" disabled={busy || loading} onClick={() => open(person, false)}>Escolher itens<ArrowRight size={16} /></button><button className="button primary" disabled={busy || loading} onClick={() => open(person, true)}><CheckCheck size={17} />Devolver tudo</button></div>
-          </article>)}</div>}
+          </article>; })}</div>}
       {data.total > 12 && <Pager page={page} total={data.total} limit={12} onChange={setPage} />}
       <p className="return-footnote"><Check size={15} />Devoluções feitas nas outras abas também atualizam esta lista automaticamente.</p>
     </div>

@@ -64,7 +64,7 @@ async function materialLabels(data) {
             throw new Error('Um dos equipamentos não foi encontrado.');
     }
     else {
-        let where = "WHERE m.tipo_controle='INDIVIDUAL'";
+        let where = "WHERE m.tipo_controle='INDIVIDUAL' AND m.status <> 'INATIVO'";
         const params = [];
         if (data.busca) {
             where += ' AND (m.nome LIKE ? OR m.codigo_interno LIKE ? OR m.codigo_barras LIKE ? OR m.patrimonio LIKE ? OR col.nome LIKE ? OR col.matricula LIKE ?)';

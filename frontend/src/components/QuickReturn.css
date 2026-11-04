@@ -24,6 +24,10 @@
 .return-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px;align-items:start}
 .return-card{border:1px solid #e1e6e8;border-radius:15px;background:#fff;overflow:hidden;box-shadow:0 3px 12px #1c3f2e04;transition:box-shadow .18s,border-color .18s}
 .return-card:hover{border-color:#b8cbc1;box-shadow:0 6px 18px #1c3f2e09}
+.return-card.is-overdue,.return-card.is-overdue:hover{border:2px solid #c62828;background:#fff4f3;box-shadow:inset 4px 0 #c62828}
+.return-card.is-overdue .return-open-tag{display:inline-flex;align-items:center;gap:5px;background:#b91c1c;color:#fff;font-weight:700}
+.return-holding-time{display:grid;gap:4px;margin:0 18px 14px;padding:12px 14px;background:#f1f5f3;border-radius:10px;color:#334b3e}.return-holding-time>span{font-size:12px}.return-holding-time time{font-size:23px;font-weight:750;font-variant-numeric:tabular-nums}.return-holding-time small{font-size:11px}
+.return-card.is-overdue .return-holding-time{background:#ffe0df;color:#a51d24}.return-material .return-material-time{display:block;font-size:11px;margin-top:5px;color:#56677b;font-variant-numeric:tabular-nums}.return-material.is-overdue .return-material-time{color:#b91c1c;font-weight:650}
 .return-card-person{padding:22px 20px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .return-card .person{min-width:0;gap:11px}
 .return-card .person>div{min-width:0}

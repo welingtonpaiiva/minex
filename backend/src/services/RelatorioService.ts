@@ -6,7 +6,7 @@ import { HistoricoService } from './HistoricoService';
 
 export class RelatorioService {
   static async obterResumo() {
-    const totalMateriais = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE tipo_controle='INDIVIDUAL'");
+    const totalMateriais = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE tipo_controle='INDIVIDUAL' AND status <> 'INATIVO'");
     const disponiveis = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'DISPONIVEL' AND tipo_controle='INDIVIDUAL'");
     const emUso = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'EM_USO' AND tipo_controle='INDIVIDUAL'");
     const manutencao = await queryOne<{ total: number }>("SELECT COUNT(*) as total FROM materiais WHERE status = 'MANUTENCAO' AND tipo_controle='INDIVIDUAL'");
