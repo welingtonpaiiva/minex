@@ -41,7 +41,15 @@ Depois da validação, configure as variáveis da aplicação no ambiente **Prod
 - Testes de operações executados em bancos isolados no TiDB; o teste de envio repetido foi reexecutado após a correção de leitura de requisições concorrentes.
 - `/api/health`, autenticação por token e consulta de pendências validados com o usuário da aplicação.
 - Servidor local reiniciado com `backend/.runtime/local-cloud.env`, usando o mesmo banco online. O arquivo SQLite original e os snapshots continuam preservados.
-- As variáveis do arquivo privado `vercel.env` ainda precisam ser aplicadas na conta Vercel e uma publicação deve usar o código com as correções de compatibilidade.
+- As 11 variáveis do arquivo privado `vercel.env` foram aplicadas como Secret nos ambientes Production e Preview da Vercel.
+- A branch `main` contém as correções de compatibilidade e publica em produção pelo GitHub conectado ao projeto `paiva10/minex`.
+- Produção validada em https://minex-tan.vercel.app: `/api/health` retorna `{"status":"ok"}`, a página de login abre e as consultas autenticadas de pendências e resumo operacional respondem com HTTP 200.
+
+## Exportar as etiquetas compactas
+
+Execute `node backend/scripts/exportBarcodeGrid.cjs [diretorio-de-saida]` pela raiz do projeto para gerar PDFs a partir do SQLite local, sem alterar o banco. O exportador usa 5 colunas por 10 linhas e, para máscaras de fuga, 4 colunas por 9 linhas. Cada etiqueta contém o nome próximo às barras e o código abaixo, sem repetir a linha TAG.
+
+O script gera sete PDFs por categoria, um PDF completo, um ZIP e um relatório que confere a leitura de todos os códigos em 203 e 300 dpi. Essa exportação lê o arquivo SQLite local; alterações posteriores feitas no banco online não são incluídas automaticamente nesse arquivo.
 
 As tabelas com autoincremento usam o comentário condicional `/*T![auto_id_cache] AUTO_ID_CACHE=1 */`: o TiDB mantém IDs crescentes entre seus servidores e o MySQL ignora o comentário. Isso preserva a ordenação das operações que consultam o último identificador da auditoria.
 
