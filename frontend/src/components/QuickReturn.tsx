@@ -32,6 +32,7 @@ export function QuickReturn() {
   const [draft, setDraft] = useState<Draft | null>(null), [busy, setBusy] = useState(false), [success, setSuccess] = useState('');
   const pending = useRef(false);
   const [trackingNfc, setTrackingNfc] = useState(true), [confirmingNfc, setConfirmingNfc] = useState(false);
+  const [returnAllPerson, setReturnAllPerson] = useState<PendingReturnPerson | null>(null);
   const resource = useResource<PendingReturns>('/emprestimos/pendencias', { busca: search, page, limit: 12 },
     { items: [], total: 0, resumo: { pessoas: 0, itens: 0, unidades: 0 } }, 10000);
   const { data, loading, error, updated, reload } = resource;
@@ -52,10 +53,19 @@ export function QuickReturn() {
   }
   async function track(nfcId: string, person?: Colaborador) {
     if (!person) return;
+    if (returnAllPerson && person.id !== returnAllPerson.id) {
+      throw new Error('Este crachá pertence a outro colaborador. Aproxime o crachá de ' + returnAllPerson.nome + '.');
+    }
     const response = await api.get<PendingReturns>('/emprestimos/pendencias', { params: { colaboradorId: person.id, limit: 1 } });
     const found = response.data.items.find(item => item.id === person.id);
     if (!found) throw new Error(person.nome + ' não possui materiais pendentes de devolução.');
-    open(found, false, nfcId); setTrackingNfc(false);
+    open(found, !!returnAllPerson, nfcId); setTrackingNfc(false); setReturnAllPerson(null);
+  }
+  function startTracking(person: PendingReturnPerson | null = null) {
+    setReturnAllPerson(person); setTrackingNfc(true);
+  }
+  function closeTracking() {
+    setTrackingNfc(false); setReturnAllPerson(null);
   }
   function change(values: Partial<Draft>) {
     if (!pending.current) setDraft(old => old && ({ ...old, ...values, key: crypto.randomUUID(), error: '' }));
@@ -92,7 +102,7 @@ export function QuickReturn() {
   return <Page title="Pessoas e materiais" description="Veja quem está com materiais e receba as devoluções direto por aqui."
     action={<Reload onClick={() => void reload()} loading={loading || busy} />}>
     <div className="quick-return">
-      <button className="button primary nfc-start" disabled={busy} onClick={() => setTrackingNfc(true)}>Rastrear pelo crachá NFC</button>
+      <button className="button primary nfc-start" disabled={busy} onClick={() => startTracking()}>Rastrear pelo crachá NFC</button>
       <p className="summary-note">Leia o crachá para abrir os materiais do colaborador. Confira os itens recebidos e leia novamente o NFC para confirmar a devolução.</p>
       <section className="return-overview" aria-label="Resumo das devoluções pendentes">
         <div className="return-overview-intro"><span className="return-overview-icon"><ArrowDownLeft size={26} /></span><div><span className="return-eyebrow">ENTRADA · BAIXA RÁPIDA</span><h2>De volta ao estoque.</h2><p>Confira, receba e siga para o próximo atendimento.</p></div></div>
@@ -118,7 +128,7 @@ export function QuickReturn() {
             <div className="return-card-materials">{person.materiais.slice(0, 3).map(item => <MaterialLine key={itemKey(item)} item={item} now={now} />)}
               {person.materiais.length > 3 && <details className="return-more"><summary>Ver mais {count(person.materiais.length - 3, 'item', 'itens')}</summary>{person.materiais.slice(3).map(item => <MaterialLine key={itemKey(item)} item={item} now={now} />)}</details>}
             </div>
-            <div className="return-card-actions"><button className="button secondary" disabled={busy || loading} onClick={() => open(person, false)}>Escolher itens<ArrowRight size={16} /></button><button className="button primary" disabled={busy || loading} onClick={() => open(person, true)}><CheckCheck size={17} />Devolver tudo</button></div>
+            <div className="return-card-actions"><button className="button secondary" disabled={busy || loading} onClick={() => open(person, false)}>Escolher itens<ArrowRight size={16} /></button><button className="button primary" disabled={busy || loading} onClick={() => startTracking(person)}><CheckCheck size={17} />Devolver tudo</button></div>
           </article>; })}</div>}
       {data.total > 12 && <Pager page={page} total={data.total} limit={12} onChange={setPage} />}
       <p className="return-footnote"><Check size={15} />Devoluções feitas nas outras abas também atualizam esta lista automaticamente.</p>
@@ -150,8 +160,10 @@ export function QuickReturn() {
         <div className="return-confirm-footer"><div><strong>{count(units, 'unidade', 'unidades')}</strong><span>em {count(selected.length, 'item selecionado', 'itens selecionados')}</span></div><div><button type="button" className="button secondary" disabled={busy} onClick={close}>Cancelar</button><button className="button primary" data-tone="success" disabled={busy || !hasReturnReadings(draft.readings, selected)}><ArrowDownLeft size={18} />{busy ? 'Registrando…' : 'Confirmar baixa'}</button></div></div>
       </form>
     </Modal>}
-    <NfcReaderModal isOpen={trackingNfc} onClose={() => setTrackingNfc(false)} nfcOnly
-      title="ENTRADA — APROXIME O CRACHÁ NFC" subtitle="Leia o crachá do colaborador para abrir os materiais pendentes de devolução." onNfcRead={track}/>
+    <NfcReaderModal isOpen={trackingNfc} onClose={closeTracking} nfcOnly
+      title="ENTRADA — APROXIME O CRACHÁ NFC" subtitle={returnAllPerson
+        ? 'Aproxime o crachá de ' + returnAllPerson.nome + ' para reconhecer o colaborador e conferir todos os materiais a devolver.'
+        : 'Leia o crachá do colaborador para abrir os materiais pendentes de devolução.'} onNfcRead={track}/>
     <ReturnNfcConfirmation isOpen={confirmingNfc} person={draft?.person || null}
       onClose={() => { if (!pending.current) setConfirmingNfc(false); }} onConfirm={confirmReturn}/>
   </Page>;

@@ -154,6 +154,12 @@ test('API aplica permissões, revoga conta inativa e não expõe fotos sem auten
 test('DDL MySQL emite InnoDB, autoincremento e chaves estrangeiras reais', () => {
   const ddl=mysqlDDL('CREATE TABLE IF NOT EXISTS exemplo (id INTEGER PRIMARY KEY AUTOINCREMENT,\n colaborador_id INTEGER NOT NULL REFERENCES colaboradores(id),\n created_at TEXT NOT NULL DEFAULT (datetime(\'now\', \'localtime\')))');
   assert.match(ddl,/AUTO_INCREMENT/);assert.match(ddl,/FOREIGN KEY \(colaborador_id\)/);assert.match(ddl,/DATETIME\(3\)/);assert.match(ddl,/ENGINE=InnoDB/);
+  assert.ok(ddl.includes('/*T![auto_id_cache] AUTO_ID_CACHE=1 */'));
+  const kits=fs.readFileSync(path.join(__dirname,'../src/database/006_kits.sql'),'utf8');
+  const kitItems=kits.split(';').find(statement=>statement.includes('CREATE TABLE IF NOT EXISTS kit_materiais')).trim();
+  const cascade=mysqlDDL(kitItems);
+  assert.match(cascade,/FOREIGN KEY \(kit_id\) REFERENCES kits\(id\) ON DELETE CASCADE/);
+  assert.doesNotMatch(cascade,/kit_id INTEGER NOT NULL ON DELETE/);
 });
 
 test('saldo quantitativo resiste a concorrência, devoluções parciais, conferência e idempotência', async () => {

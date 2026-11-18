@@ -48,7 +48,7 @@ async function returnByCode(data, userId) {
     const signature = version({ tipo: 'ENTRADA_POR_CODIGO', code, action: data.acao, loanId, quantity, condition, reason, expected });
     return (0, db_1.withTransaction)(async (execute) => {
         await execute('SELECT id FROM usuarios WHERE id=?' + db_1.lockRow, [operator]);
-        const previous = await (0, db_1.queryOne)('SELECT * FROM requisicoes WHERE usuario_id=? AND chave=?', [operator, key]);
+        const previous = await (0, db_1.queryOne)('SELECT * FROM requisicoes WHERE usuario_id=? AND chave=?' + db_1.lockRow, [operator, key]);
         if (previous) {
             if (previous.assinatura !== signature)
                 throw new Error('Identificador já utilizado em outra operação');

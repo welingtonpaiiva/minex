@@ -52,12 +52,10 @@ export async function migrateToMysql() {
       while (true) {
         const rows = await sqliteRead(db, 'SELECT * FROM ' + table + ' WHERE id > ? ORDER BY id LIMIT 500', [lastId]);
         if (!rows.length) break;
-        for (const row of rows) {
-          const values = columns.map(c => migrateValue(c, row[c]));
-          hash.update(JSON.stringify(values));
-          await connection.query('INSERT INTO `' + table + '` (' + columns.map(c => '`' + c + '`').join(',') + ') VALUES (' + columns.map(() => '?').join(',') + ')', values);
-          lastId = row.id; count++;
-        }
+        const values = rows.map(row => columns.map(c => migrateValue(c, row[c])));
+        await connection.query('INSERT INTO `' + table + '` (' + columns.map(c => '`' + c + '`').join(',') + ') VALUES ?', [values]);
+        values.forEach(row => hash.update(JSON.stringify(row)));
+        lastId = rows[rows.length - 1].id; count += rows.length;
       }
       const sourceHash = hash.digest('hex'), targetHash = crypto.createHash('sha256');
       let targetId = 0, targetCount = 0;
@@ -75,6 +73,7 @@ export async function migrateToMysql() {
       }
       if (targetCount !== count || targetHash.digest('hex') !== sourceHash) throw new Error('Conferência de dados falhou: ' + table);
       report.tabelas.push({ tabela: table, registros: count, sha256: sourceHash });
+      console.log('[MIGRATE] ' + table + ': ' + count + ' registro(s) conferido(s).');
     }
     // Preserve tables from previous application generations without guessing how
     // equipment codes or historical relationships map onto the active catalog.
@@ -85,10 +84,13 @@ export async function migrateToMysql() {
       await connection.query('INSERT INTO legado_esquemas (tabela, sql_original) VALUES (?, ?)', [table.name, table.sql]);
       const rows = await sqliteRead(db, 'SELECT rowid AS __original_rowid, * FROM "' + table.name + '" ORDER BY rowid');
       const hash = crypto.createHash('sha256');
-      for (const row of rows) {
+      const values = rows.map(row => {
         const ref = row.id ?? row.__original_rowid; delete row.__original_rowid;
         const json = JSON.stringify(row); hash.update(json);
-        await connection.query('INSERT INTO legado_registros (tabela, registro_id, dados_json) VALUES (?, ?, ?)', [table.name, ref, json]);
+        return [table.name, ref, json];
+      });
+      for (let start = 0; start < values.length; start += 500) {
+        await connection.query('INSERT INTO legado_registros (tabela, registro_id, dados_json) VALUES ?', [values.slice(start, start + 500)]);
       }
       const digest = hash.digest('hex'), targetHash = crypto.createHash('sha256');
       const [copied]: any = await connection.query('SELECT dados_json FROM legado_registros WHERE tabela=? ORDER BY id', [table.name]);

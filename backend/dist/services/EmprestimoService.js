@@ -18,7 +18,8 @@ async function operation(data, type, work) {
     return (0, db_1.withTransaction)(async (execute) => {
         // Serializes duplicate submissions for one operator across connections/processes.
         await execute('SELECT id FROM usuarios WHERE id = ?' + db_1.lockRow, [data.operadorId]);
-        const previous = await (0, db_1.queryOne)('SELECT * FROM requisicoes WHERE usuario_id = ? AND chave = ?', [data.operadorId, key]);
+        // Use a current read after the operator lock, including on TiDB snapshots.
+        const previous = await (0, db_1.queryOne)('SELECT * FROM requisicoes WHERE usuario_id = ? AND chave = ?' + db_1.lockRow, [data.operadorId, key]);
         if (previous) {
             if (previous.assinatura !== signature)
                 throw new Error('Identificador já utilizado em outra operação');

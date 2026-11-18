@@ -105,7 +105,7 @@ export async function quickReturn(data: any, userId: number) {
 
   return withTransaction(async execute => {
     await execute('SELECT id FROM usuarios WHERE id = ?' + lockRow, [operatorId]);
-    const previous = await queryOne('SELECT * FROM requisicoes WHERE usuario_id = ? AND chave = ?', [operatorId, key]);
+    const previous = await queryOne('SELECT * FROM requisicoes WHERE usuario_id = ? AND chave = ?' + lockRow, [operatorId, key]);
     if (previous) {
       if (previous.assinatura !== signature) throw new Error('Identificador já utilizado em outra operação');
       return JSON.parse(previous.resposta_json);

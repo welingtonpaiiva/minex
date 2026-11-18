@@ -12,7 +12,7 @@ export async function quantityMove(data: any, userId: number) {
   const signature = createHash('sha256').update(JSON.stringify({ ...data, requestId: undefined })).digest('hex');
   return withTransaction(async execute => {
     await execute('SELECT id FROM usuarios WHERE id=?' + lockRow, [userId]);
-    const previous = await queryOne('SELECT * FROM requisicoes WHERE usuario_id=? AND chave=?', [userId, key]);
+    const previous = await queryOne('SELECT * FROM requisicoes WHERE usuario_id=? AND chave=?' + lockRow, [userId, key]);
     if (previous) {
       if (previous.assinatura !== signature) throw new Error('Identificador já usado em outra operação');
       return JSON.parse(previous.resposta_json);

@@ -26,14 +26,17 @@ function mysqlDDL(statement) {
         .replace(/\b(descricao|observacao|justificativa) VARCHAR\(255\)/g, '$1 VARCHAR(4000)')
         .replace(/CREATE INDEX IF NOT EXISTS/g, 'CREATE INDEX');
     const foreignKeys = [];
-    sql = sql.replace(/(\w+) ([^,\n]+?) REFERENCES (\w+)\((\w+)\)/g, (_, column, type, table, key) => {
-        foreignKeys.push('FOREIGN KEY (' + column + ') REFERENCES ' + table + '(' + key + ')');
+    sql = sql.replace(/(\w+) ([^,\n]+?) REFERENCES (\w+)\((\w+)\)((?:\s+ON\s+(?:DELETE|UPDATE)\s+(?:CASCADE|RESTRICT|NO\s+ACTION|SET\s+(?:NULL|DEFAULT)))*)/g, (_, column, type, table, key, actions) => {
+        foreignKeys.push('FOREIGN KEY (' + column + ') REFERENCES ' + table + '(' + key + ')' + actions);
         return column + ' ' + type;
     });
     if (/^CREATE TABLE/.test(sql)) {
         if (foreignKeys.length)
             sql = sql.replace(/\)\s*$/, ', ' + foreignKeys.join(', ') + ')');
         sql += ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin';
+        // TiDB must allocate IDs globally in order; MySQL ignores this feature comment.
+        if (/\bAUTO_INCREMENT\b/.test(sql))
+            sql += ' /*T![auto_id_cache] AUTO_ID_CACHE=1 */';
     }
     return sql;
 }
@@ -62,6 +65,7 @@ async function runMigrations() {
         : await (0, db_1.query)('PRAGMA table_info(colaboradores)');
     for (const [name, type] of [
         ['empresa', "VARCHAR(255) NOT NULL DEFAULT ''"], ['turma', "VARCHAR(32) NOT NULL DEFAULT ''"],
+        ['cracha', "VARCHAR(255) DEFAULT ''"],
         ['brigadista', 'INTEGER NOT NULL DEFAULT 0'], ['brigada_especialidade', "VARCHAR(255) NOT NULL DEFAULT ''"],
         ['brigada_validade', 'VARCHAR(10)']
     ]) {
@@ -80,10 +84,10 @@ async function runMigrations() {
         // Recuperar o vínculo pela última retirada de cada empréstimo ainda ativo.
         await (0, db_1.withTransaction)(async (execute) => {
             const loans = await execute(`SELECT e.id, e.colaborador_id, r.id AS retirada_id, r.detalhes
-        FROM emprestimos e JOIN auditoria r ON r.id = (
-          SELECT MAX(a.id) FROM auditoria a
-          WHERE a.acao = 'RETIRADA' AND a.entidade = 'material' AND a.referencia_id = e.material_id
-        )`);
+        FROM emprestimos e JOIN auditoria r ON r.referencia_id = e.material_id
+          AND r.acao = 'RETIRADA' AND r.entidade = 'material'
+        WHERE r.id = (SELECT MAX(a.id) FROM auditoria a
+          WHERE a.acao = 'RETIRADA' AND a.entidade = 'material' AND a.referencia_id = e.material_id)`);
             for (const loan of loans) {
                 const withdrawal = JSON.parse(loan.detalhes);
                 if (Number(withdrawal.colaborador_id) !== Number(loan.colaborador_id))
