@@ -9,3 +9,4 @@ backups/
 *.log
 test-results/
 .vercel/
+.env.local
