@@ -6,6 +6,7 @@ const db_1 = require("../config/db");
 const OperationalService_1 = require("../services/OperationalService");
 const time_1 = require("../utils/time");
 const MonitoringService_1 = require("../services/MonitoringService");
+const search_1 = require("../utils/search");
 const router = (0, express_1.Router)();
 router.use(authMiddleware_1.authMiddleware);
 const handle = (fn) => (req, res, next) => { Promise.resolve(fn(req, res)).catch(next); };
@@ -72,8 +73,8 @@ router.put('/treinamentos/:id', (0, authMiddleware_1.requireRole)(OperationalSer
 }));
 router.get('/conformidade/:id', handle(async (req, res) => { res.json(await (0, OperationalService_1.getCompliance)((0, OperationalService_1.id)(req.params.id))); }));
 router.get('/conformidade', handle(async (req, res) => {
-    const p = (0, OperationalService_1.pagination)(req.query), term = '%' + String(req.query.busca || '').slice(0, 255) + '%';
-    const where = `WHERE (c.nome LIKE ? OR c.matricula LIKE ?) AND (? = '' OR c.setor = ?)
+    const p = (0, OperationalService_1.pagination)(req.query), term = (0, search_1.searchTerm)(req.query.busca);
+    const where = `WHERE (${(0, search_1.searchColumn)('c.nome')} LIKE ? OR ${(0, search_1.searchColumn)('c.matricula')} LIKE ?) AND (? = '' OR c.setor = ?)
     AND (? = '' OR EXISTS (SELECT 1 FROM colaborador_treinamentos ct WHERE ct.colaborador_id=c.id AND ct.treinamento_id=? AND ct.status='ATIVO'))`;
     const params = [term, term, req.query.setor || '', req.query.setor || '', req.query.treinamento || '', req.query.treinamento || ''];
     const status = `CASE

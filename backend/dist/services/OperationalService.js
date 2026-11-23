@@ -14,6 +14,7 @@ exports.listLosses = listLosses;
 exports.updateLoss = updateLoss;
 const db_1 = require("../config/db");
 const time_1 = require("../utils/time");
+const MinePresenceService_1 = require("./MinePresenceService");
 exports.operationRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'OPERADOR', 'OPERADOR_ESTOQUE'];
 exports.registrationRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO'];
 exports.barcodeRoles = [...new Set([...exports.registrationRoles, ...exports.operationRoles])];
@@ -121,8 +122,12 @@ async function mineAccess(data, userId) {
             await audit(userId, 'ENTRADA_MINA', 'acesso', result[0].id, { colaborador_id: collaborator.id }, execute);
         }
         else if (data.tipo === 'SAIDA') {
-            if (!active)
+            if (!active) {
+                const [presence] = await (0, MinePresenceService_1.minePresence)(execute, collaborator.id);
+                if (presence?.possui_mascara_fuga)
+                    throw new Error('Devolva a máscara de fuga para encerrar a presença automática na mina');
                 throw new Error('Não há entrada ativa para registrar a saída');
+            }
             await execute('UPDATE acessos_mina SET saida = ?, operador_saida_id = ?, ativo_colaborador_id = NULL WHERE id = ?', [(0, time_1.now)(), userId, active.id]);
             await audit(userId, 'SAIDA_MINA', 'acesso', active.id, { colaborador_id: collaborator.id }, execute);
         }
@@ -132,11 +137,15 @@ async function mineAccess(data, userId) {
     });
 }
 async function mineOverview() {
-    const rows = await (0, db_1.query)(`SELECT a.*, c.nome, c.matricula, c.setor, c.foto_url
-    FROM acessos_mina a JOIN colaboradores c ON c.id = a.colaborador_id
-    WHERE a.saida IS NULL ORDER BY a.entrada`);
-    const entries = rows.map(row => { const minutes = (0, time_1.elapsed)(row.entrada); return { ...row, entrada: new Date((0, time_1.instant)(row.entrada)).toISOString(), minutos: minutes, tempo: (0, time_1.duration)(minutes), excedido: Date.now() - (0, time_1.instant)(row.entrada) > 8 * 3600000 }; });
-    return { atualizado_em: (0, time_1.now)(), dentro_mina: entries.length, quantidade: entries.filter(e => e.excedido).length, colaboradores: entries };
+    return (0, db_1.withTransaction)(async (execute) => {
+        const rows = await (0, MinePresenceService_1.minePresence)(execute);
+        const entries = rows.map(row => {
+            const timestamp = (0, time_1.instant)(row.entrada), minutes = Number.isFinite(timestamp) ? (0, time_1.elapsed)(row.entrada) : 0;
+            return { ...row, entrada: Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null,
+                minutos: minutes, tempo: (0, time_1.duration)(minutes), excedido: Date.now() - timestamp > 8 * 3600000 };
+        });
+        return { atualizado_em: (0, time_1.now)(), dentro_mina: entries.length, quantidade: entries.filter(e => e.excedido).length, colaboradores: entries };
+    });
 }
 async function listLosses(filters) {
     const paging = pagination(filters), search = '%' + String(filters.busca || '').slice(0, 255) + '%';

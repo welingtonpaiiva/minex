@@ -12,6 +12,8 @@ export interface MonitorPerson {
   horario_inconsistente: boolean;
   brigadista: boolean;
   destino?: string;
+  origem?: 'ACESSO' | 'MASCARA_FUGA';
+  possui_mascara_fuga?: boolean;
   brigada_especialidade?: string;
   brigada_validade?: string | null;
 }

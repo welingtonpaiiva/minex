@@ -195,8 +195,7 @@ export const DashboardAlertas: React.FC<{ canRecordReturn?: boolean }> = ({ canR
     try {
       setLoading(true);
       const res = await api.get('/operacao/acessos');
-      // Adapt the access records to the existing TV presentation. Material loans
-      // do not determine whether a collaborator is currently inside the mine.
+      // Adapt the shared presence records, including outstanding escape masks.
       const resumo: ResumoAlertasTurno = {
         totalEmUso: res.data.dentro_mina, normalCount: 0, atencaoCount: 0, criticoCount: 0,
         alertas: res.data.colaboradores.map((entry: any) => ({

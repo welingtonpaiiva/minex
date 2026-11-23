@@ -1,5 +1,6 @@
 import { Executor, query, queryOne, withTransaction, lockRow, databaseClient } from '../config/db';
 import { now, elapsed, duration, today, instant } from '../utils/time';
+import { minePresence } from './MinePresenceService';
 
 export const operationRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'OPERADOR', 'OPERADOR_ESTOQUE'];
 export const registrationRoles = ['ADMINISTRADOR', 'SUPERVISOR', 'CADASTRO'];
@@ -89,7 +90,11 @@ export async function mineAccess(data: any, userId: number) {
         VALUES (?, ?, ?, ?, ?, ?)`, [collaborator.id, now(), userId, text(data.destino || '', 'Destino', 255, false), '', collaborator.id]);
       await audit(userId, 'ENTRADA_MINA', 'acesso', result[0].id, { colaborador_id: collaborator.id }, execute);
     } else if (data.tipo === 'SAIDA') {
-      if (!active) throw new Error('Não há entrada ativa para registrar a saída');
+      if (!active) {
+        const [presence] = await minePresence(execute, collaborator.id);
+        if (presence?.possui_mascara_fuga) throw new Error('Devolva a máscara de fuga para encerrar a presença automática na mina');
+        throw new Error('Não há entrada ativa para registrar a saída');
+      }
       await execute('UPDATE acessos_mina SET saida = ?, operador_saida_id = ?, ativo_colaborador_id = NULL WHERE id = ?', [now(), userId, active.id]);
       await audit(userId, 'SAIDA_MINA', 'acesso', active.id, { colaborador_id: collaborator.id }, execute);
     } else throw new Error('Tipo de acesso inválido');
@@ -97,11 +102,13 @@ export async function mineAccess(data: any, userId: number) {
   });
 }
 export async function mineOverview() {
-  const rows = await query(`SELECT a.*, c.nome, c.matricula, c.setor, c.foto_url
-    FROM acessos_mina a JOIN colaboradores c ON c.id = a.colaborador_id
-    WHERE a.saida IS NULL ORDER BY a.entrada`);
-  const entries = rows.map(row => { const minutes = elapsed(row.entrada); return { ...row, entrada: new Date(instant(row.entrada)).toISOString(), minutos: minutes, tempo: duration(minutes), excedido: Date.now() - instant(row.entrada) > 8 * 3600000 }; });
-  return { atualizado_em: now(), dentro_mina: entries.length, quantidade: entries.filter(e => e.excedido).length, colaboradores: entries };
+  return withTransaction(async execute => {
+    const rows = await minePresence(execute);
+    const entries = rows.map(row => { const timestamp = instant(row.entrada), minutes = Number.isFinite(timestamp) ? elapsed(row.entrada) : 0;
+      return { ...row, entrada: Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null,
+        minutos: minutes, tempo: duration(minutes), excedido: Date.now() - timestamp > 8 * 3600000 }; });
+    return { atualizado_em: now(), dentro_mina: entries.length, quantidade: entries.filter(e => e.excedido).length, colaboradores: entries };
+  });
 }
 export async function listLosses(filters: any) {
   const paging = pagination(filters), search = '%' + String(filters.busca || '').slice(0, 255) + '%';

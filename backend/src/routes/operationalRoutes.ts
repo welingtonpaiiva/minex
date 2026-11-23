@@ -4,6 +4,7 @@ import { query, queryOne, withTransaction, databaseClient, lockRow } from '../co
 import { audit, id, text, roles, operationRoles, trainingRoles, pagination, getCompliance, saveTraining, mineAccess, mineOverview, listLosses, updateLoss } from '../services/OperationalService';
 import { today, dayBoundary } from '../utils/time';
 import { monitoringOverview, monitoringProfile } from '../services/MonitoringService';
+import { searchColumn, searchTerm } from '../utils/search';
 const router = Router();
 router.use(authMiddleware);
 const handle = (fn: (req: AuthenticatedRequest, res: Response) => Promise<unknown>) =>
@@ -64,8 +65,8 @@ router.put('/treinamentos/:id', requireRole(trainingRoles), handle(async (req, r
 }));
 router.get('/conformidade/:id', handle(async (req, res) => { res.json(await getCompliance(id(req.params.id))); }));
 router.get('/conformidade', handle(async (req, res) => {
-  const p = pagination(req.query), term = '%' + String(req.query.busca || '').slice(0, 255) + '%';
-  const where = `WHERE (c.nome LIKE ? OR c.matricula LIKE ?) AND (? = '' OR c.setor = ?)
+  const p = pagination(req.query), term = searchTerm(req.query.busca);
+  const where = `WHERE (${searchColumn('c.nome')} LIKE ? OR ${searchColumn('c.matricula')} LIKE ?) AND (? = '' OR c.setor = ?)
     AND (? = '' OR EXISTS (SELECT 1 FROM colaborador_treinamentos ct WHERE ct.colaborador_id=c.id AND ct.treinamento_id=? AND ct.status='ATIVO'))`;
   const params = [term, term, req.query.setor || '', req.query.setor || '', req.query.treinamento || '', req.query.treinamento || ''];
   const status = `CASE

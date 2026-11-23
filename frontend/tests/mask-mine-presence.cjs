@@ -1,0 +1,51 @@
+const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), crypto = require('node:crypto');
+const assert = require('node:assert/strict');
+const { chromium, expect } = require('@playwright/test');
+process.env.DB_CLIENT = 'sqlite';
+process.env.SQLITE_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'minex-mask-browser-')), 'test.db');
+process.env.JWT_SECRET = crypto.randomBytes(48).toString('hex');
+delete process.env.MYSQL_HOST;
+delete process.env.INITIAL_ADMIN_PASSWORD;
+const jwt = require('../../backend/node_modules/jsonwebtoken');
+const { query, closeDatabase } = require('../../backend/dist/config/db');
+const { runMigrations } = require('../../backend/dist/database/migrate');
+const { ColaboradorService } = require('../../backend/dist/services/ColaboradorService');
+const { MaterialService } = require('../../backend/dist/services/MaterialService');
+const { EmprestimoService } = require('../../backend/dist/services/EmprestimoService');
+const { app } = require('../../backend/dist/server');
+let browser, server;
+(async () => {
+  try {
+    await runMigrations();
+    const operator = (await query("INSERT INTO usuarios (nome,matricula,senha_hash,nivel_acesso) VALUES ('Operador','MASK-BROWSER','unused','ADMINISTRADOR')"))[0].id;
+    const person = await ColaboradorService.criar({ nome: 'Pessoa com máscara de fuga', matricula: 'MASK-PERSON' });
+    const mask = await MaterialService.criar({ nome: 'Máscara de Fuga', codigo_interno: 'MASK-001' });
+    const operation = () => ({ colaboradorId: person.id, operadorId: operator, materiaisCodigos: [mask.codigo_interno], requestId: crypto.randomUUID() });
+    await EmprestimoService.realizarSaida(operation());
+    server = await new Promise(resolve => { const instance = app.listen(0, '127.0.0.1', () => resolve(instance)); });
+    const base = 'http://127.0.0.1:' + server.address().port;
+    browser = await chromium.launch({ channel: 'chrome', headless: true });
+    const context = await browser.newContext();
+    await context.addInitScript(token => localStorage.setItem('casa_da_lanterna_token', token), jwt.sign({ id: operator }, process.env.JWT_SECRET));
+    const page = await context.newPage(), errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto(base + '/acessos');
+    await expect(page.getByRole('heading', { name: 'Acesso à mina', exact: true })).toBeVisible();
+    await expect(page.locator('tbody tr')).toHaveCount(1);
+    await expect(page.getByText('Máscara de fuga em posse', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Devolver máscara', exact: true })).toHaveAttribute('href', '/entrada');
+    await expect(page.locator('.metric').first().locator('strong')).toHaveText('1');
+    await page.getByRole('button', { name: 'Abrir perfil de ' + person.nome, exact: true }).click();
+    await expect(page.getByRole('dialog').getByText('NA MINA', { exact: true })).toBeVisible();
+    await EmprestimoService.realizarEntrada(operation());
+    await page.reload();
+    await expect(page.getByText('Nenhum acesso em aberto.', { exact: true })).toBeVisible();
+    await expect(page.locator('.metric').first().locator('strong')).toHaveText('0');
+    assert.deepEqual(errors, []);
+    console.log('Chrome: retirada mostra presença, identificação e perfil; devolução remove a presença.');
+  } finally {
+    if (browser) await browser.close();
+    if (server) await new Promise(resolve => server.close(resolve));
+    await closeDatabase();
+  }
+})().catch(error => { console.error(error); process.exitCode = 1; });

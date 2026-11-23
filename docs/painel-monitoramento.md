@@ -13,7 +13,7 @@
 
 ## Dados e relógio
 
-- A consulta `GET /api/operacao/monitoramento` usa os registros abertos de `acessos_mina`, vinculados ao identificador do colaborador.
+- A consulta `GET /api/operacao/monitoramento` combina acessos abertos com empréstimos pendentes de máscaras de fuga, individuais ou por quantidade. Cada colaborador aparece uma vez. A máscara é identificada pela categoria Máscaras de Fuga ou pelo nome Máscara de Fuga (com ou sem acentos e variações de caixa). Sem acesso manual aberto, o horário é a retirada mais antiga entre as máscaras ainda em posse; com acesso manual, vale o horário desse acesso. A devolução de todas as máscaras encerra a presença automática; eventual acesso manual aberto continua válido. A leitura não cria entradas ou saídas no histórico. O perfil e o alerta geral usam a mesma regra.
 - A posição é consultada a cada 10 segundos, sem consultas sobrepostas. Em falhas, há reconexão automática entre 5 e 30 segundos e sinalização de dados desatualizados.
 - Uma operação registrada em outra aba da mesma aplicação sinaliza a atualização imediatamente, inclusive para um perfil que esteja aberto. A sinalização usa apenas um marcador no armazenamento do navegador; cada aba consulta a API com sua autenticação. Se uma consulta já estiver em andamento, uma nova consulta é executada assim que ela terminar. Na ausência de armazenamento disponível, a consulta periódica continua funcionando. O modo de demonstração ignora esses avisos.
 - O relógio e os contadores compartilham uma atualização local a cada segundo, ancorada no horário recebido do servidor. A apresentação usa `APP_TIMEZONE` (padrão: `America/Sao_Paulo`), independentemente do fuso do navegador.
@@ -24,7 +24,7 @@
 
 Empresa, turma, identificação de brigadista, especialidade e validade da habilitação estão disponíveis no formulário de colaboradores. O cadastro é protegido pelas permissões existentes. Os novos campos são adicionados de forma aditiva pelas migrações; em ambientes sem migração automática, executar `npm run migrate --prefix backend` antes da atualização.
 
-Ninguém é classificado como brigadista a partir de nome, função ou aproximação textual. Presença física vem do acesso aberto; habilitação vigente, vencida ou não informada é apresentada separadamente. Os totais da brigada representam todos os cadastros identificados como brigadistas, incluindo os que estejam fora da mina.
+Ninguém é classificado como brigadista a partir de nome, função ou aproximação textual. A presença considerada no sistema vem de acesso aberto ou máscara de fuga em posse; habilitação vigente, vencida ou não informada é apresentada separadamente. Os totais da brigada representam todos os cadastros identificados como brigadistas, incluindo os que estejam fora da mina.
 
 Dados não cadastrados aparecem como não informados. Turmas legadas explicitamente registradas no setor como `TURMA A` a `TURMA D` podem ser apresentadas a partir desse campo. Importações futuras da planilha preservam empresa e turma em seus campos próprios; o redesign não reexecuta importações nem preenche informações por suposição.
 

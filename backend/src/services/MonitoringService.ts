@@ -1,15 +1,13 @@
 import { withTransaction } from '../config/db';
 import { instant } from '../utils/time';
+import { minePresence } from './MinePresenceService';
 
 export async function monitoringOverview() {
   const timeZone = process.env.APP_TIMEZONE || 'America/Sao_Paulo';
   // Validate the configured operational zone rather than silently using the viewer's zone.
   const dateFormat = new Intl.DateTimeFormat('sv-SE', { timeZone });
   return withTransaction(async execute => {
-    const entries = await execute(`SELECT a.id AS acesso_id, a.colaborador_id, a.entrada, a.destino,
-      c.nome, c.matricula, c.cargo, c.setor, c.foto_url, c.empresa, c.turma, c.brigadista, c.brigada_especialidade, c.brigada_validade
-      FROM acessos_mina a JOIN colaboradores c ON c.id = a.colaborador_id
-      WHERE a.saida IS NULL ORDER BY a.entrada, a.id`);
+    const entries = await minePresence(execute);
     const brigade = await execute(`SELECT c.id AS colaborador_id, c.nome, c.matricula, c.cargo, c.foto_url,
       c.turma, c.setor, c.brigada_especialidade, c.brigada_validade, c.status
       FROM colaboradores c WHERE c.brigadista = 1 ORDER BY c.nome, c.id`);
@@ -50,8 +48,9 @@ export async function monitoringProfile(collaboratorId: number) {
     };
     const normalized = history.map(entry => ({ ...entry, entrada: asIso(entry.entrada), saida: asIso(entry.saida), em_aberto: !entry.saida }));
     // Query presence independently of the limited history, including legacy records.
-    const [active] = await execute('SELECT id, entrada, destino FROM acessos_mina WHERE colaborador_id = ? AND saida IS NULL ORDER BY id DESC LIMIT 1', [collaboratorId]);
+    const [active] = await minePresence(execute, collaboratorId);
     return { colaborador: { ...person, brigadista: Number(person.brigadista) === 1 },
-      acesso_ativo: active ? { ...active, entrada: asIso(active.entrada) } : null, historico: normalized };
+      acesso_ativo: active ? { id: active.id, entrada: asIso(active.entrada), destino: active.destino,
+        origem: active.origem, possui_mascara_fuga: active.possui_mascara_fuga } : null, historico: normalized };
   });
 }

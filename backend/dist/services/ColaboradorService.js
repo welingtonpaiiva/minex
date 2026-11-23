@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ColaboradorService = void 0;
 const db_1 = require("../config/db");
 const CollaboratorMonitoringFields_1 = require("./CollaboratorMonitoringFields");
+const search_1 = require("../utils/search");
 class ColaboradorService {
     static async listar(busca, status, limit = 100, offset = 0) {
         let sql = 'SELECT * FROM colaboradores WHERE 1=1';
@@ -12,8 +13,8 @@ class ColaboradorService {
             params.push(status);
         }
         if (busca) {
-            sql += ' AND (nome LIKE ? OR matricula LIKE ? OR nfc_id LIKE ? OR setor LIKE ?)';
-            const term = `%${busca.trim()}%`;
+            sql += ' AND (' + ['nome', 'matricula', 'nfc_id', 'setor'].map(column => `${(0, search_1.searchColumn)(column)} LIKE ?`).join(' OR ') + ')';
+            const term = (0, search_1.searchTerm)(busca);
             params.push(term, term, term, term);
         }
         sql += ' ORDER BY nome ASC LIMIT ? OFFSET ?';

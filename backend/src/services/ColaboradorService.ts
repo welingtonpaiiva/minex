@@ -1,5 +1,6 @@
 import { query, queryOne } from '../config/db';
 import { CollaboratorMonitoringFields, monitoringFields } from './CollaboratorMonitoringFields';
+import { searchColumn, searchTerm } from '../utils/search';
 
 export class ColaboradorService {
   static async listar(busca?: string, status?: string, limit = 100, offset = 0) {
@@ -12,8 +13,8 @@ export class ColaboradorService {
     }
 
     if (busca) {
-      sql += ' AND (nome LIKE ? OR matricula LIKE ? OR nfc_id LIKE ? OR setor LIKE ?)';
-      const term = `%${busca.trim()}%`;
+      sql += ' AND (' + ['nome', 'matricula', 'nfc_id', 'setor'].map(column => `${searchColumn(column)} LIKE ?`).join(' OR ') + ')';
+      const term = searchTerm(busca);
       params.push(term, term, term, term);
     }
 
